@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+
+    <Properties>
+        <Property name="info-file">target/logs/info.log</Property>
+        <Property name="error-file">target/logs/error.log</Property>
+    </Properties>
+
+    <Appenders>
+        <File name="info-appender" fileName="${info-file}" append="false">
+            <PatternLayout>
+                <Pattern>%d{HH:mm:ss dd-MM-yyyy} [%t][%level] (%F:%L) - %m%n</Pattern>
+            </PatternLayout>
+            <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+        </File>
+
+        <File name="error-appender" fileName="${error-file}" append="false">
+            <PatternLayout>
+                <Pattern>%d{HH:mm:ss dd-MM-yyyy} [%t][%level] (%F:%L) - %m%n</Pattern>
+            </PatternLayout>
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+        </File>
+    </Appenders>
+
+    <Loggers>
+        <Root level="debug">
+            <Appender-Ref ref="error-appender"/>
+            <Appender-Ref ref="info-appender"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

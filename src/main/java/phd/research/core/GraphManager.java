@@ -1,0 +1,66 @@
+package phd.research.core;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import phd.research.graph.Callgraph;
+import phd.research.graph.ControlFlowGraph;
+import soot.Scene;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
+
+import java.io.IOException;
+
+/**
+ * @author Jordan Doyle
+ */
+public class GraphManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(GraphManager.class);
+    private static final GraphManager instance = new GraphManager();
+
+    private String appName;
+    private Callgraph callGraph;
+    private ControlFlowGraph controlFlowGraph;
+
+    private GraphManager() { }
+
+    public static GraphManager getInstance() {
+        return instance;
+    }
+
+    public void start() {
+        this.appName = retrieveAppName();
+        this.callGraph = new Callgraph(Scene.v().getCallGraph());
+        this.controlFlowGraph = new ControlFlowGraph(this.callGraph);
+        //this.controlFlowGraph = null;
+    }
+
+    public String getAppName() {
+        return this.appName;
+    }
+
+    public Callgraph getCallGraph() {
+        return this.callGraph;
+    }
+
+    public ControlFlowGraph getControlFlowGraph() {
+        return this.controlFlowGraph;
+    }
+
+    private String retrieveAppName() {
+        logger.info("Retrieving application name...");
+        String applicationName = null;
+
+        ProcessManifest manifest;
+        try {
+            manifest = new ProcessManifest(FrameworkMain.getAPK());
+            if (manifest.getApplication().hasAttribute("label"))
+                applicationName = manifest.getApplication().getAttribute("label").getValue().toString();
+        } catch (IOException e) {
+            logger.error("Failure processing manifest: " + e.getMessage());
+            return null;
+        }
+
+        logger.info("Application name is \"" + applicationName + "\"");
+        return applicationName;
+    }
+}

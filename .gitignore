@@ -1,0 +1,7 @@
+.DS_Store
+.idea/
+*iml
+output/
+target/
+console_output.txt
+sootOutput/
