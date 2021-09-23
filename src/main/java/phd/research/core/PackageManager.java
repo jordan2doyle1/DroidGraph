@@ -2,6 +2,7 @@ package phd.research.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
 import soot.SootClass;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
@@ -65,7 +66,7 @@ public class PackageManager {
         ProcessManifest manifest;
         try {
             manifest = new ProcessManifest(FrameworkMain.getAPK());
-        } catch (IOException e) {
+        } catch (IOException | XmlPullParserException e) {
             logger.error("Failure processing manifest: " + e.getMessage());
             return null;
         }

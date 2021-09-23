@@ -2,6 +2,7 @@ package phd.research.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmlpull.v1.XmlPullParserException;
 import phd.research.graph.Callgraph;
 import phd.research.graph.ControlFlowGraph;
 import soot.Scene;
@@ -50,12 +51,22 @@ public class GraphManager {
         logger.info("Retrieving application name...");
         String applicationName = null;
 
+//        TODO: Can this be deleted - dld code used before FlowDroid update.
+//        ProcessManifest manifest;
+//        try {
+//            manifest = new ProcessManifest(FrameworkMain.getAPK());
+//            if (manifest.getApplication().hasAttribute("label"))
+//                applicationName = manifest.getApplication().getAttribute("label").getValue().toString();
+//        } catch (IOException | XmlPullParserException e) {
+//            logger.error("Failure processing manifest: " + e.getMessage());
+//            return null;
+//        }
+
         ProcessManifest manifest;
         try {
             manifest = new ProcessManifest(FrameworkMain.getAPK());
-            if (manifest.getApplication().hasAttribute("label"))
-                applicationName = manifest.getApplication().getAttribute("label").getValue().toString();
-        } catch (IOException e) {
+            applicationName = manifest.getApplication().getName();
+        } catch (IOException | XmlPullParserException e) {
             logger.error("Failure processing manifest: " + e.getMessage());
             return null;
         }

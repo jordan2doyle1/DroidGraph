@@ -10,8 +10,8 @@ import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.callbacks.CallbackDefinition;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
+import soot.jimple.infoflow.callbacks.CallbackDefinition;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -146,10 +146,13 @@ public class InterfaceManager {
             logger.info("FlowDroid found " + callbacks.size() + " callbacks in \"" + entry.getKey().getShortName() + "\"");
 
             for (CallbackDefinition callback : callbacks) {
-                if (callback.getCallbackType() == CallbackDefinition.CallbackType.Default) {
+                String targetName = callback.getTargetMethod().getName();
+                if (targetName.contains("onCreate") || targetName.contains("onStart") || targetName.contains("onResume")
+                        || targetName.contains("onRestart") || targetName.contains("onPause") ||
+                        targetName.contains("onStop") || targetName.contains("onDestroy")) {
                     this.lifecycleMethods.add(callback.getTargetMethod());
                     logger.debug("Found lifecycle method \"" + callback.getTargetMethod().getName() + "\".");
-                } else if (callback.getCallbackType() == CallbackDefinition.CallbackType.Widget) {
+                } else {
                     SootMethod method = callback.getTargetMethod();
                     PackageManager packageManager = PackageManager.getInstance();
 
