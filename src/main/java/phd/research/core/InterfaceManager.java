@@ -10,13 +10,11 @@ import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
 import soot.jimple.infoflow.callbacks.CallbackDefinition;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author Jordan Doyle
@@ -137,11 +135,23 @@ public class InterfaceManager {
     }
 
     public void extractUI(SetupApplication app) {
+        Map<SootClass, Set<CallbackDefinition>> customCallbacks = new HashMap<>();
+
+        for (Pair<SootClass, AndroidCallbackDefinition> callbacks : app.droidGraphCallbacks) {
+            if (customCallbacks.containsKey(callbacks.getO1())) {
+                customCallbacks.get(callbacks.getO1()).add(callbacks.getO2());
+            } else {
+                Set<CallbackDefinition> callbackDefinitions = new HashSet<>();
+                callbackDefinitions.add(callbacks.getO2());
+                customCallbacks.put(callbacks.getO1(), callbackDefinitions);
+            }
+        }
+
         logger.info("Retrieving callback methods and linking controls...");
-        logger.info("FlowDroid found " + app.customCallbacks.size() + " classes with callbacks.");
+        logger.info("FlowDroid found " + customCallbacks.size() + " classes with callbacks.");
         Set<SootMethod> controlCallbackSet = new HashSet<>();
 
-        for (Map.Entry<SootClass, Set<CallbackDefinition>> entry : app.customCallbacks.entrySet()) {
+        for (Map.Entry<SootClass, Set<CallbackDefinition>> entry : customCallbacks.entrySet()) {
             Set<CallbackDefinition> callbacks = entry.getValue();
             logger.info("FlowDroid found " + callbacks.size() + " callbacks in \"" + entry.getKey().getShortName() + "\"");
 
@@ -174,7 +184,7 @@ public class InterfaceManager {
 
         Set<Pair<String, AndroidLayoutControl>> nullControls = new HashSet<>();
 
-        for (Pair<String, AndroidLayoutControl> userControl : app.layoutFileParser.getUserControls()) {
+        for (Pair<String, AndroidLayoutControl> userControl : FrameworkMain.retrieveLayoutFileParser().getUserControls()) {
             AndroidLayoutControl control = userControl.getO2();
 
             if (control.getClickListener() != null) {

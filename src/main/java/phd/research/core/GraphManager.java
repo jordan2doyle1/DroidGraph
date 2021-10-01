@@ -7,6 +7,8 @@ import phd.research.graph.Callgraph;
 import phd.research.graph.ControlFlowGraph;
 import soot.Scene;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.LayoutFileParser;
 
 import java.io.IOException;
 
@@ -22,7 +24,8 @@ public class GraphManager {
     private Callgraph callGraph;
     private ControlFlowGraph controlFlowGraph;
 
-    private GraphManager() { }
+    private GraphManager() {
+    }
 
     public static GraphManager getInstance() {
         return instance;
@@ -32,7 +35,6 @@ public class GraphManager {
         this.appName = retrieveAppName();
         this.callGraph = new Callgraph(Scene.v().getCallGraph());
         this.controlFlowGraph = new ControlFlowGraph(this.callGraph);
-        //this.controlFlowGraph = null;
     }
 
     public String getAppName() {
@@ -49,18 +51,7 @@ public class GraphManager {
 
     private String retrieveAppName() {
         logger.info("Retrieving application name...");
-        String applicationName = null;
-
-//        TODO: Can this be deleted - dld code used before FlowDroid update.
-//        ProcessManifest manifest;
-//        try {
-//            manifest = new ProcessManifest(FrameworkMain.getAPK());
-//            if (manifest.getApplication().hasAttribute("label"))
-//                applicationName = manifest.getApplication().getAttribute("label").getValue().toString();
-//        } catch (IOException | XmlPullParserException e) {
-//            logger.error("Failure processing manifest: " + e.getMessage());
-//            return null;
-//        }
+        String applicationName;
 
         ProcessManifest manifest;
         try {
