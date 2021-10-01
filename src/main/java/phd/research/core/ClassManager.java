@@ -2,6 +2,7 @@ package phd.research.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmlpull.v1.XmlPullParserException;
 import soot.Scene;
 import soot.SootClass;
 import soot.jimple.infoflow.android.axml.AXmlNode;
@@ -161,7 +162,7 @@ public class ClassManager {
                 } else
                     logger.error("Failed to find entry point " + entryPoint + ".");
             }
-        } catch (IOException e) {
+        } catch (IOException | XmlPullParserException e) {
             logger.error("Failure processing manifest: " + e.getMessage());
             return entryPoints;
         }
@@ -177,7 +178,7 @@ public class ClassManager {
         ProcessManifest manifest;
         try {
             manifest = new ProcessManifest(FrameworkMain.getAPK());
-            for (AXmlNode activity : manifest.getLaunchableActivities()) {
+            for (AXmlNode activity : manifest.getLaunchableActivityNodes()) {
                 if (activity.hasAttribute("name")) {
                     // Could be excluding valid activities if the app developer has not provided the name attribute.
                     String activityName = activity.getAttribute("name").getValue().toString();
@@ -190,7 +191,7 @@ public class ClassManager {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | XmlPullParserException e) {
             logger.error("Failure processing manifest: " + e.getMessage());
             return launchActivities;
         }

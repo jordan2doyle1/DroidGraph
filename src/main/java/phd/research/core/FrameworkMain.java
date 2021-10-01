@@ -2,12 +2,16 @@ package phd.research.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmlpull.v1.XmlPullParserException;
 import phd.research.graph.GraphWriter;
 import phd.research.jGraph.Vertex;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.LayoutFileParser;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -186,6 +190,31 @@ public class FrameworkMain {
         return true;
     }
 
+    public static ARSCFileParser retrieveResources() {
+        ARSCFileParser resources = new ARSCFileParser();
+        try {
+            resources.parse(getAPK());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return resources;
+    }
+
+    public static LayoutFileParser retrieveLayoutFileParser() {
+        LayoutFileParser lfp = null;
+        try {
+            ProcessManifest manifest = new ProcessManifest(getAPK());
+            lfp = new LayoutFileParser(manifest.getPackageName(), retrieveResources());
+        } catch (IOException | XmlPullParserException e) {
+            e.printStackTrace();
+        }
+
+        assert lfp != null;
+        lfp.parseLayoutFileDirect(getAPK());
+        return lfp;
+    }
+
     private static void executeSoot() {
         Properties properties = getFrameworkProperties();
 
@@ -216,6 +245,7 @@ public class FrameworkMain {
         SetupApplication app = new SetupApplication(configuration);
         app.constructCallgraph();
 
+        retrieveLayoutFileParser();
         PackageManager.getInstance().start();
         ClassManager.getInstance().start();
         MethodManager.getInstance().start();
