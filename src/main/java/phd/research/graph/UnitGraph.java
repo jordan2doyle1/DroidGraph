@@ -20,14 +20,12 @@ import java.util.Set;
 public class UnitGraph extends BriefUnitGraph {
 
     private final String name;
-    private final Graph<Vertex, DefaultEdge> jUnitGraphT;
-    private final JGraph jUnitGraph;
+    private Graph<Vertex, DefaultEdge> jUnitGraphT;
+    private JGraph jUnitGraph;
 
     public UnitGraph(Body body) {
         super(body);
         this.name = generateGraphName();
-        this.jUnitGraphT = generateJGraphT();
-        this.jUnitGraph = generateJGraph();
     }
 
     public Graph<Vertex, DefaultEdge> getJUnitGraphT() {
@@ -71,7 +69,13 @@ public class UnitGraph extends BriefUnitGraph {
         return className.substring(className.lastIndexOf(".") + 1) + "_" + super.method.getName();
     }
 
-    private Graph<Vertex, DefaultEdge> generateJGraphT() {
+    public void generateJGraphs() {
+        generateJGraphT();
+        generateJGraph();
+    }
+
+
+    public void generateJGraphT() {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         for (Unit unit : super.unitChain) {
@@ -85,10 +89,11 @@ public class UnitGraph extends BriefUnitGraph {
                 graph.addEdge(vertex, nextVertex);
             }
         }
-        return graph;
+
+        this.jUnitGraphT = graph;
     }
 
-    private JGraph generateJGraph() {
+    public void generateJGraph() {
         JGraph graph = new JGraph();
 
         for (Unit unit : super.unitChain) {
@@ -103,6 +108,6 @@ public class UnitGraph extends BriefUnitGraph {
             }
         }
 
-        return graph;
+        this.jUnitGraph = graph;
     }
 }
