@@ -1,6 +1,5 @@
 package phd.research.jGraph;
 
-import phd.research.core.PackageManager;
 import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Style;
@@ -26,7 +25,7 @@ public class Vertex {
     public Vertex(Object hashcode, String label, Type type, SootMethod method) {
         this.id = (Integer) hashcode;
         this.type = type;
-        this.label = formatLabel(label);
+        this.label = label;
         this.sootMethod = method;
         this.sootClass = method.getDeclaringClass();
         this.visited = false;
@@ -36,7 +35,7 @@ public class Vertex {
     public Vertex(Object hashcode, String label, Type type) {
         this.id = (Integer) hashcode;
         this.type = type;
-        this.label = formatLabel(label);
+        this.label = label;
         this.sootMethod = null;
         this.sootClass = null;
         this.visited = false;
@@ -64,7 +63,7 @@ public class Vertex {
     }
 
     public Color getColor() {
-        switch (type) {
+        switch (this.type) {
             case statement:
                 return Color.yellow;
             case method:
@@ -82,7 +81,7 @@ public class Vertex {
     }
 
     public Shape getShape() {
-        switch (type) {
+        switch (this.type) {
             case statement:
                 return Shape.box;
             case method:
@@ -141,24 +140,5 @@ public class Vertex {
     @Override
     public int hashCode() {
         return Objects.hash(this.id, this.label);
-    }
-
-    private String formatLabel(String label) {
-        PackageManager packageManager = PackageManager.getInstance();
-
-        if (label.contains("dummyMainMethod"))
-            label = label.replaceAll("_", ".");
-
-        for (String packageName : packageManager.getAllPackages()) {
-            if (!packageName.equals(packageManager.getBasename()) && !packageName.equals("")) {
-                if (label.contains(packageName))
-                    label = label.replace(packageName + ".", "");
-            }
-        }
-
-        if (label.contains(packageManager.getBasename()))
-            label = label.replace(packageManager.getBasename() + ".", "");
-
-        return label;
     }
 }

@@ -17,19 +17,19 @@ public class JGraph {
     }
 
     public Set<Vertex> vertexSet() {
-        return vertices;
+        return this.vertices;
     }
 
     public Set<Edge> edgeSet() {
-        return edges;
+        return this.edges;
     }
 
     public void addVertex(Vertex vertex) {
-        vertices.add(vertex);
+        this.vertices.add(vertex);
     }
 
     public Vertex getVertex(int id) {
-        for (Vertex vertex : vertices) {
+        for (Vertex vertex : this.vertices) {
             if (vertex.getID() == id)
                 return vertex;
         }
@@ -37,11 +37,11 @@ public class JGraph {
     }
 
     public boolean contains(Vertex vertex) {
-        return vertices.contains(vertex);
+        return this.vertices.contains(vertex);
     }
 
     public void addEdge(Edge edge) {
-        edges.add(edge);
+        this.edges.add(edge);
     }
 
     public void addEdge(Vertex source, Vertex target) {
@@ -50,7 +50,7 @@ public class JGraph {
     }
 
     public boolean contains(Edge edge) {
-        return edges.contains(edge);
+        return this.edges.contains(edge);
     }
 
     public void addGraph(JGraph subGraph) {
