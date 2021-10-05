@@ -12,7 +12,6 @@ import phd.research.jGraph.Vertex;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * @author Jordan Doyle
@@ -21,28 +20,21 @@ public class GraphWriter {
 
     private static final Logger logger = LoggerFactory.getLogger(GraphWriter.class);
 
-    private static String fileOutputLocation;
     private BufferedWriter writer;
 
     public GraphWriter() {
-        if (fileOutputLocation == null)
-            fileOutputLocation = getOutputLocation();
     }
 
-    public static String getOutputLocation() {
-        return FrameworkMain.getOutputDirectory();
-    }
-
-    public static void cleanDirectory(String outputLocation) {
+    public static void cleanDirectory(String directory) {
         try {
-            FileUtils.cleanDirectory(new File(outputLocation));
+            FileUtils.cleanDirectory(new File(directory));
         } catch (IOException e) {
-            logger.error("Failed to clean output directory: " + e.getMessage());
+            logger.error("Failed to clean directory: " + e.getMessage());
         }
     }
 
     public void writeDotGraph(String name, Graph<Vertex, DefaultEdge> graph) {
-        String outputLocation = fileOutputLocation + "dot/";
+        String outputLocation = FrameworkMain.getOutputDirectory() + "dot/";
         String file = getFileName(name);
 
         ComponentNameProvider<Vertex> vertexIdProvider = new ComponentNameProvider<Vertex>() {
@@ -80,7 +72,7 @@ public class GraphWriter {
     }
 
     public void writeJSONGraph(String name, Graph<Vertex, DefaultEdge> graph) {
-        String outputLocation = fileOutputLocation + "json/";
+        String outputLocation = FrameworkMain.getOutputDirectory() + "json/";
         String file = getFileName(name) + ".json";
 
         ComponentNameProvider<Vertex> vertexIdProvider = new ComponentNameProvider<Vertex>() {
@@ -138,9 +130,9 @@ public class GraphWriter {
         return output.toString();
     }
 
-    private String getFileName(String graphName) {
+    private String getFileName(String name) {
         // Windows does not allow filenames with these characters: / \ : * ? " < > |
-        return graphName.replaceAll("[:]", "_");
+        return name.replaceAll("[:]", "_");
     }
 
     private void openFile(String location, String file) {
