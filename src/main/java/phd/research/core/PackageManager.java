@@ -65,24 +65,23 @@ public class PackageManager {
 
         ProcessManifest manifest;
         try {
-            manifest = new ProcessManifest(FrameworkMain.getAPK());
+            manifest = new ProcessManifest(FrameworkMain.getApk());
         } catch (IOException | XmlPullParserException e) {
-            logger.error("Failure processing manifest: " + e.getMessage());
+            logger.error("Error processing manifest: " + e.getMessage());
             return null;
         }
 
         String basename = manifest.getPackageName();
-        logger.info("Basename is \"" + basename + "\"");
+        logger.info("Package basename is \"" + basename + "\"");
         return basename;
     }
 
     private Set<String> readBlacklist() {
         logger.info("Reading package blacklist...");
         Set<String> packages = new HashSet<>();
-        String file = System.getProperty("user.dir") + "/config/package_blacklist";
 
         try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(FrameworkMain.getPackageBlacklist()));
             String currentPackage;
 
             while ((currentPackage = bufferedReader.readLine()) != null) {
@@ -90,7 +89,7 @@ public class PackageManager {
                 logger.debug("\"" + currentPackage + "\" found in blacklist.");
             }
         } catch (IOException e) {
-            logger.error("Failure reading package blacklist: " + e.getMessage());
+            logger.error("Error reading package blacklist: " + e.getMessage());
             return packages;
         }
 
@@ -120,7 +119,7 @@ public class PackageManager {
             String packageName = sootClass.getPackageName();
             if (!packageName.equals("")) {
                 packages.add(packageName);
-                // logger.debug("Adding package \"" + packageName + "\".");
+                logger.debug("Adding package \"" + packageName + "\".");
             }
         }
 

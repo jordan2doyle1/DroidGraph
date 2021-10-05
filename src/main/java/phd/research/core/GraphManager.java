@@ -55,7 +55,7 @@ public class GraphManager {
 
         ProcessManifest manifest;
         try {
-            manifest = new ProcessManifest(FrameworkMain.getAPK());
+            manifest = new ProcessManifest(FrameworkMain.getApk());
             applicationName = manifest.getApplication().getName();
         } catch (IOException | XmlPullParserException e) {
             logger.error("Failure processing manifest: " + e.getMessage());

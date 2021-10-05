@@ -1,100 +1,163 @@
 package phd.research.core;
 
+import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xmlpull.v1.XmlPullParserException;
-import phd.research.graph.GraphWriter;
 import phd.research.jGraph.Vertex;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.manifest.ProcessManifest;
-import soot.jimple.infoflow.android.resources.ARSCFileParser;
-import soot.jimple.infoflow.android.resources.LayoutFileParser;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Properties;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
 /**
  * @author Jordan Doyle
  */
 public class FrameworkMain {
-
     private static final Logger logger = LoggerFactory.getLogger(FrameworkMain.class);
 
-    private static String propertiesPath = System.getProperty("user.dir") + "/config/default.properties";
-
-    private static boolean outputGraph = false;
+    private static String androidPlatform;
+    private static String apk;
+    private static boolean consoleOutput;
+    private static boolean outputUnitGraphs;
+    private static boolean outputCallGraph;
+    private static boolean outputControlFlowGraph;
+    private static String outputDirectory;
     private static String outputFormat;
-    private static String graphType;
-    private static boolean consoleOutput = false;
+    private static String packageBlacklist;
+    private static String classBlacklist;
 
     public static void main(String[] args) {
         long startTime = System.nanoTime();
-        logger.info("Start time: " + startTime);
+        LocalDateTime startDate = LocalDateTime.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy-HH:mm:ss");
+        logger.info("Start time: " + dateFormatter.format(startDate) + " - " + startTime);
 
-        if (args.length != 0) {
-            for (int i = 0; i < args.length; i++) {
-                if ("-properties_path".equals(args[i])) {
-                    if ((args.length - i) < 2) {
-                        logger.error("Too few arguments: Must give properties file directory with -properties option.");
-                        return;
+        Options options = new Options();
+        options.addOption(Option.builder("ap").longOpt("android-platform").desc("Android SDK platform directory.")
+                .required().hasArg().numberOfArgs(1).argName("DIRECTORY").build());
+        options.addOption(Option.builder("a").longOpt("apk").desc("APK file to analyse.").required().hasArg()
+                .numberOfArgs(1).argName("FILE").build());
+        options.addOption(Option.builder("co").longOpt("console-output").desc("Print output to console.").build());
+        options.addOption(Option.builder("ug").longOpt("unit-graph").desc("Output Unit Graphs.").build());
+        options.addOption(Option.builder("cg").longOpt("call-graph").desc("Output Call Graph.").build());
+        options.addOption(Option.builder("cfg").longOpt("control-flow-graph").desc("Output Control Flow Graph.")
+                .build());
+        options.addOption(Option.builder("od").longOpt("output-directory").desc("Directory for output files.")
+                .hasArg().numberOfArgs(1).argName("DIRECTORY").build());
+        options.addOption(Option.builder("of").longOpt("output-format").hasArg()
+                .desc("Graph output format ('DOT', 'JSON', 'ALL').").numberOfArgs(1).argName("FORMAT").build());
+        options.addOption(Option.builder("pb").longOpt("package-blacklist")
+                .desc("File containing ignored packages.").hasArg().numberOfArgs(1).argName("FILE").build());
+        options.addOption(Option.builder("cb").longOpt("class-blacklist").desc("File containing ignored classes.")
+                .hasArg().numberOfArgs(1).argName("FILE").build());
+        options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
+        options.addOption(Option.builder("sp").longOpt("source-project").desc("Name of source project.").hasArg()
+                .numberOfArgs(1).argName("NAME").build());
+
+        CommandLine cmd = null;
+        try {
+            if (checkForHelp(args)) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("DroidGraph2.0", options);
+                System.exit(0);
+            }
+
+            CommandLineParser parser = new DefaultParser();
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            HelpFormatter formatter = new HelpFormatter();
+            final PrintWriter writer = new PrintWriter(System.out);
+            formatter.printUsage(writer,80,"DroidGraph2.0", options);
+            writer.flush();
+            System.exit(0);
+        }
+
+        if (cmd != null) {
+            androidPlatform = cmd.getOptionValue("ap");
+            if (!directoryExists(androidPlatform)) {
+                logger.error("Error: Android platform directory does not exist (" + androidPlatform + ").");
+                System.err.println("Error: Android platform directory does not exist (" + androidPlatform + ").");
+                System.exit(10);
+            }
+
+            String sourceProject = (cmd.hasOption("sp") ? cmd.getOptionValue("sp") : null);
+
+            apk = cmd.getOptionValue("a");
+            if (!fileExists(apk)) {
+                if (cmd.hasOption("sp")) {
+                    String sourceApk = "/Users/jordandoyle/Android_Projects/" + sourceProject +
+                            "/app/build/outputs/apk/debug/app-debug.apk";
+                    if (fileExists(sourceApk)) {
+                        apk = sourceApk;
+                    } else {
+                        logger.error("Error: Source project (" + sourceProject + ") does not exist .");
+                        System.err.println("Error: Source project (" + sourceProject + ") does not exist .");
+                        System.exit(20);
                     }
-                    propertiesPath = args[i + 1];
-                    i++;
-                } else if ("-o".equals(args[i])) {
-                    if ((args.length - i) < 3) {
-                        logger.error("Too few arguments: Must give output format and graph type with -o option.");
-                        return;
-                    }
-                    outputGraph = true;
-                    outputFormat = args[i + 1];
-                    graphType = args[i + 2];
-                    i += 2;
-                } else if ("-c".equals(args[i])) {
-                    consoleOutput = true;
                 } else {
-                    logger.error("Argument " + args[i] + " is not recognised.");
-                    return;
-                }
-            }
-        }
-
-        if (apkExists()) {
-            executeSoot();
-
-            if (outputGraph) {
-                GraphWriter.cleanDirectory(GraphWriter.getOutputLocation());
-                String[] formats = outputFormat.split(",");
-
-                if (isRecognisedFormat(formats)) {
-                    for (String format : formats) {
-                        for (String type : graphType.split(",")) {
-                            switch (type) {
-                                case "UG":
-                                    MethodManager.getInstance().outputFilteredMethods(format);
-                                    break;
-                                case "CG":
-                                    GraphManager.getInstance().getCallGraph().outputGraph(format);
-                                    break;
-                                case "CFG":
-                                    GraphManager.getInstance().getControlFlowGraph().outputGraph(format);
-                                default:
-                                    logger.error("Unrecognised graph type: " + type);
-                            }
-                        }
-                    }
+                    logger.error("Error: APK file does not exist (" + apk + ").");
+                    System.err.println("Error: APK file does not exist (" + apk + ").");
+                    System.exit(30);
                 }
             }
 
-            if (consoleOutput) printAnalysisDetails();
-        } else {
-            logger.error("No APK file found!");
+            consoleOutput = cmd.hasOption("co");
+            outputUnitGraphs = cmd.hasOption("ug");
+            outputCallGraph = cmd.hasOption("cg");
+            outputControlFlowGraph = cmd.hasOption("cfg");
+
+            outputDirectory = (cmd.hasOption("od") ? cmd.getOptionValue("od") :
+                    System.getProperty("user.dir") + "/sootOutput/");
+            if (!directoryExists(outputDirectory)) {
+                outputDirectory = System.getProperty("user.dir") + "/sootOutput/";
+                logger.warn("Warning: Output directory does not exist, using default directory instead.");
+            }
+            outputFormat = (cmd.hasOption("of") ? cmd.getOptionValue("of") : "JSON");
+            if (!isRecognisedFormat(outputFormat)) {
+                logger.error("Warning: Unrecognised output format, using default format instead.");
+                System.err.println("Warning: Unrecognised output format, using default format instead.");
+            }
+            packageBlacklist = (cmd.hasOption("pb") ? cmd.getOptionValue("pb") :
+                    System.getProperty("user.dir") + "/package_blacklist");
+            if (!fileExists(packageBlacklist)) {
+                logger.warn("Warning: Package blacklist file does not exist, using default instead.");
+                packageBlacklist = System.getProperty("user.dir") + "/package_blacklist";
+            }
+            classBlacklist = (cmd.hasOption("cb") ? cmd.getOptionValue("cb") :
+                    System.getProperty("user.dir") + "/class_blacklist");
+            if (!fileExists(classBlacklist)) {
+                classBlacklist = System.getProperty("user.dir") + "/class_blacklist";
+                logger.warn("Warning: Class blacklist file does not exist, using default instead.");
+            }
         }
+
+        InfoflowAndroidConfiguration configuration = new InfoflowAndroidConfiguration();
+        configuration.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.CreateNewInstance);
+        configuration.setMergeDexFiles(true);
+        configuration.getAnalysisFileConfig().setAndroidPlatformDir(androidPlatform);
+        configuration.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
+        configuration.getAnalysisFileConfig().setTargetAPKFile(apk);
+
+        SetupApplication app = new SetupApplication(configuration);
+        app.constructCallgraph();
+
+        PackageManager.getInstance().start();
+        ClassManager.getInstance().start();
+        MethodManager.getInstance().start();
+        InterfaceManager.getInstance().extractUI(app);
+        GraphManager.getInstance().start();
+
+        //TODO: Test that these work!
+        if (outputUnitGraphs) MethodManager.getInstance().outputFilteredMethods(outputFormat);
+        if (outputCallGraph) GraphManager.getInstance().getCallGraph().outputGraph(outputFormat);
+        if (outputControlFlowGraph) GraphManager.getInstance().getControlFlowGraph().outputGraph(outputFormat);
+        if (consoleOutput) printAnalysisDetails();
 
         long endTime = System.nanoTime();
         logger.info("End time: " + endTime);
@@ -102,163 +165,58 @@ public class FrameworkMain {
         logger.info("Execution time: " + Math.round(execTime / 60.0) + " minute(s) " + "(" + execTime + " second(s))");
     }
 
-    public static Properties getFrameworkProperties() {
-        Properties properties = new Properties();
-
-        try {
-            properties.load(new FileInputStream(propertiesPath));
-        } catch (IOException e) {
-            logger.error("Error loading properties file: " + e.getMessage());
-            return null;
-        }
-
-        return properties;
+    public static String getOutputDirectory() {
+        return outputDirectory;
     }
 
-    public static boolean apkExists() {
-        Properties properties = getFrameworkProperties();
-
-        if (properties != null) {
-            File apk;
-            boolean useSource = Boolean.parseBoolean(properties.getProperty("USE_SOURCE"));
-
-            if (useSource) {
-                apk = new File(String.format("%s%s%s%s", properties.getProperty("SOURCE_LOCATION"),
-                        properties.getProperty("PROJECT_NAME"), properties.getProperty("SOURCE_APK_LOCATION"),
-                        properties.getProperty("SOURCE_APK_NAME")));
-                System.out.println(apk);
-            } else
-                apk = new File(String.format("%s%s", properties.getProperty("APK_LOCATION"),
-                        properties.getProperty("APK_NAME")));
-
-            return apk.exists();
-        }
-
-        return false;
-    }
-
-    public static String getAPK() {
-        Properties properties = FrameworkMain.getFrameworkProperties();
-        String apk = null;
-
-        if (properties != null) {
-            boolean useSource = Boolean.parseBoolean(properties.getProperty("USE_SOURCE"));
-            if (useSource) {
-                apk = properties.getProperty("SOURCE_LOCATION") + properties.getProperty("PROJECT_NAME") +
-                        properties.getProperty("SOURCE_APK_LOCATION") +
-                        properties.getProperty("SOURCE_APK_NAME");
-            } else {
-                apk = properties.getProperty("APK_LOCATION") + properties.getProperty("APK_NAME");
-            }
-        }
-
+    public static String getApk() {
         return apk;
     }
 
-    public static void printList(Set<?> list) {
-        int counter = 0;
-        int numberOfPrints = 10;
-        for (Object item : list) {
-            if (counter < numberOfPrints) {
-                if (item instanceof String)
-                    System.out.println("\t" + item);
-                else if (item instanceof SootClass)
-                    System.out.println("\t" + ((SootClass) item).getName());
-                else if (item instanceof Vertex)
-                    System.out.println("\t" + ((Vertex) item).getLabel());
-                else if (item instanceof SootMethod) {
-                    SootMethod method = (SootMethod) item;
-                    System.out.println("\t" + method.getDeclaringClass().getName() + ":" + method.getName());
-                }
-            } else {
-                int remaining = list.size() - numberOfPrints;
-                System.out.println("+ " + remaining + " more!");
-                break;
-            }
-            counter++;
-        }
-        System.out.println();
+    public static String getPackageBlacklist() {
+        return packageBlacklist;
     }
 
-    private static boolean isRecognisedFormat(String[] formats) {
-        for (String format : formats) {
-            if (!(format.equals("DOT") || format.equals("JSON"))) {
-                logger.error("Unrecognised output format: " + format);
-                return false;
-            }
-        }
-        return true;
+    public static String getClassBlacklist() {
+        return classBlacklist;
     }
 
-    public static ARSCFileParser retrieveResources() {
-        ARSCFileParser resources = new ARSCFileParser();
+    private static boolean checkForHelp(String[] args) {
+        Options options = new Options();
+        options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
         try {
-            resources.parse(getAPK());
-        } catch (IOException e) {
-            e.printStackTrace();
+            cmd = parser.parse(options, args, true);
+        } catch (ParseException e) {
+            logger.error("Error Parsing Command Line Arguments: " + e.getMessage());
+            System.err.println("Error Parsing Command Line Arguments: " + e.getMessage());
         }
 
-        return resources;
+        if (cmd != null) {
+            return cmd.hasOption("h");
+        }
+        return false;
     }
 
-    public static LayoutFileParser retrieveLayoutFileParser() {
-        LayoutFileParser lfp = null;
-        try {
-            ProcessManifest manifest = new ProcessManifest(getAPK());
-            lfp = new LayoutFileParser(manifest.getPackageName(), retrieveResources());
-        } catch (IOException | XmlPullParserException e) {
-            e.printStackTrace();
-        }
-
-        assert lfp != null;
-        lfp.parseLayoutFileDirect(getAPK());
-        return lfp;
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean directoryExists(String directoryName) {
+        File directory = new File(directoryName);
+        return directory.isDirectory();
     }
 
-    private static void executeSoot() {
-        Properties properties = getFrameworkProperties();
+    private static boolean fileExists(String fileName) {
+        File file = new File(fileName);
+        return file.exists();
+    }
 
-        if (properties == null) {
-            return;
-        }
-
-        InfoflowAndroidConfiguration configuration = new InfoflowAndroidConfiguration();
-        configuration.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.CreateNewInstance);
-        configuration.setMergeDexFiles(true);
-        configuration.getAnalysisFileConfig().setAndroidPlatformDir(properties.getProperty("PLATFORM_LOCATION"));
-        configuration.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
-
-        boolean useSource = Boolean.parseBoolean(properties.getProperty("USE_SOURCE"));
-        if (useSource) {
-            configuration.getAnalysisFileConfig().setTargetAPKFile(String.format("%s%s%s%s",
-                    properties.getProperty("SOURCE_LOCATION"),
-                    properties.getProperty("PROJECT_NAME"),
-                    properties.getProperty("SOURCE_APK_LOCATION"),
-                    properties.getProperty("SOURCE_APK_NAME"))
-            );
-        } else {
-            configuration.getAnalysisFileConfig().setTargetAPKFile(String.format("%s%s",
-                    properties.getProperty("APK_LOCATION"), properties.getProperty("APK_NAME"))
-            );
-        }
-
-        SetupApplication app = new SetupApplication(configuration);
-        app.constructCallgraph();
-
-        retrieveLayoutFileParser();
-        PackageManager.getInstance().start();
-        ClassManager.getInstance().start();
-        MethodManager.getInstance().start();
-        InterfaceManager.getInstance().extractUI(app);
-        GraphManager.getInstance().start();
+    private static boolean isRecognisedFormat(String format) {
+        return format.equals("DOT") || format.equals("JSON") || format.equals("ALL");
     }
 
     private static void printAnalysisDetails() {
         System.out.println("-------------------------------- Analysis Details ---------------------------------\n");
-
-        GraphManager graphManager = GraphManager.getInstance();
-        System.out.println("Application Name: " + graphManager.getAppName());
-        System.out.println();
 
         PackageManager packageManager = PackageManager.getInstance();
         System.out.println("Base Package Name: " + packageManager.getBasename());
@@ -287,6 +245,7 @@ public class FrameworkMain {
         System.out.println("Interface Callback Table");
         System.out.println(interfaceManager.getControlListenerTable());
 
+        GraphManager graphManager = GraphManager.getInstance();
         System.out.println("Call Graph Composition Table");
         System.out.println(graphManager.getCallGraph().getGraphCompositionTable());
 
@@ -294,5 +253,31 @@ public class FrameworkMain {
         System.out.println(graphManager.getControlFlowGraph().getGraphCompositionTable());
 
         System.out.println("\n-----------------------------------------------------------------------------------\n");
+    }
+
+    @SuppressWarnings("unused")
+    public static void printList(Set<?> list) {
+        int counter = 0;
+        int numberOfPrints = 10;
+        for (Object item : list) {
+            if (counter < numberOfPrints) {
+                if (item instanceof String)
+                    System.out.println("\t" + item);
+                else if (item instanceof SootClass)
+                    System.out.println("\t" + ((SootClass) item).getName());
+                else if (item instanceof Vertex)
+                    System.out.println("\t" + ((Vertex) item).getLabel());
+                else if (item instanceof SootMethod) {
+                    SootMethod method = (SootMethod) item;
+                    System.out.println("\t" + method.getDeclaringClass().getName() + ":" + method.getName());
+                }
+            } else {
+                int remaining = list.size() - numberOfPrints;
+                System.out.println("+ " + remaining + " more!");
+                break;
+            }
+            counter++;
+        }
+        System.out.println();
     }
 }

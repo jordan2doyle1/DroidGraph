@@ -3,6 +3,7 @@ package phd.research.core;
 import heros.solver.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Type;
 import phd.research.helper.Control;
 import soot.*;
@@ -11,9 +12,13 @@ import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
 import soot.jimple.infoflow.callbacks.CallbackDefinition;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -184,7 +189,7 @@ public class InterfaceManager {
 
         Set<Pair<String, AndroidLayoutControl>> nullControls = new HashSet<>();
 
-        for (Pair<String, AndroidLayoutControl> userControl : FrameworkMain.retrieveLayoutFileParser().getUserControls()) {
+        for (Pair<String, AndroidLayoutControl> userControl : retrieveLayoutFileParser().getUserControls()) {
             AndroidLayoutControl control = userControl.getO2();
 
             if (control.getClickListener() != null) {
@@ -246,6 +251,33 @@ public class InterfaceManager {
                 logger.error("No listener linked to " + control.getID() + ".");
             }
         }
+    }
+
+    private ARSCFileParser retrieveResources() {
+        ARSCFileParser resources = new ARSCFileParser();
+        try {
+            resources.parse(FrameworkMain.getApk());
+        } catch (IOException e) {
+            logger.error("Error getting resources: " + e.getMessage());
+        }
+
+        return resources;
+    }
+
+    private LayoutFileParser retrieveLayoutFileParser() {
+        LayoutFileParser layoutFileParser = null;
+        try {
+            ProcessManifest manifest = new ProcessManifest(FrameworkMain.getApk());
+            layoutFileParser = new LayoutFileParser(manifest.getPackageName(), retrieveResources());
+        } catch (IOException | XmlPullParserException e) {
+            logger.error("Error getting LayoutFileParser: " + e.getMessage());
+        }
+
+        if (layoutFileParser != null) {
+            layoutFileParser.parseLayoutFileDirect(FrameworkMain.getApk());
+        }
+
+        return layoutFileParser;
     }
 
     private SootMethod searchCallbackMethods(String methodName) {

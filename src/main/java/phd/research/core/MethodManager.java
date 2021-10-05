@@ -63,7 +63,6 @@ public class MethodManager {
         }
     }
 
-    @SuppressWarnings("CommentedOutCode")
     private Set<SootMethod> retrieveAllMethods() {
         logger.info("Retrieving all methods...");
         Set<SootClass> classes = ClassManager.getInstance().getAllClasses();
@@ -73,9 +72,9 @@ public class MethodManager {
             List<SootMethod> methods = sootClass.getMethods();
             allMethods.addAll(methods);
 
-//            for (SootMethod method : methods) {
-//                logger.debug("Added method \"" + method.getName() + "\".");
-//            }
+            for (SootMethod method : methods) {
+                logger.debug("Added method \"" + method.getName() + "\".");
+            }
         }
 
         logger.info("Found " + allMethods.size() + " methods.");

@@ -81,10 +81,9 @@ public class ClassManager {
     private Set<String> readBlacklist() {
         logger.info("Reading class blacklist...");
         Set<String> classes = new HashSet<>();
-        String file = System.getProperty("user.dir") + "/config/class_blacklist";
 
         try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(FrameworkMain.getClassBlacklist()));
             String currentClass;
 
             while ((currentClass = bufferedReader.readLine()) != null) {
@@ -92,7 +91,7 @@ public class ClassManager {
                 logger.debug("\"" + currentClass + "\" found in blacklist.");
             }
         } catch (IOException e) {
-            logger.error("Failure reading class blacklist: " + e.getMessage());
+            logger.error("Error reading class blacklist: " + e.getMessage());
             return classes;
         }
 
@@ -108,14 +107,13 @@ public class ClassManager {
         return false;
     }
 
-    @SuppressWarnings("CommentedOutCode")
     private Set<SootClass> retrieveAllClasses() {
         logger.info("Retrieving all classes...");
         Set<SootClass> classes = new HashSet<>(Scene.v().getClasses());
 
-//        for (SootClass sootClass : classes) {
-//            logger.debug("Added class \"" + sootClass.getShortName() + "\".");
-//        }
+        for (SootClass sootClass : classes) {
+            logger.debug("Added class \"" + sootClass.getShortName() + "\".");
+        }
 
         logger.info("Found " + classes.size() + " classes.");
         return classes;
@@ -153,7 +151,7 @@ public class ClassManager {
 
         ProcessManifest manifest;
         try {
-            manifest = new ProcessManifest(FrameworkMain.getAPK());
+            manifest = new ProcessManifest(FrameworkMain.getApk());
             for (String entryPoint : manifest.getEntryPointClasses()) {
                 SootClass entryPointClass = getClass(this.filtered, entryPoint);
                 if (entryPointClass != null) {
@@ -163,7 +161,7 @@ public class ClassManager {
                     logger.error("Failed to find entry point " + entryPoint + ".");
             }
         } catch (IOException | XmlPullParserException e) {
-            logger.error("Failure processing manifest: " + e.getMessage());
+            logger.error("Error processing manifest: " + e.getMessage());
             return entryPoints;
         }
 
@@ -177,7 +175,7 @@ public class ClassManager {
 
         ProcessManifest manifest;
         try {
-            manifest = new ProcessManifest(FrameworkMain.getAPK());
+            manifest = new ProcessManifest(FrameworkMain.getApk());
             for (AXmlNode activity : manifest.getLaunchableActivityNodes()) {
                 if (activity.hasAttribute("name")) {
                     // Could be excluding valid activities if the app developer has not provided the name attribute.

@@ -30,12 +30,7 @@ public class GraphWriter {
     }
 
     public static String getOutputLocation() {
-        Properties properties = FrameworkMain.getFrameworkProperties();
-
-        if (properties != null)
-            return properties.getProperty("OUTPUT_LOCATION");
-
-        return null;
+        return FrameworkMain.getOutputDirectory();
     }
 
     public static void cleanDirectory(String outputLocation) {
