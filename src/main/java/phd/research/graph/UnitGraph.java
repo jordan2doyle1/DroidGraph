@@ -59,6 +59,10 @@ public class UnitGraph extends BriefUnitGraph {
             case "JSON":
                 writer.writeJSONGraph(this.name, this.jUnitGraphT);
                 break;
+            case "ALL":
+                writer.writeDotGraph(this.name, this.jUnitGraphT);
+                writer.writeJSONGraph(this.name, this.jUnitGraphT);
+                break;
         }
     }
 
