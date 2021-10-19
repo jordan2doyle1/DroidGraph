@@ -166,6 +166,7 @@ public class FrameworkMain {
         if (consoleOutput) {
             ContentViewer contentViewer = new ContentViewer(appAnalysis);
             contentViewer.printAppDetails();
+            contentViewer.printCallbackTable();
             contentViewer.printCallGraphDetails();
             contentViewer.printCFGDetails();
         }

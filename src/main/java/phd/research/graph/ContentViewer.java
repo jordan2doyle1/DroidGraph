@@ -1,6 +1,7 @@
 package phd.research.graph;
 
 import phd.research.core.ApplicationAnalysis;
+import phd.research.helper.Control;
 import phd.research.jGraph.JGraph;
 import soot.Scene;
 import soot.SootClass;
@@ -50,18 +51,42 @@ public class ContentViewer {
         System.out.println();
 
         System.out.println("Methods: " + this.filteredMethods.size() + " (Total: " + this.allMethods.size() + ")");
-//        System.out.println("Lifecycle Methods: " + this.interfaceManager.lifecycleCount());
-//        System.out.println("System Callbacks: " + this.interfaceManager.callbackCount());
-//        System.out.println("Callback Methods: " + this.interfaceManager.listenerCount());
-//        System.out.println();
+        System.out.println("Lifecycle Methods: " + this.analysis.getLifecycleMethods().size());
+        System.out.println("System Callbacks: " + this.analysis.getCallbackMethods().size());
+        System.out.println("Callback Methods: " + this.analysis.getListenerMethods().size());
+        System.out.println();
 
-//        System.out.println("Callback ID's: " + this.interfaceManager.controlCount());
-//        System.out.println();
-
-//        System.out.println("Interface Callback Table");
-//        System.out.println(this.interfaceManager.getControlListenerTable());
+        System.out.println("Controls: " + this.analysis.getControls().size());
 
         System.out.println("\n-----------------------------------------------------------------------------------\n");
+    }
+
+    public void printCallbackTable() {
+        String separator = "--------------------------------------------------------------------------------\n";
+        String stringFormat = "\t%-15s\t%-30s\t%-30s\t%-30s\n";
+
+        if (this.analysis.getControls().isEmpty()) {
+            System.out.println("Control Callback Table is Empty!!!");
+        } else {
+            System.out.println("Interface Callback Table");
+            System.out.println(separator);
+            System.out.printf((stringFormat) + "%n", "WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD");
+            System.out.println(separator);
+
+            for (Control control : this.analysis.getControls()) {
+                Integer interfaceID = control.getId();
+                String textID = control.getTextId();
+                SootMethod listener = control.getClickListener();
+
+                if (listener != null) {
+                    System.out.printf((stringFormat) + "%n", interfaceID, textID,
+                            listener.getDeclaringClass().getShortName(), listener.getName());
+                } else {
+                    System.out.printf((stringFormat) + "%n", interfaceID, null, null, null);
+                }
+            }
+            System.out.println(separator);
+        }
     }
 
     public void printCallGraphDetails() {
