@@ -1,5 +1,7 @@
 package phd.research.jGraph;
 
+import org.jgrapht.nio.Attribute;
+import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Style;
@@ -7,6 +9,8 @@ import phd.research.enums.Type;
 import soot.SootClass;
 import soot.SootMethod;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -100,6 +104,18 @@ public class Vertex {
 
     public Style getStyle() {
         return Style.filled;
+    }
+
+    public Map<String, Attribute> getAttributes() {
+        Map<String, Attribute> attributes = new HashMap<>();
+
+        attributes.put("label", DefaultAttribute.createAttribute(this.label));
+        attributes.put("color", DefaultAttribute.createAttribute(this.getColor().name()));
+        attributes.put("shape", DefaultAttribute.createAttribute(this.getShape().name()));
+        attributes.put("style", DefaultAttribute.createAttribute(this.getStyle().name()));
+        attributes.put("type", DefaultAttribute.createAttribute(this.type.name()));
+
+        return attributes;
     }
 
     public boolean hasVisited() {
