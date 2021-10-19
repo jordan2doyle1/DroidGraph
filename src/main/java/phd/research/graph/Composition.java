@@ -12,51 +12,48 @@ import java.util.Set;
  */
 public class Composition {
 
-    private int edgeCount, vertexCount, callbackCount, listenerCount, lifecycleCount, methodCount, dummyCount,
-            controlCount;
+    private int edge, vertex, callback, listener, lifecycle, method, dummy, control;
 
     public Composition(Graph<Vertex, DefaultEdge> graph) {
-        this.callbackCount = this.listenerCount = this.lifecycleCount = this.methodCount = this.dummyCount =
-                this.controlCount = 0;
+        this.callback = this.listener = this.lifecycle = this.method = this.dummy = this.control = 0;
         readComposition(graph);
     }
 
     public Composition(JGraph graph) {
-        this.callbackCount = this.listenerCount = this.lifecycleCount = this.methodCount = this.dummyCount =
-                this.controlCount = 0;
+        this.callback = this.listener = this.lifecycle = this.method = this.dummy = this.control = 0;
         readComposition(graph);
     }
 
     public int getEdgeCount() {
-        return this.edgeCount;
+        return this.edge;
     }
 
     public int getVertexCount() {
-        return this.vertexCount;
+        return this.vertex;
     }
 
     public int getCallbackCount() {
-        return this.callbackCount;
+        return this.callback;
     }
 
     public int getListenerCount() {
-        return this.listenerCount;
+        return this.listener;
     }
 
     public int getLifecycleCount() {
-        return lifecycleCount;
+        return lifecycle;
     }
 
     public int getMethodCount() {
-        return methodCount;
+        return method;
     }
 
     public int getDummyCount() {
-        return dummyCount;
+        return dummy;
     }
 
     public int getControlCount() {
-        return controlCount;
+        return control;
     }
 
     @SuppressWarnings("unchecked")
@@ -65,39 +62,63 @@ public class Composition {
 
         if (graph instanceof Graph) {
             Graph<Vertex, DefaultEdge> jGraphT = (Graph<Vertex, DefaultEdge>) graph;
-            this.edgeCount = jGraphT.edgeSet().size();
+            this.edge = jGraphT.edgeSet().size();
             vertices = jGraphT.vertexSet();
         } else if (graph instanceof JGraph) {
             JGraph jGraph = (JGraph) graph;
-            this.edgeCount = jGraph.edgeSet().size();
+            this.edge = jGraph.edgeSet().size();
             vertices = jGraph.vertexSet();
         }
 
         if (vertices != null) {
-            this.vertexCount = vertices.size();
+            this.vertex = vertices.size();
 
             for (Vertex vertex : vertices) {
                 switch (vertex.getType()) {
                     case method:
-                        this.methodCount++;
+                        this.method++;
                         break;
                     case listener:
-                        this.listenerCount++;
+                        this.listener++;
                         break;
                     case callback:
-                        this.callbackCount++;
+                        this.callback++;
                         break;
                     case lifecycle:
-                        this.lifecycleCount++;
+                        this.lifecycle++;
                         break;
                     case dummyMethod:
-                        this.dummyCount++;
+                        this.dummy++;
                         break;
                     case control:
-                        this.controlCount++;
+                        this.control++;
                         break;
                 }
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "(Vertex:" + this.vertex + " Edge:" + this.edge + " System:" + this.callback + " Callback:"
+                + this.listener + " Lifecycle:" + this.lifecycle + " Method:" + this.method + " Dummy:" + this.dummy
+                + " Interface" + this.control + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof Composition)) {
+            return false;
+        }
+
+        Composition composition = (Composition) o;
+        return this.edge == composition.edge && this.vertex == composition.vertex
+                && this.callback == composition.callback && this.listener == composition.listener
+                && this.lifecycle == composition.lifecycle && this.method == composition.method
+                && this.dummy == composition.dummy && this.control == composition.control;
     }
 }

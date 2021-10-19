@@ -19,25 +19,33 @@ import java.util.Set;
  */
 public class UnitGraph extends BriefUnitGraph {
 
-    private final String name;
     private Graph<Vertex, DefaultEdge> jUnitGraphT;
     private JGraph jUnitGraph;
 
     public UnitGraph(Body body) {
         super(body);
-        this.name = generateGraphName();
     }
 
     public Graph<Vertex, DefaultEdge> getJUnitGraphT() {
+        if (jUnitGraphT == null) {
+            generateJGraphT();
+        }
         return this.jUnitGraphT;
     }
 
     public JGraph getJUnitGraph() {
+        if (jUnitGraph == null) {
+            generateJGraph();
+        }
         return this.jUnitGraph;
     }
 
     public Set<Vertex> getRoots() {
         Set<Vertex> rootVertices = new HashSet<>();
+
+        if (jUnitGraphT == null) {
+            generateJGraphT();
+        }
 
         for (Vertex vertex : this.jUnitGraphT.vertexSet()) {
             if (this.jUnitGraphT.inDegreeOf(vertex) == 0) {
@@ -48,34 +56,7 @@ public class UnitGraph extends BriefUnitGraph {
         return rootVertices;
     }
 
-    public void outputGraph(String format) {
-        GraphWriter writer = new GraphWriter();
-        switch (format) {
-            case "DOT":
-                writer.writeDotGraph(this.name, this.jUnitGraphT);
-                break;
-            case "JSON":
-                writer.writeJSONGraph(this.name, this.jUnitGraphT);
-                break;
-            case "ALL":
-                writer.writeDotGraph(this.name, this.jUnitGraphT);
-                writer.writeJSONGraph(this.name, this.jUnitGraphT);
-                break;
-        }
-    }
-
-    private String generateGraphName() {
-        String className = super.method.getDeclaringClass().getName();
-        return className.substring(className.lastIndexOf(".") + 1) + "_" + super.method.getName();
-    }
-
-    public void generateJGraphs() {
-        generateJGraphT();
-        generateJGraph();
-    }
-
-
-    public void generateJGraphT() {
+    private void generateJGraphT() {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         for (Unit unit : super.unitChain) {
@@ -93,7 +74,7 @@ public class UnitGraph extends BriefUnitGraph {
         this.jUnitGraphT = graph;
     }
 
-    public void generateJGraph() {
+    private void generateJGraph() {
         JGraph graph = new JGraph();
 
         for (Unit unit : super.unitChain) {

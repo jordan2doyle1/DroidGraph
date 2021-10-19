@@ -3,15 +3,14 @@ package phd.research.graph;
 import org.apache.commons.io.FileUtils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.io.*;
+import org.jgrapht.nio.dot.DOTExporter;
+import org.jgrapht.nio.json.JSONExporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.core.FrameworkMain;
 import phd.research.jGraph.Vertex;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author Jordan Doyle
@@ -23,6 +22,7 @@ public class GraphWriter {
     private BufferedWriter writer;
 
     public GraphWriter() {
+
     }
 
     public static void cleanDirectory(String directory) {
@@ -33,82 +33,47 @@ public class GraphWriter {
         }
     }
 
-    public void writeDotGraph(String name, Graph<Vertex, DefaultEdge> graph) {
-        String outputLocation = FrameworkMain.getOutputDirectory() + "dot/";
+    public void writeGraph(String format, String name, Graph<Vertex, DefaultEdge> graph) {
         String file = getFileName(name);
 
-        ComponentNameProvider<Vertex> vertexIdProvider = new ComponentNameProvider<Vertex>() {
-            public String getName(Vertex component) {
-                return String.valueOf(component.getID());
-            }
-        };
+        switch (format) {
+            case "DOT":
+                exportDOT(file, graph);
+                break;
+            case "JSON":
+                exportJSON(file, graph);
+                break;
+            case "ALL":
+                exportDOT(file, graph);
+                exportJSON(file, graph);
+                break;
+            default:
+                logger.error("Error Unknown Output Format.");
+        }
+    }
 
-        ComponentNameProvider<Vertex> vertexLabelProvider = new ComponentNameProvider<Vertex>() {
-            public String getName(Vertex component) {
-                return component.getLabel();
-            }
-        };
-
-        ComponentAttributeProvider<Vertex> vertexAttributeProvider = new ComponentAttributeProvider<Vertex>() {
-            @Override
-            public Map<String, Attribute> getComponentAttributes(Vertex component) {
-                HashMap<String, Attribute> attributes = new HashMap<>();
-                attributes.put("color", DefaultAttribute.createAttribute(component.getColor().name()));
-                attributes.put("shape", DefaultAttribute.createAttribute(component.getShape().name()));
-                attributes.put("style", DefaultAttribute.createAttribute(component.getStyle().name()));
-                attributes.put("type", DefaultAttribute.createAttribute(component.getType().name()));
-                return attributes;
-            }
-        };
-
-        DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(vertexIdProvider,
-                vertexLabelProvider, null, vertexAttributeProvider, null);
+    private void exportDOT(String file, Graph<Vertex, DefaultEdge> graph) {
+        String outputLocation = FrameworkMain.getOutputDirectory() + "DOT/";
         openFile(outputLocation, file + ".dot");
+
+        DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(v -> String.valueOf(v.getID()));
+        exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
+
         closeFile();
 
         String command = "dot -T png " + outputLocation + file + ".dot" + " -o " + outputLocation + file + ".png";
         executeCommand(command);
     }
 
-    public void writeJSONGraph(String name, Graph<Vertex, DefaultEdge> graph) {
-        String outputLocation = FrameworkMain.getOutputDirectory() + "json/";
-        String file = getFileName(name) + ".json";
+    private void exportJSON(String file, Graph<Vertex, DefaultEdge> graph) {
+        String outputLocation = FrameworkMain.getOutputDirectory() + "JSON/";
+        openFile(outputLocation, file + ".json");
 
-        ComponentNameProvider<Vertex> vertexIdProvider = new ComponentNameProvider<Vertex>() {
-            public String getName(Vertex component) {
-                return String.valueOf(component.getID());
-            }
-        };
+        JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(v -> String.valueOf(v.getID()));
+        exporter.setVertexAttributeProvider(Vertex::getAttributes);
+        exporter.exportGraph(graph, writer);
 
-        ComponentAttributeProvider<DefaultEdge> edgeAttributeProvider = new ComponentAttributeProvider<DefaultEdge>() {
-            @Override
-            public Map<String, Attribute> getComponentAttributes(DefaultEdge defaultEdge) {
-                return new HashMap<>();
-            }
-        };
-
-        ComponentAttributeProvider<Vertex> vertexAttributeProvider = new ComponentAttributeProvider<Vertex>() {
-            @Override
-            public Map<String, Attribute> getComponentAttributes(Vertex component) {
-                HashMap<String, Attribute> attributes = new HashMap<>();
-                attributes.put("label", DefaultAttribute.createAttribute(component.getLabel()));
-                attributes.put("color", DefaultAttribute.createAttribute(component.getColor().name()));
-                attributes.put("shape", DefaultAttribute.createAttribute(component.getShape().name()));
-                attributes.put("style", DefaultAttribute.createAttribute(component.getStyle().name()));
-                attributes.put("type", DefaultAttribute.createAttribute(component.getType().name()));
-                return attributes;
-            }
-        };
-
-        try {
-            JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(vertexIdProvider, vertexAttributeProvider,
-                    null, edgeAttributeProvider);
-            openFile(outputLocation, file);
-            exporter.exportGraph(graph, writer);
-        } catch (ExportException e) {
-            logger.error("Failed to export graph as JSON file: " + e.getMessage());
-        }
         closeFile();
     }
 
