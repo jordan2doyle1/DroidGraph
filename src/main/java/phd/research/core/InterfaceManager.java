@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Type;
+import phd.research.graph.ContentFilter;
 import phd.research.helper.Control;
 import soot.*;
 import soot.jimple.AbstractStmtSwitch;

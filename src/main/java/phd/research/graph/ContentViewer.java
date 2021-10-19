@@ -1,8 +1,6 @@
-package phd.research.core;
+package phd.research.graph;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import phd.research.graph.Composition;
+import phd.research.core.ApplicationAnalysis;
 import phd.research.jGraph.JGraph;
 import soot.Scene;
 import soot.SootClass;
@@ -15,11 +13,8 @@ import java.util.Set;
 
 public class ContentViewer {
 
-    private static final Logger logger = LoggerFactory.getLogger(ContentViewer.class);
-
     private final ApplicationAnalysis analysis;
     private final ContentFilter filter;
-
     private final Set<String> allPackages;
     private final Set<String> filteredPackages;
     private final Set<SootClass> allClasses;
@@ -42,7 +37,7 @@ public class ContentViewer {
         this.filteredMethods = filterMethods();
     }
 
-    protected void printAppDetails() {
+    public void printAppDetails() {
         System.out.println("-------------------------------- Analysis Details ---------------------------------\n");
 
         System.out.println("Base Package Name: " + this.analysis.getBasePackageName());
@@ -55,39 +50,39 @@ public class ContentViewer {
         System.out.println();
 
         System.out.println("Methods: " + this.filteredMethods.size() + " (Total: " + this.allMethods.size() + ")");
-        System.out.println("Lifecycle Methods: " + this.interfaceManager.lifecycleCount());
-        System.out.println("System Callbacks: " + this.interfaceManager.callbackCount());
-        System.out.println("Callback Methods: " + this.interfaceManager.listenerCount());
-        System.out.println();
+//        System.out.println("Lifecycle Methods: " + this.interfaceManager.lifecycleCount());
+//        System.out.println("System Callbacks: " + this.interfaceManager.callbackCount());
+//        System.out.println("Callback Methods: " + this.interfaceManager.listenerCount());
+//        System.out.println();
 
-        System.out.println("Callback ID's: " + this.interfaceManager.controlCount());
-        System.out.println();
+//        System.out.println("Callback ID's: " + this.interfaceManager.controlCount());
+//        System.out.println();
 
-        System.out.println("Interface Callback Table");
-        System.out.println(this.interfaceManager.getControlListenerTable());
+//        System.out.println("Interface Callback Table");
+//        System.out.println(this.interfaceManager.getControlListenerTable());
 
         System.out.println("\n-----------------------------------------------------------------------------------\n");
     }
 
-    protected void printCallGraphDetails() {
+    public void printCallGraphDetails() {
         System.out.println("Call Graph Composition Table");
-        Composition callGraphComposition = new Composition(this.analysis.getCallGraph());
+        GraphComposition callGraphComposition = new GraphComposition(this.analysis.getCallGraph());
         System.out.println(callGraphComposition);
 
         JGraph jCallGraph = this.analysis.getJCallGraph();
-        Composition jCallGraphComposition = new Composition(jCallGraph);
+        GraphComposition jCallGraphComposition = new GraphComposition(jCallGraph);
 
         if (!callGraphComposition.equals(jCallGraphComposition))
             System.out.println(jCallGraphComposition);
     }
 
-    protected void printCFGDetails() {
+    public void printCFGDetails() {
         System.out.println("Control Flow Graph Composition Table");
-        Composition controlFlowGraphComposition = new Composition(this.analysis.getControlFlowGraph());
+        GraphComposition controlFlowGraphComposition = new GraphComposition(this.analysis.getControlFlowGraph());
         System.out.println(controlFlowGraphComposition);
 
         JGraph jControlFlowGraph = this.analysis.getJControlFlowGraph();
-        Composition jControlFlowGraphComposition = new Composition(jControlFlowGraph);
+        GraphComposition jControlFlowGraphComposition = new GraphComposition(jControlFlowGraph);
 
         if (!controlFlowGraphComposition.equals(jControlFlowGraphComposition))
             System.out.println(jControlFlowGraphComposition);
@@ -105,12 +100,12 @@ public class ContentViewer {
         return allMethods;
     }
 
-    private Set<SootMethod> filterMethods(ContentFilter filter) {
+    private Set<SootMethod> filterMethods() {
         Chain<SootClass> classes = Scene.v().getClasses();
         Set<SootMethod> acceptedMethods = new HashSet<>();
 
         for (SootClass sootClass : classes) {
-            if (filter.isValidClass(sootClass)) {
+            if (this.filter.isValidClass(sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 acceptedMethods.addAll(methods);
             }

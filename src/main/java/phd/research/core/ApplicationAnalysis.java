@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Type;
-import phd.research.graph.Composition;
+import phd.research.graph.ContentFilter;
 import phd.research.graph.GraphWriter;
 import phd.research.graph.UnitGraph;
 import phd.research.helper.Control;
@@ -302,52 +302,7 @@ public class ApplicationAnalysis {
         return graph;
     }
 
-    protected void printAnalysisDetails() {
-        System.out.println("-------------------------------- Analysis Details ---------------------------------\n");
-
-        System.out.println("Base Package Name: " + getBasePackageName());
-//        System.out.println("Number of Packages: " + this.packageManager.filteredCount() + " (Total: " +
-//                packageManager.packageCount() + ")");
-        System.out.println();
-
-//        System.out.println("Number of Entry Points: " + this.classManager.entryPointCount());
-//        System.out.println("Number of Launching Activities: " + this.classManager.launchActivityCount());
-//        System.out.println("Number of Classes: " + this.classManager.filteredCount() + " (Total: " +
-//                this.classManager.classCount() + ")");
-        System.out.println();
-
-//        System.out.println("Number of Methods: " + this.methodManager.filteredCount() + " (Total: " +
-//                this.methodManager.methodCount() + ")");
-        System.out.println();
-
-        System.out.println("Number of Lifecycle Methods: " + this.interfaceManager.lifecycleCount());
-        System.out.println("Number of System Callbacks: " + this.interfaceManager.callbackCount());
-        System.out.println("Number of Callback Methods: " + this.interfaceManager.listenerCount());
-        System.out.println("Number of Callback ID's: " + this.interfaceManager.controlCount());
-        System.out.println();
-
-        System.out.println("Interface Callback Table");
-        System.out.println(this.interfaceManager.getControlListenerTable());
-
-        System.out.println("Call Graph Composition Table");
-        Composition callGraphComposition = new Composition(this.callGraph);
-        System.out.println(callGraphComposition);
-        JGraph jCallGraph = generateJGraph(Scene.v().getCallGraph());
-        Composition jCallGraphComposition = new Composition(jCallGraph);
-        if (!callGraphComposition.equals(jCallGraphComposition))
-            System.out.println(jCallGraphComposition);
-
-        System.out.println("Control Flow Graph Composition Table");
-        Composition controlFlowGraphComposition = new Composition(this.controlFlowGraph);
-        System.out.println(controlFlowGraphComposition);
-        JGraph jControlFlowGraph = generateJGraph(jCallGraph);
-        Composition jControlFlowGraphComposition = new Composition(jControlFlowGraph);
-        if (!controlFlowGraphComposition.equals(jControlFlowGraphComposition))
-                System.out.println(jControlFlowGraphComposition);
-
-        System.out.println("\n-----------------------------------------------------------------------------------\n");
-    }
-
+    // TODO: Do I need this commented out code?
     private String formatLabel(String label) {
         System.out.println("Original Label: " + label);
 

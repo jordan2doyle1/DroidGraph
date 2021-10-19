@@ -3,6 +3,7 @@ package phd.research.core;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import phd.research.graph.ContentViewer;
 import phd.research.graph.GraphWriter;
 import phd.research.jGraph.Vertex;
 import soot.SootClass;
@@ -162,8 +163,12 @@ public class FrameworkMain {
             graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
         }
 
-        if (consoleOutput)
-            appAnalysis.printAnalysisDetails();
+        if (consoleOutput) {
+            ContentViewer contentViewer = new ContentViewer(appAnalysis);
+            contentViewer.printAppDetails();
+            contentViewer.printCallGraphDetails();
+            contentViewer.printCFGDetails();
+        }
 
         long endTime = System.nanoTime();
         logger.info("End time: " + endTime);

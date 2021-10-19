@@ -1,7 +1,8 @@
-package phd.research.core;
+package phd.research.graph;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import phd.research.core.FrameworkMain;
 import soot.SootClass;
 import soot.SootMethod;
 
@@ -13,7 +14,6 @@ import java.util.Set;
 
 public class ContentFilter {
 
-    //TODO: Create Class to confirm analysis content. this will be all the creating lists code.
     private static final Logger logger = LoggerFactory.getLogger(ContentFilter.class);
 
     private final Set<String> packageBlacklist;

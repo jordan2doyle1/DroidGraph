@@ -10,16 +10,16 @@ import java.util.Set;
 /**
  * @author Jordan Doyle
  */
-public class Composition {
+public class GraphComposition {
 
     private int edge, vertex, callback, listener, lifecycle, method, dummy, control;
 
-    public Composition(Graph<Vertex, DefaultEdge> graph) {
+    public GraphComposition(Graph<Vertex, DefaultEdge> graph) {
         this.callback = this.listener = this.lifecycle = this.method = this.dummy = this.control = 0;
         readComposition(graph);
     }
 
-    public Composition(JGraph graph) {
+    public GraphComposition(JGraph graph) {
         this.callback = this.listener = this.lifecycle = this.method = this.dummy = this.control = 0;
         readComposition(graph);
     }
@@ -111,11 +111,11 @@ public class Composition {
             return true;
         }
 
-        if (!(o instanceof Composition)) {
+        if (!(o instanceof GraphComposition)) {
             return false;
         }
 
-        Composition composition = (Composition) o;
+        GraphComposition composition = (GraphComposition) o;
         return this.edge == composition.edge && this.vertex == composition.vertex
                 && this.callback == composition.callback && this.listener == composition.listener
                 && this.lifecycle == composition.lifecycle && this.method == composition.method
