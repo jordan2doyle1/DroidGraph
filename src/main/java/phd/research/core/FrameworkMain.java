@@ -3,11 +3,11 @@ package phd.research.core;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import phd.research.graph.GraphWriter;
 import phd.research.jGraph.Vertex;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
-import soot.jimple.infoflow.android.SetupApplication;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -144,20 +144,26 @@ public class FrameworkMain {
         configuration.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
         configuration.getAnalysisFileConfig().setTargetAPKFile(apk);
 
-        SetupApplication app = new SetupApplication(configuration);
-        app.constructCallgraph();
+        ApplicationAnalysis appAnalysis = new ApplicationAnalysis(configuration);
+        appAnalysis.runAnalysis();
 
-        PackageManager.getInstance().start();
-        ClassManager.getInstance().start();
-        MethodManager.getInstance().start();
-        InterfaceManager.getInstance().extractUI(app);
-        GraphManager.getInstance().start();
+        GraphWriter.cleanDirectory(outputDirectory);
 
-        //TODO: Test that these work!
-        if (outputUnitGraphs) MethodManager.getInstance().outputFilteredMethods(outputFormat);
-        if (outputCallGraph) GraphManager.getInstance().getCallGraph().outputGraph(outputFormat);
-        if (outputControlFlowGraph) GraphManager.getInstance().getControlFlowGraph().outputGraph(outputFormat);
-        if (consoleOutput) printAnalysisDetails();
+        if (outputUnitGraphs)
+            appAnalysis.outputMethods(outputFormat);
+
+        GraphWriter graphWriter = new GraphWriter();
+        if (outputCallGraph) {
+            String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
+            graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
+        }
+        if (outputControlFlowGraph) {
+            String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
+            graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
+        }
+
+        if (consoleOutput)
+            appAnalysis.printAnalysisDetails();
 
         long endTime = System.nanoTime();
         logger.info("End time: " + endTime);
@@ -213,46 +219,6 @@ public class FrameworkMain {
 
     private static boolean isRecognisedFormat(String format) {
         return format.equals("DOT") || format.equals("JSON") || format.equals("ALL");
-    }
-
-    private static void printAnalysisDetails() {
-        System.out.println("-------------------------------- Analysis Details ---------------------------------\n");
-
-        PackageManager packageManager = PackageManager.getInstance();
-        System.out.println("Base Package Name: " + packageManager.getBasename());
-        System.out.println("Number of Packages: " + packageManager.filteredCount() + " (Total: " +
-                packageManager.packageCount() + ")");
-        System.out.println();
-
-        ClassManager classManager = ClassManager.getInstance();
-        System.out.println("Number of Entry Points: " + classManager.entryPointCount());
-        System.out.println("Number of Launching Activities: " + classManager.launchActivityCount());
-        System.out.println("Number of Classes: " + classManager.filteredCount() + " (Total: " +
-                classManager.classCount() + ")");
-        System.out.println();
-
-        MethodManager methodManager = MethodManager.getInstance();
-        System.out.println("Number of Methods: " + methodManager.filteredCount() + " (Total: " +
-                methodManager.methodCount() + ")");
-        System.out.println();
-
-        InterfaceManager interfaceManager = InterfaceManager.getInstance();
-        System.out.println("Number of Lifecycle Methods: " + interfaceManager.lifecycleCount());
-        System.out.println("Number of System Callbacks: " + interfaceManager.callbackCount());
-        System.out.println("Number of Callback Methods: " + interfaceManager.listenerCount());
-        System.out.println("Number of Callback ID's: " + interfaceManager.controlCount());
-        System.out.println();
-        System.out.println("Interface Callback Table");
-        System.out.println(interfaceManager.getControlListenerTable());
-
-        GraphManager graphManager = GraphManager.getInstance();
-        System.out.println("Call Graph Composition Table");
-        System.out.println(graphManager.getCallGraph().getGraphCompositionTable());
-
-        System.out.println("Control Flow Graph Composition Table");
-        System.out.println(graphManager.getControlFlowGraph().getGraphCompositionTable());
-
-        System.out.println("\n-----------------------------------------------------------------------------------\n");
     }
 
     @SuppressWarnings("unused")

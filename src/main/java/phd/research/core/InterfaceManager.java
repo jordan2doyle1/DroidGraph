@@ -27,22 +27,17 @@ import java.util.*;
 public class InterfaceManager {
 
     private static final Logger logger = LoggerFactory.getLogger(InterfaceManager.class);
-    private static final InterfaceManager instance = new InterfaceManager();
 
     private final Set<SootMethod> lifecycleMethods;
     private final Set<SootMethod> callbackMethods;
     private final Set<SootMethod> listenerMethods;
     private final Set<Control> controls;
 
-    private InterfaceManager() {
+    public InterfaceManager() {
         this.lifecycleMethods = new HashSet<>();
         this.callbackMethods = new HashSet<>();
         this.listenerMethods = new HashSet<>();
         this.controls = new HashSet<>();
-    }
-
-    public static InterfaceManager getInstance() {
-        return instance;
     }
 
     public boolean isLifecycle(SootMethod method) {
@@ -139,7 +134,7 @@ public class InterfaceManager {
         return null;
     }
 
-    public void extractUI(SetupApplication app) {
+    public void extractUI(SetupApplication app, ContentFilter filter) {
         Map<SootClass, Set<CallbackDefinition>> customCallbacks = new HashMap<>();
 
         for (Pair<SootClass, AndroidCallbackDefinition> callbacks : app.droidGraphCallbacks) {
@@ -169,9 +164,8 @@ public class InterfaceManager {
                     logger.debug("Found lifecycle method \"" + callback.getTargetMethod().getName() + "\".");
                 } else {
                     SootMethod method = callback.getTargetMethod();
-                    PackageManager packageManager = PackageManager.getInstance();
 
-                    if (packageManager.isFiltered(method.getDeclaringClass().getPackageName())) {
+                    if (filter.isValidPackage(method.getDeclaringClass().getPackageName())) {
                         this.listenerMethods.add(method);
                         logger.debug("Found listener method \"" + method.getName() + "\".");
                         controlCallbackSet.add(method);
@@ -320,7 +314,7 @@ public class InterfaceManager {
         String textID = null;
         String numberID = null;
 
-        if ((! argument.equals("")) && (argument.contains(":"))) {
+        if ((argument.contains(":"))) {
             String[] id = argument.split(":");
             textID = "id/" + id[0];
             numberID = id[1];
