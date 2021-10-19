@@ -3,6 +3,7 @@ package phd.research.helper;
 /**
  * @author Jordan Doyle
  */
+@SuppressWarnings("unused")
 public class Tuple<L, M, R> implements Cloneable {
 
     L left;
