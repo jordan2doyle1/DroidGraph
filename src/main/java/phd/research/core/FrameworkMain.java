@@ -5,16 +5,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.graph.ContentViewer;
 import phd.research.graph.GraphWriter;
-import phd.research.jGraph.Vertex;
-import soot.SootClass;
-import soot.SootMethod;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Set;
 
 /**
  * @author Jordan Doyle
@@ -33,11 +30,12 @@ public class FrameworkMain {
     private static String packageBlacklist;
     private static String classBlacklist;
 
+    @SuppressWarnings("CommentedOutCode")
     public static void main(String[] args) {
-        long startTime = System.nanoTime();
         LocalDateTime startDate = LocalDateTime.now();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy-HH:mm:ss");
-        logger.info("Start time: " + dateFormatter.format(startDate) + " - " + startTime);
+        logger.info("Start time: " + dateFormatter.format(startDate));
+        System.out.println("Start time: " + dateFormatter.format(startDate));
 
         Options options = new Options();
         options.addOption(Option.builder("ap").longOpt("android-platform").desc("Android SDK platform directory.")
@@ -74,7 +72,7 @@ public class FrameworkMain {
         } catch (ParseException e) {
             HelpFormatter formatter = new HelpFormatter();
             final PrintWriter writer = new PrintWriter(System.out);
-            formatter.printUsage(writer,80,"DroidGraph2.0", options);
+            formatter.printUsage(writer, 80, "DroidGraph2.0", options);
             writer.flush();
             System.exit(0);
         }
@@ -145,6 +143,7 @@ public class FrameworkMain {
         configuration.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
         configuration.getAnalysisFileConfig().setTargetAPKFile(apk);
 
+        // TODO: Time FlowDroid's Analysis Separately.
         ApplicationAnalysis appAnalysis = new ApplicationAnalysis(configuration);
         appAnalysis.runAnalysis();
 
@@ -166,15 +165,18 @@ public class FrameworkMain {
         if (consoleOutput) {
             ContentViewer contentViewer = new ContentViewer(appAnalysis);
             contentViewer.printAppDetails();
-            contentViewer.printCallbackTable();
-            contentViewer.printCallGraphDetails();
-            contentViewer.printCFGDetails();
+            // contentViewer.printCallbackTable();
+            // contentViewer.printCallGraphDetails();
+            // contentViewer.printCFGDetails();
+            // contentViewer.writeContentsToFile();
         }
 
-        long endTime = System.nanoTime();
-        logger.info("End time: " + endTime);
-        long execTime = (((endTime - startTime) / 1000) / 1000) / 1000; // Nano to Micro to Milli to Seconds.
-        logger.info("Execution time: " + Math.round(execTime / 60.0) + " minute(s) " + "(" + execTime + " second(s))");
+        LocalDateTime endDate = LocalDateTime.now();
+        logger.info("End time: " + dateFormatter.format(endDate));
+        System.out.println("End time: " + dateFormatter.format(endDate));
+        Duration duration = Duration.between(startDate, endDate);
+        logger.info("Execution time: " + duration.getSeconds() + " second(s).");
+        System.out.println("Execution time: " + duration.getSeconds() + " second(s).");
     }
 
     public static String getOutputDirectory() {
@@ -225,31 +227,5 @@ public class FrameworkMain {
 
     private static boolean isRecognisedFormat(String format) {
         return format.equals("DOT") || format.equals("JSON") || format.equals("ALL");
-    }
-
-    @SuppressWarnings("unused")
-    public static void printList(Set<?> list) {
-        int counter = 0;
-        int numberOfPrints = 10;
-        for (Object item : list) {
-            if (counter < numberOfPrints) {
-                if (item instanceof String)
-                    System.out.println("\t" + item);
-                else if (item instanceof SootClass)
-                    System.out.println("\t" + ((SootClass) item).getName());
-                else if (item instanceof Vertex)
-                    System.out.println("\t" + ((Vertex) item).getLabel());
-                else if (item instanceof SootMethod) {
-                    SootMethod method = (SootMethod) item;
-                    System.out.println("\t" + method.getDeclaringClass().getName() + ":" + method.getName());
-                }
-            } else {
-                int remaining = list.size() - numberOfPrints;
-                System.out.println("+ " + remaining + " more!");
-                break;
-            }
-            counter++;
-        }
-        System.out.println();
     }
 }

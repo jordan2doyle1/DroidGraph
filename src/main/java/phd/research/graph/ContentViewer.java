@@ -60,8 +60,9 @@ public class ContentViewer {
 
         System.out.println("Methods: " + this.filteredMethods.size() + " (Total: " + this.allMethods.size() + ")");
         System.out.println("Lifecycle Methods: " + this.lifecycleMethods.size());
-        System.out.println("System Callbacks: " + this.callbackMethods.size());
-        System.out.println("Callback Methods: " + this.listenerMethods.size());
+        // System.out.println("System Callbacks: " + this.callbackMethods.size());
+        // System.out.println("Callback Methods: " + this.listenerMethods.size());
+        System.out.println("Callback Methods: " + this.analysis.getCallbacks().size());
         System.out.println();
 
         System.out.println("Controls: " + this.analysis.getControls().size());

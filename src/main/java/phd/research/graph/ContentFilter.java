@@ -5,10 +5,12 @@ import org.slf4j.LoggerFactory;
 import phd.research.core.FrameworkMain;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.jimple.infoflow.android.entryPointCreators.AndroidEntryPointUtils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,6 +52,33 @@ public class ContentFilter {
 
     public boolean isValidMethod(SootMethod method) {
         return isValidClass(method.getDeclaringClass());
+    }
+
+    public boolean isLifecycleMethod(SootMethod method) {
+        AndroidEntryPointUtils entryPointUtils = new AndroidEntryPointUtils();
+        boolean isLifecycle = entryPointUtils.isEntryPointMethod(method);
+
+        Set<String> lifecycleMethodNames = new HashSet<>(Arrays.asList("onCreate", "onStart", "onResume", "onRestart",
+                "onPause", "onStop", "onDestroy", "onCreateView", "onViewCreated", "onViewStateRestored",
+                "onSavedInstanceState", "onDestroyView"));
+        boolean maybeLifecycle = lifecycleMethodNames.contains(method.getName());
+
+        if (!isLifecycle || !maybeLifecycle) {
+            //System.out.println("isLifecycleMethod : Inconsistent : " + method);
+        }
+
+        return isLifecycle;
+    }
+
+    public boolean isListenerMethod(SootMethod method) {
+        return method.getDeclaringClass().getName().startsWith("android.widget") ||
+                method.getDeclaringClass().getName().startsWith("android.view") ||
+                method.getDeclaringClass().getName().startsWith("android.content.DialogInterface$");
+    }
+
+    public boolean isCallbackMethod(SootMethod method) {
+        // TODO: Implement!
+        return false;
     }
 
     private Set<String> readBlacklist(String file) {
