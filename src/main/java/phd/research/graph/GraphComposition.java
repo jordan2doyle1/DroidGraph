@@ -2,7 +2,6 @@ package phd.research.graph;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
-import phd.research.jGraph.JGraph;
 import phd.research.jGraph.Vertex;
 
 import java.util.Set;
@@ -19,90 +18,41 @@ public class GraphComposition {
         readComposition(graph);
     }
 
-    public GraphComposition(JGraph graph) {
-        this.callback = this.listener = this.lifecycle = this.method = this.dummy = this.control = 0;
-        readComposition(graph);
-    }
+    public void readComposition(Graph<Vertex, DefaultEdge> graph) {
+        this.edge = graph.edgeSet().size();
 
-    public int getEdgeCount() {
-        return this.edge;
-    }
+        Set<Vertex> vertices = graph.vertexSet();
+        this.vertex = vertices.size();
 
-    public int getVertexCount() {
-        return this.vertex;
-    }
-
-    public int getCallbackCount() {
-        return this.callback;
-    }
-
-    public int getListenerCount() {
-        return this.listener;
-    }
-
-    public int getLifecycleCount() {
-        return lifecycle;
-    }
-
-    public int getMethodCount() {
-        return method;
-    }
-
-    public int getDummyCount() {
-        return dummy;
-    }
-
-    public int getControlCount() {
-        return control;
-    }
-
-    @SuppressWarnings("unchecked")
-    public void readComposition(Object graph) {
-        Set<Vertex> vertices = null;
-
-        if (graph instanceof Graph) {
-            Graph<Vertex, DefaultEdge> jGraphT = (Graph<Vertex, DefaultEdge>) graph;
-            this.edge = jGraphT.edgeSet().size();
-            vertices = jGraphT.vertexSet();
-        } else if (graph instanceof JGraph) {
-            JGraph jGraph = (JGraph) graph;
-            this.edge = jGraph.edgeSet().size();
-            vertices = jGraph.vertexSet();
-        }
-
-        if (vertices != null) {
-            this.vertex = vertices.size();
-
-            for (Vertex vertex : vertices) {
-                switch (vertex.getType()) {
-                    case method:
-                        this.method++;
-                        break;
-                    case listener:
-                        this.listener++;
-                        break;
-                    case callback:
-                        this.callback++;
-                        break;
-                    case lifecycle:
-                        this.lifecycle++;
-                        break;
-                    case dummyMethod:
-                        this.dummy++;
-                        break;
-                    case control:
-                        this.control++;
-                        break;
-                }
+        for (Vertex vertex : vertices) {
+            switch (vertex.getType()) {
+                case method:
+                    this.method++;
+                    break;
+                case listener:
+                    this.listener++;
+                    break;
+                case callback:
+                    this.callback++;
+                    break;
+                case lifecycle:
+                    this.lifecycle++;
+                    break;
+                case dummyMethod:
+                    this.dummy++;
+                    break;
+                case control:
+                    this.control++;
+                    break;
             }
         }
     }
 
     @Override
     public String toString() {
-        return "(Vertex:" + this.vertex + " Edge:" + this.edge + " System:" + this.callback + " Callback:"
-                + this.listener + " Lifecycle:" + this.lifecycle + " Method:" + this.method + " Dummy:" + this.dummy
-                + " Interface" + this.control + ")";
+        return "(Vertex:" + this.vertex + ", Edge:" + this.edge + ", System:" + this.callback + ", Listener:"
+                + this.listener + ", Lifecycle:" + this.lifecycle + ", Method:" + this.method + ", Dummy:" + this.dummy
+                + ", Interface:" + this.control + ")";
     }
 
     @Override
