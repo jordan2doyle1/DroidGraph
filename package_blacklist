@@ -10,3 +10,7 @@ org.xml.sax
 com.danielstone.materialaboutlibrary
 org.acra
 org.json
+dalvik.system
+dalvik.annotation
+org.checkerframework
+.databinding

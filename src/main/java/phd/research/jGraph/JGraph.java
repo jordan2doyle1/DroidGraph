@@ -1,14 +1,18 @@
 package phd.research.jGraph;
 
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultEdge;
+
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * @author Jordan Doyle
  */
+@SuppressWarnings("unused")
 public class JGraph {
 
-    private final Set<Vertex> vertices;
+    private Set<Vertex> vertices;
     private final Set<Edge> edges;
 
     public JGraph() {
@@ -18,10 +22,6 @@ public class JGraph {
 
     public Set<Vertex> vertexSet() {
         return this.vertices;
-    }
-
-    public Set<Edge> edgeSet() {
-        return this.edges;
     }
 
     public void addVertex(Vertex vertex) {
@@ -56,5 +56,16 @@ public class JGraph {
     public void addGraph(JGraph subGraph) {
         this.vertices.addAll(subGraph.vertices);
         this.edges.addAll(subGraph.edges);
+    }
+
+    public static JGraph convert(Graph<Vertex, DefaultEdge> graph) {
+        JGraph jGraph = new JGraph();
+        jGraph.vertices = graph.vertexSet();
+
+        for (DefaultEdge edge : graph.edgeSet()) {
+            jGraph.addEdge(graph.getEdgeSource(edge), graph.getEdgeTarget(edge));
+        }
+
+        return jGraph;
     }
 }
