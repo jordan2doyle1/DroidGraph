@@ -11,6 +11,7 @@ import phd.research.core.FrameworkMain;
 import phd.research.jGraph.Vertex;
 
 import java.io.*;
+import java.util.Set;
 
 /**
  * @author Jordan Doyle
@@ -21,9 +22,7 @@ public class GraphWriter {
 
     private BufferedWriter writer;
 
-    public GraphWriter() {
-
-    }
+    public GraphWriter() {}
 
     public static void cleanDirectory(String directory) {
         try {
@@ -50,6 +49,17 @@ public class GraphWriter {
             default:
                 logger.error("Error Unknown Output Format.");
         }
+    }
+
+    public void writeContent(String name, Set<?> list) {
+        String outputLocation = FrameworkMain.getOutputDirectory() + "CONTENT/";
+        openFile(outputLocation, name + ".txt");
+
+        for (Object item : list) {
+            write(item.toString() + "\n");
+        }
+
+        closeFile();
     }
 
     private void exportDOT(String file, Graph<Vertex, DefaultEdge> graph) {
@@ -111,6 +121,14 @@ public class GraphWriter {
             writer = new BufferedWriter(new java.io.FileWriter(location + file));
         } catch (IOException e) {
             logger.error("Failure opening file: " + e.getMessage());
+        }
+    }
+
+    private void write(String line) {
+        try {
+            writer.write(line);
+        } catch (IOException e) {
+            logger.error("Failure writing to file: " + e.getMessage());
         }
     }
 
