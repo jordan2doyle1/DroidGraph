@@ -4,6 +4,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import phd.research.jGraph.Vertex;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -70,5 +71,11 @@ public class GraphComposition {
                 && this.callback == composition.callback && this.listener == composition.listener
                 && this.lifecycle == composition.lifecycle && this.method == composition.method
                 && this.dummy == composition.dummy && this.control == composition.control;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.edge, this.vertex, this.callback, this.listener, this.lifecycle, this.method,
+                this.dummy, this.control);
     }
 }

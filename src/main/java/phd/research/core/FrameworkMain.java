@@ -3,6 +3,7 @@ package phd.research.core;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import phd.research.enums.Format;
 import phd.research.graph.ContentViewer;
 import phd.research.graph.GraphWriter;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -26,7 +27,7 @@ public class FrameworkMain {
     private static boolean outputCallGraph;
     private static boolean outputControlFlowGraph;
     private static String outputDirectory;
-    private static String outputFormat;
+    private static Format outputFormat;
     private static String packageBlacklist;
     private static String classBlacklist;
 
@@ -117,7 +118,7 @@ public class FrameworkMain {
                 outputDirectory = System.getProperty("user.dir") + "/sootOutput/";
                 logger.warn("Warning: Output directory does not exist, using default directory instead.");
             }
-            outputFormat = (cmd.hasOption("of") ? cmd.getOptionValue("of") : "JSON");
+            String outputFormat = (cmd.hasOption("of") ? cmd.getOptionValue("of") : "JSON");
             if (!isRecognisedFormat(outputFormat)) {
                 logger.error("Warning: Unrecognised output format, using default format instead.");
                 System.err.println("Warning: Unrecognised output format, using default format instead.");
@@ -226,6 +227,18 @@ public class FrameworkMain {
     }
 
     private static boolean isRecognisedFormat(String format) {
-        return format.equals("DOT") || format.equals("JSON") || format.equals("ALL");
+        switch(format) {
+            case "DOT":
+                outputFormat = Format.dot;
+                return true;
+            case "JSON":
+                outputFormat = Format.json;
+                return true;
+            case "ALL":
+                outputFormat = Format.all;
+                return true;
+            default:
+                return false;
+        }
     }
 }

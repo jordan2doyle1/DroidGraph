@@ -8,6 +8,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
+import phd.research.enums.Format;
 import phd.research.enums.Type;
 import phd.research.graph.ContentFilter;
 import phd.research.graph.GraphWriter;
@@ -133,7 +134,7 @@ public class ApplicationAnalysis {
         this.manifest = processManifest();
     }
 
-    protected void outputMethods(String format) {
+    protected void outputMethods(Format format) {
         for (SootClass sootClass : Scene.v().getClasses()) {
             if (this.filter.isValidClass(sootClass)) {
                 for (SootMethod method : sootClass.getMethods()) {

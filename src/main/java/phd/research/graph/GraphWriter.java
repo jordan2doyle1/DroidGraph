@@ -8,6 +8,7 @@ import org.jgrapht.nio.json.JSONExporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.core.FrameworkMain;
+import phd.research.enums.Format;
 import phd.research.jGraph.Vertex;
 
 import java.io.*;
@@ -22,38 +23,37 @@ public class GraphWriter {
 
     private BufferedWriter writer;
 
-    public GraphWriter() {}
+    public GraphWriter() {
+    }
 
     public static void cleanDirectory(String directory) {
         try {
             FileUtils.cleanDirectory(new File(directory));
         } catch (IOException e) {
-            logger.error("Failed to clean directory: " + e.getMessage());
+            logger.error("Error cleaning directory: " + e.getMessage());
         }
     }
 
-    public void writeGraph(String format, String name, Graph<Vertex, DefaultEdge> graph) {
+    public void writeGraph(Format format, String name, Graph<Vertex, DefaultEdge> graph) {
         String file = getFileName(name);
 
         switch (format) {
-            case "DOT":
+            case dot:
                 exportDOT(file, graph);
                 break;
-            case "JSON":
+            case json:
                 exportJSON(file, graph);
                 break;
-            case "ALL":
+            case all:
                 exportDOT(file, graph);
                 exportJSON(file, graph);
                 break;
-            default:
-                logger.error("Error Unknown Output Format.");
         }
     }
 
     public void writeContent(String name, Set<?> list) {
         String outputLocation = FrameworkMain.getOutputDirectory() + "CONTENT/";
-        openFile(outputLocation, name + ".txt");
+        openFile(outputLocation, getFileName(name) + ".txt");
 
         for (Object item : list) {
             write(item.toString() + "\n");
@@ -120,7 +120,7 @@ public class GraphWriter {
             }
             writer = new BufferedWriter(new java.io.FileWriter(location + file));
         } catch (IOException e) {
-            logger.error("Failure opening file: " + e.getMessage());
+            logger.error("Error opening file: " + e.getMessage());
         }
     }
 
@@ -128,7 +128,7 @@ public class GraphWriter {
         try {
             writer.write(line);
         } catch (IOException e) {
-            logger.error("Failure writing to file: " + e.getMessage());
+            logger.error("Error writing to file: " + e.getMessage());
         }
     }
 
@@ -136,7 +136,7 @@ public class GraphWriter {
         try {
             writer.close();
         } catch (IOException e) {
-            logger.error("Failure closing file: " + e.getMessage());
+            logger.error("Error closing file: " + e.getMessage());
         }
     }
 }
