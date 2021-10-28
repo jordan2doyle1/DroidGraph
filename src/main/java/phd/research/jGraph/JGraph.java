@@ -4,6 +4,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -67,5 +68,25 @@ public class JGraph {
     public void addGraph(JGraph subGraph) {
         this.vertices.addAll(subGraph.vertices);
         this.edges.addAll(subGraph.edges);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof JGraph)) {
+            return false;
+        }
+
+        JGraph graph = (JGraph) o;
+
+        return this.vertices == graph.vertices && this.edges == graph.edges;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.vertices, this.edges);
     }
 }
