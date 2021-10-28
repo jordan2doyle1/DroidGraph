@@ -12,12 +12,23 @@ import java.util.Set;
 @SuppressWarnings("unused")
 public class JGraph {
 
-    private Set<Vertex> vertices;
     private final Set<Edge> edges;
+    private Set<Vertex> vertices;
 
     public JGraph() {
         vertices = new HashSet<>();
         edges = new HashSet<>();
+    }
+
+    public static JGraph convert(Graph<Vertex, DefaultEdge> graph) {
+        JGraph jGraph = new JGraph();
+        jGraph.vertices = graph.vertexSet();
+
+        for (DefaultEdge edge : graph.edgeSet()) {
+            jGraph.addEdge(graph.getEdgeSource(edge), graph.getEdgeTarget(edge));
+        }
+
+        return jGraph;
     }
 
     public Set<Vertex> vertexSet() {
@@ -56,16 +67,5 @@ public class JGraph {
     public void addGraph(JGraph subGraph) {
         this.vertices.addAll(subGraph.vertices);
         this.edges.addAll(subGraph.edges);
-    }
-
-    public static JGraph convert(Graph<Vertex, DefaultEdge> graph) {
-        JGraph jGraph = new JGraph();
-        jGraph.vertices = graph.vertexSet();
-
-        for (DefaultEdge edge : graph.edgeSet()) {
-            jGraph.addEdge(graph.getEdgeSource(edge), graph.getEdgeTarget(edge));
-        }
-
-        return jGraph;
     }
 }
