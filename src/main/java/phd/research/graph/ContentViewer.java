@@ -17,57 +17,145 @@ public class ContentViewer {
 
     private final ApplicationAnalysis analysis;
     private final ContentFilter filter;
-    private final Set<String> allPackages;
-    private final Set<String> filteredPackages;
-    private final Set<SootClass> allClasses;
-    private final Set<SootClass> filteredClasses;
-    private final Set<SootClass> entryPoints;
-    private final Set<SootClass> launchActivities;
-    private final Set<SootMethod> allMethods;
-    private final Set<SootMethod> filteredMethods;
-    private final Set<SootMethod> lifecycleMethods;
-    private final Set<SootMethod> listenerMethods;
-    private final Set<SootMethod> callbackMethods;
+
+    private Set<String> allPackages;
+    private Set<String> filteredPackages;
+    private Set<SootClass> allClasses;
+    private Set<SootClass> filteredClasses;
+    private Set<SootMethod> allMethods;
+    private Set<SootMethod> filteredMethods;
+    private Set<SootMethod> lifecycleMethods;
+    private Set<SootMethod> listenerMethods;
+    private Set<SootMethod> callbackMethods;
 
     public ContentViewer(ApplicationAnalysis analysis) {
         this.analysis = analysis;
         this.filter = this.analysis.getFilter();
+    }
 
-        this.allPackages = retrieveAllPackages();
-        this.filteredPackages = filterPackages();
-        this.allClasses = retrieveAllClasses();
-        this.filteredClasses = filterClasses(filter);
-        this.entryPoints = this.analysis.getEntryPointClasses();
-        this.launchActivities = this.analysis.getLaunchActivities();
-        this.allMethods = retrieveAllMethods();
-        this.filteredMethods = filterMethods();
-        this.callbackMethods = filterCallbackMethods();
-        this.lifecycleMethods = filterLifecycleMethods();
-        this.listenerMethods = filterListenerMethods();
+    private static void printList(Set<?> list) {
+        int counter = 0;
+        int numberOfPrints = 10;
+        for (Object item : list) {
+            if (counter < numberOfPrints) {
+                if (item instanceof String)
+                    System.out.println(item);
+                else if (item instanceof SootClass)
+                    System.out.println(((SootClass) item).getName());
+                else if (item instanceof Vertex)
+                    System.out.println(((Vertex) item).getLabel());
+                else if (item instanceof SootMethod) {
+                    SootMethod method = (SootMethod) item;
+                    System.out.println(method.getDeclaringClass().getName() + ":" + method.getName());
+                }
+            } else {
+                int remaining = list.size() - numberOfPrints;
+                System.out.println("+ " + remaining + " more!");
+                break;
+            }
+            counter++;
+        }
+        System.out.println();
+    }
+
+    public Set<String> getAllPackages() {
+        if (this.allPackages == null) {
+            this.allPackages = retrieveAllPackages();
+        }
+        return this.allPackages;
+    }
+
+    public Set<String> getFilteredPackages() {
+        if (this.filteredPackages == null) {
+            this.filteredPackages = filterPackages();
+        }
+        return this.filteredPackages;
+    }
+
+    public Set<SootClass> getAllClasses() {
+        if (this.allClasses == null) {
+            this.allClasses = retrieveAllClasses();
+        }
+        return this.allClasses;
+    }
+
+    public Set<SootClass> getFilteredClasses() {
+        if (this.filteredClasses == null) {
+            this.filteredClasses = filterClasses();
+        }
+        return this.filteredClasses;
+    }
+
+    public Set<SootMethod> getAllMethods() {
+        if (this.allMethods == null) {
+            this.allMethods = retrieveAllMethods();
+        }
+        return this.allMethods;
+    }
+
+    public Set<SootMethod> getFilteredMethods() {
+        if (this.filteredMethods == null) {
+            this.filteredMethods = filterMethods();
+        }
+        return this.filteredMethods;
+    }
+
+    public Set<SootMethod> getLifecycleMethods() {
+        if (this.lifecycleMethods == null) {
+            this.lifecycleMethods = filterLifecycleMethods();
+        }
+        return this.lifecycleMethods;
+    }
+
+    public Set<SootMethod> getListenerMethods() {
+        if (this.listenerMethods == null) {
+            this.listenerMethods = filterListenerMethods();
+        }
+        return this.listenerMethods;
+    }
+
+    public Set<SootMethod> getCallbackMethods() {
+        if (this.callbackMethods == null) {
+            this.callbackMethods = filterCallbackMethods();
+        }
+        return this.callbackMethods;
     }
 
     public void printAppDetails() {
         System.out.println("------------------------------- Analysis Details -------------------------------");
 
         System.out.println("Base Package Name: " + this.analysis.getBasePackageName());
-        System.out.println("Packages: " + this.filteredPackages.size() + " (Total: " + this.allPackages.size() + ")");
+        System.out.println("Packages: " + getFilteredPackages().size() + " (Total: " + getAllPackages().size() + ")");
         System.out.println();
 
-        System.out.println("Classes: " + this.filteredClasses.size() + " (Total: " + this.allClasses.size() + ")");
-        System.out.println("Entry Points: " + this.entryPoints.size());
-        System.out.println("Launch Activities: " + this.launchActivities.size());
+        System.out.println("Classes: " + getFilteredClasses().size() + " (Total: " + getAllClasses().size() + ")");
+        System.out.println("Entry Points: " + this.analysis.getEntryPointClasses().size());
+        System.out.println("Launch Activities: " + this.analysis.getLaunchActivities().size());
         System.out.println();
 
-        System.out.println("Methods: " + this.filteredMethods.size() + " (Total: " + this.allMethods.size() + ")");
-        System.out.println("Lifecycle Methods: " + this.lifecycleMethods.size());
-        // System.out.println("System Callbacks: " + this.callbackMethods.size());
-        // System.out.println("Callback Methods: " + this.listenerMethods.size());
-        System.out.println("Callback Methods: " + this.analysis.getCallbacks().size());
+        System.out.println("Methods: " + getFilteredMethods().size() + " (Total: " + getAllMethods().size() + ")");
+        System.out.println("Lifecycle Methods: " + getLifecycleMethods().size());
+        System.out.println("Listener Methods: " + getListenerMethods().size());
+        System.out.println("Other Callbacks: " + getCallbackMethods().size());
         System.out.println();
 
         System.out.println("Controls: " + this.analysis.getControls().size());
 
         System.out.println("--------------------------------------------------------------------------------");
+    }
+
+    @SuppressWarnings("unused")
+    public void writeContentsToFile() {
+        GraphWriter writer = new GraphWriter();
+        writer.writeContent("packages", getAllPackages());
+        writer.writeContent("filtered_packages", getFilteredPackages());
+        writer.writeContent("classes", getAllClasses());
+        writer.writeContent("filtered_classes", getFilteredClasses());
+        writer.writeContent("methods", getAllMethods());
+        writer.writeContent("filtered_methods", getFilteredMethods());
+        writer.writeContent("lifecycle", getLifecycleMethods());
+        writer.writeContent("listener", getListenerMethods());
+        writer.writeContent("callbacks", getCallbackMethods());
     }
 
     @SuppressWarnings("unused")
@@ -104,6 +192,7 @@ public class ContentViewer {
         System.out.println("Call Graph Composition: " + callGraphComposition);
     }
 
+    @SuppressWarnings("unused")
     public void printCFGDetails() {
         GraphComposition controlFlowGraphComposition = new GraphComposition(this.analysis.getControlFlowGraph());
         System.out.println("CFG Composition: " + controlFlowGraphComposition);
@@ -111,74 +200,76 @@ public class ContentViewer {
 
     @SuppressWarnings("unused")
     public void printList(boolean filtered, Parts part) {
-        switch(part) {
+        switch (part) {
             case methods:
                 if (filtered)
-                    printList(this.filteredMethods);
+                    printList(getFilteredMethods());
                 else
-                    printList(this.allMethods);
+                    printList(getAllMethods());
                 break;
             case classes:
                 if (filtered)
-                    printList(this.filteredClasses);
+                    printList(getFilteredClasses());
                 else
-                    printList(this.allClasses);
+                    printList(getAllClasses());
                 break;
             case packages:
                 if (filtered)
-                    printList(this.filteredPackages);
+                    printList(getFilteredPackages());
                 else
-                    printList(this.allPackages);
+                    printList(getAllPackages());
                 break;
         }
-    }
-
-    public void writeContentsToFile() {
-        GraphWriter writer = new GraphWriter();
-        writer.writeContent("All_Packages", this.allPackages);
-        writer.writeContent("Filtered_Packages", this.filteredPackages);
-        writer.writeContent("All_Classes", this.allClasses);
-        writer.writeContent("Filtered_Classes", this.filteredClasses);
-        writer.writeContent("All_Methods", this.allMethods);
-        writer.writeContent("Filtered_Methods", this.filteredMethods);
-        writer.writeContent("Lifecycle_Methods", this.lifecycleMethods);
-        writer.writeContent("Listener_Methods", this.listenerMethods);
-        writer.writeContent("Other_Callbacks", this.callbackMethods);
-    }
-
-    private Set<SootMethod> filterLifecycleMethods() {
-        Set<SootMethod> lifecycleMethods = new HashSet<>();
-
-        for (SootMethod method : this.filteredMethods) {
-            if (filter.isLifecycleMethod(method)) {
-                lifecycleMethods.add(method);
-            }
-        }
-
-        return lifecycleMethods;
     }
 
     private Set<SootMethod> filterCallbackMethods() {
         Set<SootMethod> callbackMethods = new HashSet<>();
 
+        if (this.filteredMethods == null) {
+            this.filteredMethods = filterMethods();
+        }
+
         for (SootMethod method : this.filteredMethods) {
-            if (filter.isCallbackMethod(method)) {
+            if (this.filter.isCallbackMethod(method)) {
                 callbackMethods.add(method);
             }
         }
 
+        this.callbackMethods = callbackMethods;
         return callbackMethods;
+    }
+
+    private Set<SootMethod> filterLifecycleMethods() {
+        Set<SootMethod> lifecycleMethods = new HashSet<>();
+
+        if (this.filteredMethods == null) {
+            this.filteredMethods = filterMethods();
+        }
+
+        for (SootMethod method : this.filteredMethods) {
+            if (this.filter.isLifecycleMethod(method)) {
+                lifecycleMethods.add(method);
+            }
+        }
+
+        this.lifecycleMethods = lifecycleMethods;
+        return lifecycleMethods;
     }
 
     private Set<SootMethod> filterListenerMethods() {
         Set<SootMethod> listenerMethods = new HashSet<>();
 
+        if (this.filteredMethods == null) {
+            this.filteredMethods = filterMethods();
+        }
+
         for (SootMethod method : this.filteredMethods) {
-            if (filter.isListenerMethod(method)) {
+            if (this.filter.isListenerMethod(method)) {
                 listenerMethods.add(method);
             }
         }
 
+        this.listenerMethods = listenerMethods;
         return listenerMethods;
     }
 
@@ -191,6 +282,7 @@ public class ContentViewer {
             allMethods.addAll(methods);
         }
 
+        this.allMethods = allMethods;
         return allMethods;
     }
 
@@ -201,29 +293,39 @@ public class ContentViewer {
         for (SootClass sootClass : classes) {
             if (this.filter.isValidClass(sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
-                acceptedMethods.addAll(methods);
-            }
-        }
-
-        return acceptedMethods;
-    }
-
-    private Set<SootClass> retrieveAllClasses() {
-        return new HashSet<>(Scene.v().getClasses());
-    }
-
-    private Set<SootClass> filterClasses(ContentFilter filter) {
-        Set<SootClass> classes = new HashSet<>();
-
-        for (SootClass sootClass : this.allClasses) {
-            if (filter.isValidPackage(sootClass.getPackageName())) {
-                if (filter.isValidClass(sootClass)) {
-                    classes.add(sootClass);
+                for (SootMethod method : methods) {
+                    if (this.filter.isValidMethod(method)) {
+                        acceptedMethods.add(method);
+                    }
                 }
             }
         }
 
+        this.filteredMethods = acceptedMethods;
+        return acceptedMethods;
+    }
+
+    private Set<SootClass> retrieveAllClasses() {
+        Set<SootClass> classes = new HashSet<>(Scene.v().getClasses());
+
+        this.allClasses = classes;
         return classes;
+    }
+
+    private Set<SootClass> filterClasses() {
+        Chain<SootClass> allClasses = Scene.v().getClasses();
+        Set<SootClass> filteredClasses = new HashSet<>();
+
+        for (SootClass sootClass : allClasses) {
+            if (this.filter.isValidPackage(sootClass.getPackageName())) {
+                if (this.filter.isValidClass(sootClass)) {
+                    filteredClasses.add(sootClass);
+                }
+            }
+        }
+
+        this.filteredClasses = filteredClasses;
+        return filteredClasses;
     }
 
     private Set<String> retrieveAllPackages() {
@@ -237,45 +339,26 @@ public class ContentViewer {
             }
         }
 
+        this.allPackages = packages;
         return packages;
     }
 
     private Set<String> filterPackages() {
         Set<String> packages = new HashSet<>();
 
+        if (this.allPackages == null) {
+            this.allPackages = retrieveAllPackages();
+        }
+
         if (!this.allPackages.isEmpty()) {
             for (String currentPackage : this.allPackages) {
-                if (filter.isValidPackage(currentPackage)) {
+                if (this.filter.isValidPackage(currentPackage)) {
                     packages.add(currentPackage);
                 }
             }
         }
 
+        this.filteredPackages = packages;
         return packages;
-    }
-
-    private static void printList(Set<?> list) {
-        int counter = 0;
-        int numberOfPrints = 10;
-        for (Object item : list) {
-            if (counter < numberOfPrints) {
-                if (item instanceof String)
-                    System.out.println(item);
-                else if (item instanceof SootClass)
-                    System.out.println(((SootClass) item).getName());
-                else if (item instanceof Vertex)
-                    System.out.println(((Vertex) item).getLabel());
-                else if (item instanceof SootMethod) {
-                    SootMethod method = (SootMethod) item;
-                    System.out.println(method.getDeclaringClass().getName() + ":" + method.getName());
-                }
-            } else {
-                int remaining = list.size() - numberOfPrints;
-                System.out.println("+ " + remaining + " more!");
-                break;
-            }
-            counter++;
-        }
-        System.out.println();
     }
 }
