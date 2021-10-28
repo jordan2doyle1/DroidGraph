@@ -74,10 +74,6 @@ public class ApplicationAnalysis {
         return this.callGraph;
     }
 
-    public Set<SootMethod> getCallbacks() {
-        return this.callbacks;
-    }
-
     public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
         if (this.controlFlowGraph == null)
             this.controlFlowGraph = generateGraph(this.getCallGraph());

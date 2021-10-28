@@ -31,7 +31,7 @@ public class FrameworkMain {
     private static String packageBlacklist;
     private static String classBlacklist;
 
-    @SuppressWarnings("CommentedOutCode")
+    // TODO: Time each part of the generation separately and output when each phase begins and ends.
     public static void main(String[] args) {
         LocalDateTime startDate = LocalDateTime.now();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy-HH:mm:ss");
@@ -144,7 +144,6 @@ public class FrameworkMain {
         configuration.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
         configuration.getAnalysisFileConfig().setTargetAPKFile(apk);
 
-        // TODO: Time FlowDroid's Analysis Separately.
         ApplicationAnalysis appAnalysis = new ApplicationAnalysis(configuration);
         appAnalysis.runAnalysis();
 
@@ -166,10 +165,10 @@ public class FrameworkMain {
         if (consoleOutput) {
             ContentViewer contentViewer = new ContentViewer(appAnalysis);
             contentViewer.printAppDetails();
-            // contentViewer.printCallbackTable();
-            // contentViewer.printCallGraphDetails();
-            // contentViewer.printCFGDetails();
-            // contentViewer.writeContentsToFile();
+            contentViewer.printCallbackTable();
+            contentViewer.printCallGraphDetails();
+            contentViewer.printCFGDetails();
+            contentViewer.writeContentsToFile();
         }
 
         LocalDateTime endDate = LocalDateTime.now();
