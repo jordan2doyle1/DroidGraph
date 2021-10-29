@@ -5,8 +5,6 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.nio.dot.DOTExporter;
 import org.jgrapht.nio.json.JSONExporter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import phd.research.core.FrameworkMain;
 import phd.research.enums.Format;
 import phd.research.jGraph.Vertex;
@@ -19,22 +17,14 @@ import java.util.Set;
  */
 public class GraphWriter {
 
-    private static final Logger logger = LoggerFactory.getLogger(GraphWriter.class);
-
-    private BufferedWriter writer;
-
     public GraphWriter() {
     }
 
-    public static void cleanDirectory(String directory) {
-        try {
-            FileUtils.cleanDirectory(new File(directory));
-        } catch (IOException e) {
-            logger.error("Error cleaning directory: " + e.getMessage());
-        }
+    public static void cleanDirectory(String directory) throws IOException {
+        FileUtils.cleanDirectory(new File(directory));
     }
 
-    public void writeGraph(Format format, String name, Graph<Vertex, DefaultEdge> graph) {
+    public void writeGraph(Format format, String name, Graph<Vertex, DefaultEdge> graph) throws Exception {
         String file = getFileName(name);
 
         switch (format) {
@@ -51,57 +41,60 @@ public class GraphWriter {
         }
     }
 
-    public void writeContent(String name, Set<?> list) {
+    public void writeContent(String name, Set<?> list) throws IOException {
         String outputLocation = FrameworkMain.getOutputDirectory() + "CONTENT/";
-        openFile(outputLocation, getFileName(name) + ".txt");
+        BufferedWriter writer = openFile(outputLocation, getFileName(name) + ".txt");
 
-        for (Object item : list) {
-            write(item.toString() + "\n");
+        if (writer != null) {
+            for (Object item : list) {
+                writer.write(item.toString() + "\n");
+            }
+
+            writer.close();
         }
-
-        closeFile();
     }
 
-    private void exportDOT(String file, Graph<Vertex, DefaultEdge> graph) {
+    private void exportDOT(String file, Graph<Vertex, DefaultEdge> graph) throws Exception {
         String outputLocation = FrameworkMain.getOutputDirectory() + "DOT/";
-        openFile(outputLocation, file + ".dot");
+        BufferedWriter writer = openFile(outputLocation, file + ".dot");
 
-        DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(v -> String.valueOf(v.getID()));
-        exporter.setVertexAttributeProvider(Vertex::getAttributes);
-        exporter.exportGraph(graph, writer);
+        if (writer != null) {
+            DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(v -> String.valueOf(v.getID()));
+            exporter.setVertexAttributeProvider(Vertex::getAttributes);
+            exporter.exportGraph(graph, writer);
 
-        closeFile();
+            writer.close();
 
-        String command = "dot -T png " + outputLocation + file + ".dot" + " -o " + outputLocation + file + ".png";
-        executeCommand(command);
+            String command = "dot -T png " + outputLocation + file + ".dot" + " -o " + outputLocation + file + ".png";
+            executeCommand(command);
+        }
     }
 
-    private void exportJSON(String file, Graph<Vertex, DefaultEdge> graph) {
+    private void exportJSON(String file, Graph<Vertex, DefaultEdge> graph) throws IOException {
         String outputLocation = FrameworkMain.getOutputDirectory() + "JSON/";
-        openFile(outputLocation, file + ".json");
+        BufferedWriter writer = openFile(outputLocation, file + ".json");
 
-        JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(v -> String.valueOf(v.getID()));
-        exporter.setVertexAttributeProvider(Vertex::getAttributes);
-        exporter.exportGraph(graph, writer);
+        if (writer != null) {
+            JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(v -> String.valueOf(v.getID()));
+            exporter.setVertexAttributeProvider(Vertex::getAttributes);
+            exporter.exportGraph(graph, writer);
 
-        closeFile();
+            writer.close();
+        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    private String executeCommand(String command) {
+    private String executeCommand(String command) throws Exception {
         StringBuilder output = new StringBuilder();
-        try {
-            Process process = Runtime.getRuntime().exec(command);
-            process.waitFor();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        Process process = Runtime.getRuntime().exec(command);
+        process.waitFor();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-        } catch (Exception e) {
-            logger.error("Error executing command \"" + command + "\": " + e.getMessage());
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.append(line).append("\n");
         }
+        // "Error executing command \"" + command + "\": " + e.getMessage()
         return output.toString();
     }
 
@@ -110,33 +103,13 @@ public class GraphWriter {
         return name.replaceAll("[:]", "_");
     }
 
-    private void openFile(String location, String file) {
-        try {
-            File directory = new File(location);
-            if (!directory.exists()) {
-                if (!directory.mkdirs()) {
-                    return;
-                }
+    private BufferedWriter openFile(String location, String file) throws IOException {
+        File directory = new File(location);
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) {
+                return null;
             }
-            writer = new BufferedWriter(new java.io.FileWriter(location + file));
-        } catch (IOException e) {
-            logger.error("Error opening file: " + e.getMessage());
         }
-    }
-
-    private void write(String line) {
-        try {
-            writer.write(line);
-        } catch (IOException e) {
-            logger.error("Error writing to file: " + e.getMessage());
-        }
-    }
-
-    private void closeFile() {
-        try {
-            writer.close();
-        } catch (IOException e) {
-            logger.error("Error closing file: " + e.getMessage());
-        }
+        return new BufferedWriter(new java.io.FileWriter(location + file));
     }
 }

@@ -130,7 +130,7 @@ public class ApplicationAnalysis {
         this.manifest = processManifest();
     }
 
-    protected void outputMethods(Format format) {
+    protected void outputMethods(Format format) throws Exception {
         for (SootClass sootClass : Scene.v().getClasses()) {
             if (this.filter.isValidClass(sootClass)) {
                 for (SootMethod method : sootClass.getMethods()) {

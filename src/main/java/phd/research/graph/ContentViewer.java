@@ -9,6 +9,7 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.util.Chain;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -145,7 +146,7 @@ public class ContentViewer {
     }
 
     @SuppressWarnings("unused")
-    public void writeContentsToFile() {
+    public void writeContentsToFile() throws IOException {
         GraphWriter writer = new GraphWriter();
         writer.writeContent("packages", getAllPackages());
         writer.writeContent("filtered_packages", getFilteredPackages());

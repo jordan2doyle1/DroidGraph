@@ -9,6 +9,7 @@ import phd.research.graph.GraphWriter;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -147,19 +148,35 @@ public class FrameworkMain {
         ApplicationAnalysis appAnalysis = new ApplicationAnalysis(configuration);
         appAnalysis.runAnalysis();
 
-        GraphWriter.cleanDirectory(outputDirectory);
+        try {
+            GraphWriter.cleanDirectory(outputDirectory);
+        } catch(IOException e) {
+            logger.error("Error cleaning output directory: " + e.getMessage());
+        }
 
         if (outputUnitGraphs)
-            appAnalysis.outputMethods(outputFormat);
+            try {
+                appAnalysis.outputMethods(outputFormat);
+            } catch (Exception e) {
+                logger.error("Error writing methods to output file: " + e.getMessage());
+            }
 
         GraphWriter graphWriter = new GraphWriter();
         if (outputCallGraph) {
             String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
-            graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
+            try {
+                graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
+            } catch(Exception e) {
+                logger.error("Error writing call graph to output file: " + e.getMessage());
+            }
         }
         if (outputControlFlowGraph) {
             String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
-            graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
+            try {
+                graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
+            } catch (Exception e) {
+                logger.error("Error writing CFG to output file: " + e.getMessage());
+            }
         }
 
         if (consoleOutput) {
@@ -168,7 +185,12 @@ public class FrameworkMain {
             contentViewer.printCallbackTable();
             contentViewer.printCallGraphDetails();
             contentViewer.printCFGDetails();
-            contentViewer.writeContentsToFile();
+            try {
+                contentViewer.writeContentsToFile();
+            } catch (IOException e) {
+                logger.error("Error writing content to output file: " + e.getMessage());
+            }
+
         }
 
         LocalDateTime endDate = LocalDateTime.now();
