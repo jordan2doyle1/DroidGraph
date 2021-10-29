@@ -40,6 +40,11 @@ import java.util.*;
  */
 public class ApplicationAnalysis {
 
+    // TODO: What does SootConfigForAndroid do, and is it useful?
+    // TODO: What does SystemClassHandler do and is it useful?
+    // TODO: How does FlowDroid separate application classes from system classes?
+
+    // TODO: Time each part of the generation separately and output when each phase begins and ends.
     private static final Logger logger = LoggerFactory.getLogger(ApplicationAnalysis.class);
 
     private final ContentFilter filter;
@@ -57,9 +62,6 @@ public class ApplicationAnalysis {
         this.filter = new ContentFilter();
         this.controls = new HashSet<>();
         this.callbacks = new HashSet<>();
-        this.extractUI();
-
-        runAnalysis();
     }
 
     public void runAnalysis() {
@@ -124,6 +126,9 @@ public class ApplicationAnalysis {
     }
 
     private void runFlowDroid(InfoflowAndroidConfiguration flowDroidConfig) {
+        logger.info("Running FlowDroid...");
+        System.out.println("Running FlowDroid");
+        long flowDroidStart = System.currentTimeMillis();
         this.application = new SetupApplication(flowDroidConfig);
         this.application.constructCallgraph();
 
@@ -191,6 +196,7 @@ public class ApplicationAnalysis {
     }
 
     private void extractUI() {
+        // TODO: Remove instrumentation requirement. Alternative method of connecting interface control to listener method.
 //        Map<SootClass, Set<CallbackDefinition>> customCallbacks = new HashMap<>();
 //
 //        for (Pair<SootClass, AndroidCallbackDefinition> callbacks : this.application.droidGraphCallbacks) {
@@ -409,7 +415,11 @@ public class ApplicationAnalysis {
             return Type.method;
     }
 
-    private Set<SootMethod> checkMethod(Graph<Vertex, DefaultEdge> graph) {
+    private Set<SootMethod> checkGraph(Graph<Vertex, DefaultEdge> graph) {
+        // TODO: Create a method of verifying the graph structure is complete and correct.
+        //  Are all the methods in the graph?
+        //  Do all vertices have input edges (excluding root)?
+        //  Print to the console if a problem is seen?
         Chain<SootClass> classes = Scene.v().getClasses();
         Set<SootMethod> notInGraph = new HashSet<>();
 
@@ -447,6 +457,7 @@ public class ApplicationAnalysis {
     }
 
     private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) {
+        // TODO: Confirm this is correct?
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         Iterator<MethodOrMethodContext> sourceItr = sootCallGraph.sourceMethods();
@@ -476,11 +487,12 @@ public class ApplicationAnalysis {
             }
         }
 
-        //checkMethod(graph);
+        //checkGraph(graph);
         return graph;
     }
 
     private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph) {
+        // TODO: Confirm this is correct?
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Graphs.addGraph(graph, callGraph);
         JimpleBasedInterproceduralCFG jimpleCFG = new JimpleBasedInterproceduralCFG();
@@ -528,7 +540,7 @@ public class ApplicationAnalysis {
             }
         }
 
-        //checkMethod(graph);
+        //checkGraph(graph);
         return graph;
     }
 }

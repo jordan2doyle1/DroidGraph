@@ -27,12 +27,12 @@ public class FrameworkMain {
     private static boolean outputUnitGraphs;
     private static boolean outputCallGraph;
     private static boolean outputControlFlowGraph;
+    private static boolean outputContent;
     private static String outputDirectory;
     private static Format outputFormat;
     private static String packageBlacklist;
     private static String classBlacklist;
 
-    // TODO: Time each part of the generation separately and output when each phase begins and ends.
     public static void main(String[] args) {
         LocalDateTime startDate = LocalDateTime.now();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy-HH:mm:ss");
@@ -60,6 +60,7 @@ public class FrameworkMain {
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
         options.addOption(Option.builder("sp").longOpt("source-project").desc("Name of source project.").hasArg()
                 .numberOfArgs(1).argName("NAME").build());
+        options.addOption(Option.builder("cf").longOpt("content-files").desc("Output Content Files.").build());
 
         CommandLine cmd = null;
         try {
@@ -112,12 +113,14 @@ public class FrameworkMain {
             outputUnitGraphs = cmd.hasOption("ug");
             outputCallGraph = cmd.hasOption("cg");
             outputControlFlowGraph = cmd.hasOption("cfg");
+            outputContent = cmd.hasOption("cf");
 
             outputDirectory = (cmd.hasOption("od") ? cmd.getOptionValue("od") :
                     System.getProperty("user.dir") + "/sootOutput/");
             if (!directoryExists(outputDirectory)) {
                 outputDirectory = System.getProperty("user.dir") + "/sootOutput/";
                 logger.warn("Warning: Output directory does not exist, using default directory instead.");
+                System.err.println("Warning: Output directory does not exist, using default directory instead.");
             }
             String outputFormat = (cmd.hasOption("of") ? cmd.getOptionValue("of") : "JSON");
             if (!isRecognisedFormat(outputFormat)) {
@@ -138,6 +141,12 @@ public class FrameworkMain {
             }
         }
 
+        try {
+            GraphWriter.cleanDirectory(outputDirectory);
+        } catch(IOException e) {
+            logger.error("Error cleaning output directory: " + e.getMessage());
+        }
+
         InfoflowAndroidConfiguration configuration = new InfoflowAndroidConfiguration();
         configuration.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.CreateNewInstance);
         configuration.setMergeDexFiles(true);
@@ -148,49 +157,68 @@ public class FrameworkMain {
         ApplicationAnalysis appAnalysis = new ApplicationAnalysis(configuration);
         appAnalysis.runAnalysis();
 
-        try {
-            GraphWriter.cleanDirectory(outputDirectory);
-        } catch(IOException e) {
-            logger.error("Error cleaning output directory: " + e.getMessage());
+        ContentViewer contentViewer = null;
+        if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph || outputContent) {
+            long startTime = System.currentTimeMillis();
+            logger.info("Starting file output...");
+            System.out.println("Starting file output...");
+
+            if (outputUnitGraphs)
+                try {
+                    appAnalysis.outputMethods(outputFormat);
+                } catch (Exception e) {
+                    logger.error("Error writing methods to output file: " + e.getMessage());
+                }
+
+            GraphWriter graphWriter = null;
+            if (outputCallGraph) {
+                graphWriter = new GraphWriter();
+                String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
+                try {
+                    graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
+                } catch(Exception e) {
+                    logger.error("Error writing call graph to output file: " + e.getMessage());
+                }
+            }
+
+            if (outputControlFlowGraph) {
+                if (graphWriter == null) {
+                    graphWriter = new GraphWriter();
+                }
+
+                String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
+                try {
+                    graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
+                } catch (Exception e) {
+                    logger.error("Error writing CFG to output file: " + e.getMessage());
+                }
+            }
+
+            if (outputContent) {
+                contentViewer = new ContentViewer(appAnalysis);
+                try {
+                    contentViewer.writeContentsToFile();
+                } catch (IOException e) {
+                    logger.error("Error writing content to output file: " + e.getMessage());
+                }
+            }
+
+            long endTime = System.currentTimeMillis();
+            logger.info("File output took " + (endTime - startTime) / 60 + " second(s).");
+            System.out.println("File output took " + (endTime - startTime) / 60 + " second(s).");
         }
 
-        if (outputUnitGraphs)
-            try {
-                appAnalysis.outputMethods(outputFormat);
-            } catch (Exception e) {
-                logger.error("Error writing methods to output file: " + e.getMessage());
-            }
 
-        GraphWriter graphWriter = new GraphWriter();
-        if (outputCallGraph) {
-            String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
-            try {
-                graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
-            } catch(Exception e) {
-                logger.error("Error writing call graph to output file: " + e.getMessage());
-            }
-        }
-        if (outputControlFlowGraph) {
-            String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
-            try {
-                graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
-            } catch (Exception e) {
-                logger.error("Error writing CFG to output file: " + e.getMessage());
-            }
-        }
 
         if (consoleOutput) {
-            ContentViewer contentViewer = new ContentViewer(appAnalysis);
+            if (contentViewer == null) {
+                contentViewer = new ContentViewer(appAnalysis);
+            }
+
             contentViewer.printAppDetails();
             contentViewer.printCallbackTable();
             contentViewer.printCallGraphDetails();
             contentViewer.printCFGDetails();
-            try {
-                contentViewer.writeContentsToFile();
-            } catch (IOException e) {
-                logger.error("Error writing content to output file: " + e.getMessage());
-            }
-
         }
 
         LocalDateTime endDate = LocalDateTime.now();

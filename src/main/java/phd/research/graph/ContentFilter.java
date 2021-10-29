@@ -16,17 +16,20 @@ import java.util.Set;
 
 public class ContentFilter {
 
+    // TODO: Try to remove the need for a logger
     private static final Logger logger = LoggerFactory.getLogger(ContentFilter.class);
 
     private final Set<String> packageBlacklist;
     private final Set<String> classBlacklist;
 
     public ContentFilter() {
+        // TODO: Over reliance on blacklist files, try to remove these?
         this.packageBlacklist = readBlacklist(FrameworkMain.getPackageBlacklist());
         this.classBlacklist = readBlacklist(FrameworkMain.getClassBlacklist());
     }
 
     public boolean isValidPackage(String packageName) {
+        // TODO: Check how FlowDroid does this and copy it?
         for (String blacklistPackage : this.packageBlacklist) {
             if (blacklistPackage.startsWith(".")) {
                 if (packageName.contains(blacklistPackage))
@@ -40,6 +43,7 @@ public class ContentFilter {
     }
 
     public boolean isValidClass(SootClass sootClass) {
+        // TODO: Check how FlowDroid does this and copy it?
         if (!isValidPackage(sootClass.getPackageName())) {
             for (String blacklistClass : this.classBlacklist) {
                 if (sootClass.getShortName().contains(blacklistClass))
@@ -55,6 +59,7 @@ public class ContentFilter {
     }
 
     public boolean isLifecycleMethod(SootMethod method) {
+        // TODO: Confirm that this method works?
         AndroidEntryPointUtils entryPointUtils = new AndroidEntryPointUtils();
         boolean isLifecycle = entryPointUtils.isEntryPointMethod(method);
 
@@ -71,6 +76,7 @@ public class ContentFilter {
     }
 
     public boolean isListenerMethod(SootMethod method) {
+        // TODO: Confirm that this method works?
         return method.getDeclaringClass().getName().startsWith("android.widget") ||
                 method.getDeclaringClass().getName().startsWith("android.view") ||
                 method.getDeclaringClass().getName().startsWith("android.content.DialogInterface$");
@@ -82,6 +88,7 @@ public class ContentFilter {
     }
 
     private Set<String> readBlacklist(String file) {
+        // TODO: Remove try-catch so that a logger is not needed?
         Set<String> items = new HashSet<>();
 
         try {
