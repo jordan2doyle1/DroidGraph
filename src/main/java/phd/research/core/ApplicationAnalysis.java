@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Format;
 import phd.research.enums.Type;
-import phd.research.graph.ContentFilter;
-import phd.research.graph.GraphWriter;
+import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
+import phd.research.graph.Writer;
 import phd.research.helper.Control;
 import phd.research.jGraph.Vertex;
 import soot.*;
@@ -47,7 +47,7 @@ public class ApplicationAnalysis {
     // TODO: Time each part of the generation separately and output when each phase begins and ends.
     private static final Logger logger = LoggerFactory.getLogger(ApplicationAnalysis.class);
 
-    private final ContentFilter filter;
+    private final Filter filter;
     private final Set<Control> controls;
 
     private SetupApplication application;
@@ -59,9 +59,11 @@ public class ApplicationAnalysis {
     public ApplicationAnalysis(InfoflowAndroidConfiguration flowDroidConfig) {
         runFlowDroid(flowDroidConfig);
 
-        this.filter = new ContentFilter();
+        this.filter = new Filter();
+
+        // this.testFilter();
+
         this.controls = new HashSet<>();
-        this.callbacks = new HashSet<>();
     }
 
     public void runAnalysis() {
@@ -69,6 +71,19 @@ public class ApplicationAnalysis {
         this.controlFlowGraph = generateGraph(this.callGraph);
     }
 
+    public Set<SootMethod> getCallbacks() {
+        if (this.callbacks == null) {
+            this.callbacks = retrieveCallback();
+        }
+        return this.callbacks;
+    }
+
+    private void testFilter() {
+        // System.out.format("\t%-100s\t%-10s\t%-10s\t%-10s\t%-10s\n", "SOOT CLASS", "JAVA_LIB", "LIB", "PHANTOM", "APP");
+        for (SootMethod sootMethod : this.getCallbacks()) {
+            System.out.println(sootMethod);
+        }
+    }
     public Graph<Vertex, DefaultEdge> getCallGraph() {
         if (this.callGraph == null)
             this.callGraph = generateGraph(Scene.v().getCallGraph());
@@ -87,8 +102,12 @@ public class ApplicationAnalysis {
         return this.manifest.getPackageName();
     }
 
-    public ContentFilter getFilter() {
+    public Filter getFilter() {
         return this.filter;
+    }
+
+    public SetupApplication getApplication() {
+        return this.application;
     }
 
     public Set<Control> getControls() {
@@ -127,12 +146,17 @@ public class ApplicationAnalysis {
 
     private void runFlowDroid(InfoflowAndroidConfiguration flowDroidConfig) {
         logger.info("Running FlowDroid...");
-        System.out.println("Running FlowDroid");
-        long flowDroidStart = System.currentTimeMillis();
+        System.out.println("Running FlowDroid...");
+        long startTime = System.currentTimeMillis();
+
         this.application = new SetupApplication(flowDroidConfig);
         this.application.constructCallgraph();
-
         this.manifest = processManifest();
+
+        long endTime = System.currentTimeMillis();
+        logger.info("FlowDroid took " + (endTime - startTime) / 1000 + " second(s).");
+        System.out.println("FlowDroid took " + (endTime - startTime) / 1000 + " second(s).");
+
     }
 
     protected void outputMethods(Format format) throws Exception {
@@ -146,8 +170,8 @@ public class ApplicationAnalysis {
                         String name = sootClass.getName().substring(sootClass.getName().lastIndexOf(".") + 1)
                                 + "_" + method.getName();
 
-                        GraphWriter graphWriter = new GraphWriter();
-                        graphWriter.writeGraph(format, name, unitGraph.getGraph());
+                        Writer writer = new Writer();
+                        writer.writeGraph(format, name, unitGraph.getGraph());
                     }
                 }
             }
@@ -195,6 +219,23 @@ public class ApplicationAnalysis {
         return manifest;
     }
 
+    private Set<SootMethod> retrieveCallback() {
+        Set<SootMethod> allCallbacks = new HashSet<>();
+        for (SootClass callbackClass : this.application.droidGraphCallbacks.keySet()) {
+            System.out.println("Callback Class: " + callbackClass);
+            for (AndroidCallbackDefinition callback : this.application.droidGraphCallbacks.get(callbackClass)) {
+                // System.out.println("Callback: " + callback.getTargetMethod());
+            }
+//            if (filter.isLifecycleMethod(callback.getO2().getTargetMethod())) { // TODO: Check what parent method is?
+//                break;
+//            } else {
+//                callbacks.add(callback.getO2().getTargetMethod());
+//            }
+        }
+
+        return allCallbacks;
+    }
+
     private void extractUI() {
         // TODO: Remove instrumentation requirement. Alternative method of connecting interface control to listener method.
 //        Map<SootClass, Set<CallbackDefinition>> customCallbacks = new HashMap<>();
@@ -210,16 +251,7 @@ public class ApplicationAnalysis {
 //        }
 
         // Getting all the callbacks without the lifecycle methods.
-        Set<SootMethod> callbackMethods = new HashSet<>();
-        for (Pair<SootClass, AndroidCallbackDefinition> callback : this.application.droidGraphCallbacks) {
-            if (filter.isLifecycleMethod(callback.getO2().getTargetMethod())) { // TODO: Check what parent method is?
-                break;
-            } else {
-                callbackMethods.add(callback.getO2().getTargetMethod());
-            }
-        }
-
-        this.callbacks = callbackMethods;
+        Set<SootMethod> callbackMethods = this.callbacks;
 
         // Getting UI Controls.
         Set<Pair<String, AndroidLayoutControl>> nullControls = new HashSet<>();
@@ -409,7 +441,7 @@ public class ApplicationAnalysis {
             return Type.listener;
         else if (this.filter.isLifecycleMethod(method))
             return Type.lifecycle;
-        else if (this.filter.isCallbackMethod(method))
+        else if (this.filter.isCallbackMethod(this.application.droidGraphCallbacks, method))
             return Type.callback;
         else
             return Type.method;

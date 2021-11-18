@@ -4,16 +4,16 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.enums.Format;
-import phd.research.graph.ContentViewer;
-import phd.research.graph.GraphWriter;
+import phd.research.graph.Viewer;
+import phd.research.graph.Writer;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Jordan Doyle
@@ -30,8 +30,8 @@ public class FrameworkMain {
     private static boolean outputContent;
     private static String outputDirectory;
     private static Format outputFormat;
-    private static String packageBlacklist;
-    private static String classBlacklist;
+    private static Set<String> packageBlacklist;
+    private static Set<String> classBlacklist;
 
     public static void main(String[] args) {
         LocalDateTime startDate = LocalDateTime.now();
@@ -127,23 +127,25 @@ public class FrameworkMain {
                 logger.error("Warning: Unrecognised output format, using default format instead.");
                 System.err.println("Warning: Unrecognised output format, using default format instead.");
             }
-            packageBlacklist = (cmd.hasOption("pb") ? cmd.getOptionValue("pb") :
+            String packageBlacklistFile = (cmd.hasOption("pb") ? cmd.getOptionValue("pb") :
                     System.getProperty("user.dir") + "/package_blacklist");
-            if (!fileExists(packageBlacklist)) {
+            if (!fileExists(packageBlacklistFile)) {
                 logger.warn("Warning: Package blacklist file does not exist, using default instead.");
-                packageBlacklist = System.getProperty("user.dir") + "/package_blacklist";
+                packageBlacklistFile = System.getProperty("user.dir") + "/package_blacklist";
             }
-            classBlacklist = (cmd.hasOption("cb") ? cmd.getOptionValue("cb") :
+            packageBlacklist = readBlacklist(packageBlacklistFile);
+            String classBlacklistFile = (cmd.hasOption("cb") ? cmd.getOptionValue("cb") :
                     System.getProperty("user.dir") + "/class_blacklist");
-            if (!fileExists(classBlacklist)) {
-                classBlacklist = System.getProperty("user.dir") + "/class_blacklist";
+            if (!fileExists(classBlacklistFile)) {
                 logger.warn("Warning: Class blacklist file does not exist, using default instead.");
+                classBlacklistFile = System.getProperty("user.dir") + "/class_blacklist";
             }
+            classBlacklist = readBlacklist(classBlacklistFile);
         }
 
         try {
-            GraphWriter.cleanDirectory(outputDirectory);
-        } catch(IOException e) {
+            Writer.cleanDirectory(outputDirectory);
+        } catch (IOException e) {
             logger.error("Error cleaning output directory: " + e.getMessage());
         }
 
@@ -157,7 +159,7 @@ public class FrameworkMain {
         ApplicationAnalysis appAnalysis = new ApplicationAnalysis(configuration);
         appAnalysis.runAnalysis();
 
-        ContentViewer contentViewer = null;
+        Viewer viewer = null;
         if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph || outputContent) {
             long startTime = System.currentTimeMillis();
             logger.info("Starting file output...");
@@ -170,34 +172,34 @@ public class FrameworkMain {
                     logger.error("Error writing methods to output file: " + e.getMessage());
                 }
 
-            GraphWriter graphWriter = null;
+            Writer writer = null;
             if (outputCallGraph) {
-                graphWriter = new GraphWriter();
+                writer = new Writer();
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
                 try {
-                    graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
-                } catch(Exception e) {
+                    writer.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
+                } catch (Exception e) {
                     logger.error("Error writing call graph to output file: " + e.getMessage());
                 }
             }
 
             if (outputControlFlowGraph) {
-                if (graphWriter == null) {
-                    graphWriter = new GraphWriter();
+                if (writer == null) {
+                    writer = new Writer();
                 }
 
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
                 try {
-                    graphWriter.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
+                    writer.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
                 } catch (Exception e) {
                     logger.error("Error writing CFG to output file: " + e.getMessage());
                 }
             }
 
             if (outputContent) {
-                contentViewer = new ContentViewer(appAnalysis);
+                viewer = new Viewer(appAnalysis);
                 try {
-                    contentViewer.writeContentsToFile();
+                    viewer.writeContentsToFile();
                 } catch (IOException e) {
                     logger.error("Error writing content to output file: " + e.getMessage());
                 }
@@ -208,17 +210,15 @@ public class FrameworkMain {
             System.out.println("File output took " + (endTime - startTime) / 60 + " second(s).");
         }
 
-
-
         if (consoleOutput) {
-            if (contentViewer == null) {
-                contentViewer = new ContentViewer(appAnalysis);
+            if (viewer == null) {
+                viewer = new Viewer(appAnalysis);
             }
 
-            contentViewer.printAppDetails();
-            contentViewer.printCallbackTable();
-            contentViewer.printCallGraphDetails();
-            contentViewer.printCFGDetails();
+            viewer.printAppDetails();
+            viewer.printCallbackTable();
+            viewer.printCallGraphDetails();
+            viewer.printCFGDetails();
         }
 
         LocalDateTime endDate = LocalDateTime.now();
@@ -237,11 +237,11 @@ public class FrameworkMain {
         return apk;
     }
 
-    public static String getPackageBlacklist() {
+    public static Set<String> getPackageBlacklist() {
         return packageBlacklist;
     }
 
-    public static String getClassBlacklist() {
+    public static Set<String> getClassBlacklist() {
         return classBlacklist;
     }
 
@@ -276,7 +276,7 @@ public class FrameworkMain {
     }
 
     private static boolean isRecognisedFormat(String format) {
-        switch(format) {
+        switch (format) {
             case "DOT":
                 outputFormat = Format.dot;
                 return true;
@@ -289,5 +289,23 @@ public class FrameworkMain {
             default:
                 return false;
         }
+    }
+
+    private static Set<String> readBlacklist(String file) {
+        Set<String> items = new HashSet<>();
+
+        BufferedReader bufferedReader;
+        String currentItem;
+        try {
+            bufferedReader = new BufferedReader(new FileReader(file));
+            while ((currentItem = bufferedReader.readLine()) != null) {
+                items.add(currentItem);
+            }
+        } catch (IOException e) {
+            logger.error("Error reading blacklist: " + e.getMessage());
+            return items;
+        }
+
+        return items;
     }
 }

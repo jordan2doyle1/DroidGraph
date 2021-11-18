@@ -15,9 +15,9 @@ import java.util.Set;
 /**
  * @author Jordan Doyle
  */
-public class GraphWriter {
+public class Writer {
 
-    public GraphWriter() {
+    public Writer() {
     }
 
     public static void cleanDirectory(String directory) throws IOException {

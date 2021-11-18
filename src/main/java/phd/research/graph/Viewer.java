@@ -14,13 +14,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class ContentViewer {
+/**
+ * @author Jordan Doyle
+ */
+public class Viewer {
 
     private final ApplicationAnalysis analysis;
-    private final ContentFilter filter;
+    private final Filter filter;
 
-    private Set<String> allPackages;
-    private Set<String> filteredPackages;
     private Set<SootClass> allClasses;
     private Set<SootClass> filteredClasses;
     private Set<SootMethod> allMethods;
@@ -29,7 +30,7 @@ public class ContentViewer {
     private Set<SootMethod> listenerMethods;
     private Set<SootMethod> callbackMethods;
 
-    public ContentViewer(ApplicationAnalysis analysis) {
+    public Viewer(ApplicationAnalysis analysis) {
         this.analysis = analysis;
         this.filter = this.analysis.getFilter();
     }
@@ -57,20 +58,6 @@ public class ContentViewer {
             counter++;
         }
         System.out.println();
-    }
-
-    public Set<String> getAllPackages() {
-        if (this.allPackages == null) {
-            this.allPackages = retrieveAllPackages();
-        }
-        return this.allPackages;
-    }
-
-    public Set<String> getFilteredPackages() {
-        if (this.filteredPackages == null) {
-            this.filteredPackages = filterPackages();
-        }
-        return this.filteredPackages;
     }
 
     public Set<SootClass> getAllClasses() {
@@ -126,7 +113,6 @@ public class ContentViewer {
         System.out.println("------------------------------- Analysis Details -------------------------------");
 
         System.out.println("Base Package Name: " + this.analysis.getBasePackageName());
-        System.out.println("Packages: " + getFilteredPackages().size() + " (Total: " + getAllPackages().size() + ")");
         System.out.println();
 
         System.out.println("Classes: " + getFilteredClasses().size() + " (Total: " + getAllClasses().size() + ")");
@@ -147,9 +133,7 @@ public class ContentViewer {
 
     @SuppressWarnings("unused")
     public void writeContentsToFile() throws IOException {
-        GraphWriter writer = new GraphWriter();
-        writer.writeContent("packages", getAllPackages());
-        writer.writeContent("filtered_packages", getFilteredPackages());
+        Writer writer = new Writer();
         writer.writeContent("classes", getAllClasses());
         writer.writeContent("filtered_classes", getFilteredClasses());
         writer.writeContent("methods", getAllMethods());
@@ -189,13 +173,13 @@ public class ContentViewer {
 
     @SuppressWarnings("unused")
     public void printCallGraphDetails() {
-        GraphComposition callGraphComposition = new GraphComposition(this.analysis.getCallGraph());
+        Composition callGraphComposition = new Composition(this.analysis.getCallGraph());
         System.out.println("Call Graph Composition: " + callGraphComposition);
     }
 
     @SuppressWarnings("unused")
     public void printCFGDetails() {
-        GraphComposition controlFlowGraphComposition = new GraphComposition(this.analysis.getControlFlowGraph());
+        Composition controlFlowGraphComposition = new Composition(this.analysis.getControlFlowGraph());
         System.out.println("CFG Composition: " + controlFlowGraphComposition);
     }
 
@@ -214,12 +198,6 @@ public class ContentViewer {
                 else
                     printList(getAllClasses());
                 break;
-            case packages:
-                if (filtered)
-                    printList(getFilteredPackages());
-                else
-                    printList(getAllPackages());
-                break;
         }
     }
 
@@ -231,7 +209,7 @@ public class ContentViewer {
         }
 
         for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isCallbackMethod(method)) {
+            if (this.filter.isCallbackMethod(this.analysis.getApplication().droidGraphCallbacks, method)) {
                 callbackMethods.add(method);
             }
         }
@@ -318,48 +296,12 @@ public class ContentViewer {
         Set<SootClass> filteredClasses = new HashSet<>();
 
         for (SootClass sootClass : allClasses) {
-            if (this.filter.isValidPackage(sootClass.getPackageName())) {
-                if (this.filter.isValidClass(sootClass)) {
-                    filteredClasses.add(sootClass);
-                }
+            if (this.filter.isValidClass(sootClass)) {
+                filteredClasses.add(sootClass);
             }
         }
 
         this.filteredClasses = filteredClasses;
         return filteredClasses;
-    }
-
-    private Set<String> retrieveAllPackages() {
-        Set<String> packages = new HashSet<>();
-        Chain<SootClass> classes = Scene.v().getClasses();
-
-        for (SootClass sootClass : classes) {
-            String packageName = sootClass.getPackageName();
-            if (!packageName.equals("")) {
-                packages.add(packageName);
-            }
-        }
-
-        this.allPackages = packages;
-        return packages;
-    }
-
-    private Set<String> filterPackages() {
-        Set<String> packages = new HashSet<>();
-
-        if (this.allPackages == null) {
-            this.allPackages = retrieveAllPackages();
-        }
-
-        if (!this.allPackages.isEmpty()) {
-            for (String currentPackage : this.allPackages) {
-                if (this.filter.isValidPackage(currentPackage)) {
-                    packages.add(currentPackage);
-                }
-            }
-        }
-
-        this.filteredPackages = packages;
-        return packages;
     }
 }
