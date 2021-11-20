@@ -225,6 +225,7 @@ public class Viewer {
             this.filteredMethods = filterMethods();
         }
 
+
         for (SootMethod method : this.filteredMethods) {
             if (this.filter.isLifecycleMethod(method)) {
                 lifecycleMethods.add(method);
@@ -243,7 +244,7 @@ public class Viewer {
         }
 
         for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isListenerMethod(method)) {
+            if (this.filter.isListenerMethod(this.analysis.getApplication().droidGraphCallbacks, method)) {
                 listenerMethods.add(method);
             }
         }

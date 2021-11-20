@@ -437,7 +437,7 @@ public class ApplicationAnalysis {
     private Type getMethodType(SootMethod method) {
         if (method.getDeclaringClass().getName().equals("dummyMainClass"))
             return Type.dummyMethod;
-        else if (this.filter.isListenerMethod(method))
+        else if (this.filter.isListenerMethod(getApplication().droidGraphCallbacks, method))
             return Type.listener;
         else if (this.filter.isLifecycleMethod(method))
             return Type.lifecycle;
