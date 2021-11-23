@@ -58,13 +58,11 @@ public class Composition {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
+        if (o == this)
             return true;
-        }
 
-        if (!(o instanceof Composition)) {
+        if (!(o instanceof Composition))
             return false;
-        }
 
         Composition composition = (Composition) o;
         return this.edge == composition.edge && this.vertex == composition.vertex

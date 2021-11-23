@@ -23,15 +23,20 @@ import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
+import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
+import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
+import soot.jimple.infoflow.cfg.LibraryClassPatcher;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.util.Chain;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
@@ -40,50 +45,70 @@ import java.util.*;
  */
 public class ApplicationAnalysis {
 
-    // TODO: What does SootConfigForAndroid do, and is it useful?
-    // TODO: What does SystemClassHandler do and is it useful?
-    // TODO: How does FlowDroid separate application classes from system classes?
-
-    // TODO: Time each part of the generation separately and output when each phase begins and ends.
     private static final Logger logger = LoggerFactory.getLogger(ApplicationAnalysis.class);
+    private static CollectedCallbacks callbacks;
 
     private final Filter filter;
-    private final Set<Control> controls;
 
+    private Set<Control> controls;
     private SetupApplication application;
     private ProcessManifest manifest;
+
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
-    private Set<SootMethod> callbacks;
 
-    public ApplicationAnalysis(InfoflowAndroidConfiguration flowDroidConfig) {
-        runFlowDroid(flowDroidConfig);
-
+    public ApplicationAnalysis() {
+        runFlowDroid();
         this.filter = new Filter();
+    }
 
-        // this.testFilter();
+    public static CollectedCallbacks getCallbacks() {
+        if (callbacks != null)
+            return callbacks;
+        else {
+            try {
+                callbacks = CollectedCallbacksSerializer.deserialize(
+                        new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"));
+            } catch (FileNotFoundException e) {
+                logger.error("Error CollectedCallbacks File Not Found:" + e.getMessage());
+            }
+        }
 
-        this.controls = new HashSet<>();
+        return callbacks;
     }
 
     public void runAnalysis() {
+        logger.info("Running graph generation...");
+        System.out.println("Running graph generation...");
+        long startTime = System.currentTimeMillis();
+
         this.callGraph = generateGraph(Scene.v().getCallGraph());
         this.controlFlowGraph = generateGraph(this.callGraph);
+
+        long endTime = System.currentTimeMillis();
+        logger.info("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
+        System.out.println("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
     }
 
-    public Set<SootMethod> getCallbacks() {
-        if (this.callbacks == null) {
-            this.callbacks = retrieveCallback();
-        }
-        return this.callbacks;
+    public Filter getFilter() {
+        return this.filter;
     }
 
-    private void testFilter() {
-        // System.out.format("\t%-100s\t%-10s\t%-10s\t%-10s\t%-10s\n", "SOOT CLASS", "JAVA_LIB", "LIB", "PHANTOM", "APP");
-        for (SootMethod sootMethod : this.getCallbacks()) {
-            System.out.println(sootMethod);
-        }
+    public Set<Control> getControls() {
+        if (this.controls == null)
+            this.controls = getUIControls();
+
+        return this.controls;
     }
+
+    public SetupApplication getApplication() {
+        return this.application;
+    }
+
+    public String getBasePackageName() {
+        return this.manifest.getPackageName();
+    }
+
     public Graph<Vertex, DefaultEdge> getCallGraph() {
         if (this.callGraph == null)
             this.callGraph = generateGraph(Scene.v().getCallGraph());
@@ -98,30 +123,13 @@ public class ApplicationAnalysis {
         return this.controlFlowGraph;
     }
 
-    public String getBasePackageName() {
-        return this.manifest.getPackageName();
-    }
-
-    public Filter getFilter() {
-        return this.filter;
-    }
-
-    public SetupApplication getApplication() {
-        return this.application;
-    }
-
-    public Set<Control> getControls() {
-        return this.controls;
-    }
-
     public Set<SootClass> getEntryPointClasses() {
         Set<SootClass> entryPoints = new HashSet<>();
 
         for (String entryPoint : this.manifest.getEntryPointClasses()) {
             SootClass entryPointClass = getClass(entryPoint);
-            if (entryPointClass != null) {
+            if (entryPointClass != null)
                 entryPoints.add(entryPointClass);
-            }
         }
 
         return entryPoints;
@@ -135,28 +143,126 @@ public class ApplicationAnalysis {
                 // Could be excluding valid activities if the app developer has not provided the name attribute.
                 String activityName = activity.getAttribute("name").getValue().toString();
                 SootClass launchActivity = getClass(activityName);
-                if (launchActivity != null) {
+                if (launchActivity != null)
                     launchActivities.add(launchActivity);
-                }
             }
         }
 
         return launchActivities;
     }
 
-    private void runFlowDroid(InfoflowAndroidConfiguration flowDroidConfig) {
+    private void runFlowDroid() {
         logger.info("Running FlowDroid...");
         System.out.println("Running FlowDroid...");
         long startTime = System.currentTimeMillis();
 
-        this.application = new SetupApplication(flowDroidConfig);
+        initializeSoot();
+        InfoflowAndroidConfiguration configuration = getFlowDroidConfiguration();
+        this.application = new SetupApplication(configuration);
         this.application.constructCallgraph();
         this.manifest = processManifest();
 
         long endTime = System.currentTimeMillis();
         logger.info("FlowDroid took " + (endTime - startTime) / 1000 + " second(s).");
         System.out.println("FlowDroid took " + (endTime - startTime) / 1000 + " second(s).");
+    }
 
+    private InfoflowAndroidConfiguration getFlowDroidConfiguration() {
+        InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
+        config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
+        config.setMergeDexFiles(true);
+        config.getAnalysisFileConfig().setAndroidPlatformDir(FrameworkMain.getAndroidPlatform());
+        config.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
+        config.getAnalysisFileConfig().setTargetAPKFile(FrameworkMain.getApk());
+        config.getCallbackConfig().setSerializeCallbacks(true);
+        config.getCallbackConfig().setCallbacksFile(FrameworkMain.getOutputDirectory() + "CollectedCallbacks");
+        return config;
+    }
+
+    private void initializeSoot() {
+        G.reset();  // Clean up any old Soot instance we may have
+
+        soot.options.Options.v().set_no_bodies_for_excluded(true);
+        soot.options.Options.v().set_allow_phantom_refs(true);
+        soot.options.Options.v().set_output_format(soot.options.Options.output_format_none);
+        soot.options.Options.v().set_whole_program(true);
+        soot.options.Options.v().set_process_dir(Collections.singletonList(FrameworkMain.getApk()));
+        soot.options.Options.v().set_android_jars(FrameworkMain.getAndroidPlatform());
+        soot.options.Options.v().set_src_prec(soot.options.Options.src_prec_apk_class_jimple);
+        soot.options.Options.v().set_keep_offset(false);
+        soot.options.Options.v().set_keep_line_number(false);
+        soot.options.Options.v().set_throw_analysis(soot.options.Options.throw_analysis_dalvik);
+        soot.options.Options.v().set_process_multiple_dex(true);
+        soot.options.Options.v().set_ignore_resolution_errors(true);
+
+        Scene.v().addBasicClass("android.view.View", soot.SootClass.BODIES);
+
+        // Set Soot configuration options. Note this needs to be done before computing the classpath.
+        // (SA) Exclude classes of android.* will cause layout class cannot be loaded for layout file based callback
+        // analysis. Added back the exclusion, because removing it breaks calls to Android SDK stubs.
+        // (JD) Remove the android.* and androidx.* within FlowDroid and see what happens.
+        List<String> excludeList = new LinkedList<>(Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*",
+                "org.eclipse.*", "soot.*", "android.*", "androidx.*"));
+        soot.options.Options.v().set_exclude(excludeList);
+
+        soot.options.Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(FrameworkMain.getAndroidPlatform(),
+                FrameworkMain.getApk()));
+        Main.v().autoSetOptions();
+
+        Scene.v().loadNecessaryClasses();
+
+        PackManager.v().getPack("wjpp").apply();
+
+        // Patch the callgraph to support additional edges. We do this now, because during callback discovery, the
+        // context-insensitive callgraph algorithm would flood us with invalid edges.
+        LibraryClassPatcher patcher = new LibraryClassPatcher();
+        patcher.patchLibraries();
+    }
+
+    private SootClass getClass(String search) {
+        for (SootClass sootClass : Scene.v().getClasses()) {
+            if (search.equals(sootClass.getName()))
+                return sootClass;
+        }
+
+        return null;
+    }
+
+    private ARSCFileParser retrieveResources() {
+        ARSCFileParser resources = new ARSCFileParser();
+
+        try {
+            resources.parse(FrameworkMain.getApk());
+        } catch (IOException e) {
+            logger.error("Error getting resources: " + e.getMessage());
+        }
+
+        return resources;
+    }
+
+    private LayoutFileParser retrieveLayoutFileParser() {
+        ProcessManifest manifest = processManifest();
+
+        if (manifest != null) {
+            LayoutFileParser layoutFileParser = new LayoutFileParser(manifest.getPackageName(), retrieveResources());
+            layoutFileParser.parseLayoutFileDirect(FrameworkMain.getApk());
+            return layoutFileParser;
+        }
+
+        return null;
+    }
+
+    private ProcessManifest processManifest() {
+        ProcessManifest manifest;
+
+        try {
+            manifest = new ProcessManifest(FrameworkMain.getApk());
+        } catch (IOException | XmlPullParserException e) {
+            logger.error("Failure processing manifest: " + e.getMessage());
+            return null;
+        }
+
+        return manifest;
     }
 
     protected void outputMethods(Format format) throws Exception {
@@ -178,66 +284,115 @@ public class ApplicationAnalysis {
         }
     }
 
-    private SootClass getClass(String search) {
-        for (SootClass sootClass : Scene.v().getClasses()) {
-            if (search.equals(sootClass.getName())) {
-                return sootClass;
-            }
+    // TODO: Improve the labels, remove parameter package names and shorten dummy main method labels.
+    private String getLabel(SootMethod method) {
+        return method.toString().replace(method.getDeclaringClass().getPackageName() + ".", "");
+    }
+
+    /**
+     * For some reason JGraphT does not have a method to retrieve individual vertices that already exist in the graph.
+     * Instead, this method searched a list of all the vertices contained within the graph for the required
+     * {@link Vertex} object and returns it.
+     *
+     * @param id  the ID of the {@link Vertex} object being searched for.
+     * @param set the set of all vertices to search.
+     * @return The {@link Vertex} object from the vertex set with the given ID.
+     */
+    private Vertex getVertex(int id, Set<Vertex> set) {
+        for (Vertex vertex : set) {
+            if (vertex.getID() == id)
+                return vertex;
         }
+
         return null;
     }
 
-    private ARSCFileParser retrieveResources() {
-        ARSCFileParser resources = new ARSCFileParser();
-        try {
-            resources.parse(FrameworkMain.getApk());
-        } catch (IOException e) {
-            logger.error("Error getting resources: " + e.getMessage());
-        }
-
-        return resources;
+    private Type getMethodType(SootMethod method) {
+        if (method.getDeclaringClass().getName().equals("dummyMainClass"))
+            return Type.dummyMethod;
+        else if (this.filter.isListenerMethod(method))
+            return Type.listener;
+        else if (this.filter.isLifecycleMethod(method))
+            return Type.lifecycle;
+        else if (this.filter.isOtherCallbackMethod(method))
+            return Type.callback;
+        else
+            return Type.method;
     }
 
-    private LayoutFileParser retrieveLayoutFileParser() {
-        ProcessManifest manifest = processManifest();
-        if (manifest != null) {
-            LayoutFileParser layoutFileParser = new LayoutFileParser(manifest.getPackageName(), retrieveResources());
-            layoutFileParser.parseLayoutFileDirect(FrameworkMain.getApk());
-            return layoutFileParser;
+    private Set<Control> getUIControls() {
+        Set<Control> uiControls = new HashSet<>();
+
+        LayoutFileParser layoutParser = retrieveLayoutFileParser();
+        if (layoutParser != null) {
+            for (Pair<String, AndroidLayoutControl> controlPair : layoutParser.getUserControls()) {
+                // TODO: Add layout file to the Control class.
+                AndroidLayoutControl control = controlPair.getO2();
+                if (control.getClickListener() != null) {
+                    SootMethod clickListener = searchCallbackMethods(control.getClickListener());
+                    if (clickListener != null)
+                        uiControls.add(new Control(control.hashCode(), control.getID(), null, clickListener));
+                } else {
+                    // TODO: why are some of the Control ID's -1.
+                    if (control.getID() != -1)
+                        uiControls.add(new Control(control.hashCode(), control.getID(), null, null));
+                }
+            }
         }
+
+        return uiControls;
+    }
+
+    private SootMethod searchCallbackMethods(String methodName) {
+        if (callbacks == null)
+            callbacks = getCallbacks();
+
+        SootMethod foundMethod = null;
+
+        for (SootClass currentClass : callbacks.getCallbackMethods().keySet()) {
+            for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(currentClass)) {
+                if (callbackDefinition.getTargetMethod().getName().equals(methodName)) {
+                    if (foundMethod != null) {
+                        logger.error("Found multiple callback methods with the name: " + methodName + ".");
+                        return null;
+                    }
+                    foundMethod = callbackDefinition.getTargetMethod();
+                }
+            }
+        }
+
+        return foundMethod;
+    }
+
+    private Control getControl(SootMethod callback) {
+        if (this.controls == null)
+            this.controls = getUIControls();
+
+        for (Control control : this.controls) {
+            if (control.getClickListener().equals(callback))
+                return control;
+        }
+
         return null;
     }
 
-    private ProcessManifest processManifest() {
-        ProcessManifest manifest;
-        try {
-            manifest = new ProcessManifest(FrameworkMain.getApk());
-        } catch (IOException | XmlPullParserException e) {
-            logger.error("Failure processing manifest: " + e.getMessage());
-            return null;
-        }
-        return manifest;
-    }
+    @SuppressWarnings("unused")
+    private Control getControl(String textId) {
+        if (this.controls == null)
+            this.controls = getUIControls();
 
-    private Set<SootMethod> retrieveCallback() {
-        Set<SootMethod> allCallbacks = new HashSet<>();
-        for (SootClass callbackClass : this.application.droidGraphCallbacks.keySet()) {
-            System.out.println("Callback Class: " + callbackClass);
-            for (AndroidCallbackDefinition callback : this.application.droidGraphCallbacks.get(callbackClass)) {
-                // System.out.println("Callback: " + callback.getTargetMethod());
-            }
-//            if (filter.isLifecycleMethod(callback.getO2().getTargetMethod())) { // TODO: Check what parent method is?
-//                break;
-//            } else {
-//                callbacks.add(callback.getO2().getTargetMethod());
-//            }
+        for (Control control : this.controls) {
+            if (control.getTextId().equals(textId))
+                return control;
         }
 
-        return allCallbacks;
+        return null;
     }
+
+    // TODO: Implement callback hash set.
 
     private void extractUI() {
-        // TODO: Remove instrumentation requirement. Alternative method of connecting interface control to listener method.
+        // TODO: Find alternative to instrumentation.
 //        Map<SootClass, Set<CallbackDefinition>> customCallbacks = new HashMap<>();
 //
 //        for (Pair<SootClass, AndroidCallbackDefinition> callbacks : this.application.droidGraphCallbacks) {
@@ -251,9 +406,10 @@ public class ApplicationAnalysis {
 //        }
 
         // Getting all the callbacks without the lifecycle methods.
-        Set<SootMethod> callbackMethods = this.callbacks;
 
-        // Getting UI Controls.
+        Set<SootMethod> callbackMethods = new HashSet<>(); //this.callbacks;
+
+        Set<Control> controls = new HashSet<>();
         Set<Pair<String, AndroidLayoutControl>> nullControls = new HashSet<>();
         LayoutFileParser lfp = retrieveLayoutFileParser();
         if (lfp != null) {
@@ -262,17 +418,15 @@ public class ApplicationAnalysis {
                 if (control.getClickListener() != null) {
                     SootMethod clickListener = searchCallbackMethods(control.getClickListener());
                     if (clickListener != null) {
-                        this.controls.add(new Control(control.hashCode(), control.getID(), null, clickListener));
+                        controls.add(new Control(control.hashCode(), control.getID(), null, clickListener));
                         callbackMethods.remove(clickListener);
                         logger.debug(control.getID() + " linked to \"" + clickListener.getDeclaringClass().getShortName()
                                 + "." + clickListener.getName() + "\".");
-                    } else {
+                    } else
                         logger.error("Problem linking controls with listeners: Two callback methods have the same name.");
-                    }
                 } else {
-                    if (control.getID() != -1) {
+                    if (control.getID() != -1)
                         nullControls.add(userControl);
-                    }
                 }
             }
         }
@@ -288,7 +442,7 @@ public class ApplicationAnalysis {
                     AndroidLayoutControl control = controlIterator.next().getO2();
 
                     if (control.getID() == interfaceID.getRight()) {
-                        this.controls.add(new Control(control.hashCode(), control.getID(), interfaceID.getLeft(),
+                        controls.add(new Control(control.hashCode(), control.getID(), interfaceID.getLeft(),
                                 listener));
                         controlIterator.remove();
                         iterator.remove();
@@ -315,56 +469,6 @@ public class ApplicationAnalysis {
         }
     }
 
-    // TODO: Improve the labels, remove parameter package names and shorten dummy main method labels.
-    private String getLabel(SootMethod method) {
-        return method.toString().replace(method.getDeclaringClass().getPackageName() + ".", "");
-    }
-
-    private Vertex getInterfaceControl(Vertex vertex) {
-        Control control = this.getControl(vertex.getSootMethod());
-        if (control != null) {
-            return new Vertex(control.hashCode(), String.valueOf(control.getId()), Type.control, vertex.getSootMethod());
-        } else {
-            logger.error("No control for " + vertex.getLabel());
-        }
-
-        return null;
-    }
-
-    /**
-     * For some reason JGraphT does not have a method to retrieve individual vertices that already exist in the graph.
-     * Instead, this method searched a list of all the vertices contained within the graph for the required
-     * {@link Vertex} object and returns it.
-     *
-     * @param id  the ID of the {@link Vertex} object being searched for.
-     * @param set the set of all vertices to search.
-     * @return The {@link Vertex} object from the vertex set with the given ID.
-     */
-    private Vertex getVertex(int id, Set<Vertex> set) {
-        for (Vertex vertex : set) {
-            if (vertex.getID() == id) {
-                return vertex;
-            }
-        }
-
-        return null;
-    }
-
-    private SootMethod searchCallbackMethods(String methodName) {
-        SootMethod foundMethod = null;
-
-        for (SootMethod method : this.callbacks) {
-            if (method.getName().equals(methodName)) {
-                if (foundMethod != null) {
-                    logger.error("Found multiple callback methods with the same name: " + methodName + ".");
-                    return null;
-                }
-                foundMethod = method;
-            }
-        }
-        return foundMethod;
-    }
-
     private phd.research.helper.Pair<String, Integer> getInterfaceID(final SootMethod callback) {
         PatchingChain<Unit> units = callback.getActiveBody().getUnits();
         final String[] arguments = {""};
@@ -379,9 +483,8 @@ public class ApplicationAnalysis {
                     super.caseInvokeStmt(stmt);
 
                     InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                    if (invokeExpr.getMethod().getName().equals("println")) {
+                    if (invokeExpr.getMethod().getName().equals("println"))
                         arguments[0] = invokeExpr.getArg(0).toString();
-                    }
                 }
             });
         }
@@ -394,9 +497,8 @@ public class ApplicationAnalysis {
             String[] id = argument.split(":");
             textID = "id/" + id[0];
             numberID = id[1];
-        } else if (!argument.equals("")) {
+        } else if (!argument.equals(""))
             numberID = argument;
-        }
 
         if (numberID == null) {
             logger.error("Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "."
@@ -416,48 +518,24 @@ public class ApplicationAnalysis {
         return interfaceID;
     }
 
-    private Control getControl(SootMethod callback) {
-        for (Control control : this.controls) {
-            if (control.getClickListener().equals(callback)) {
-                return control;
-            }
-        }
-        return null;
-    }
-
-    private Control getControl(String textId) {
-        for (Control control : this.controls) {
-            if (control.getTextId().equals(textId)) {
-                return control;
-            }
-        }
-        return null;
-    }
-
-    private Type getMethodType(SootMethod method) {
-        if (method.getDeclaringClass().getName().equals("dummyMainClass"))
-            return Type.dummyMethod;
-        else if (this.filter.isListenerMethod(getApplication().droidGraphCallbacks, method))
-            return Type.listener;
-        else if (this.filter.isLifecycleMethod(method))
-            return Type.lifecycle;
-        else if (this.filter.isCallbackMethod(this.application.droidGraphCallbacks, method))
-            return Type.callback;
+    private Vertex getInterfaceControl(Vertex vertex) {
+        Control control = this.getControl(vertex.getSootMethod());
+        if (control != null)
+            return new Vertex(control.hashCode(), String.valueOf(control.getId()), Type.control, vertex.getSootMethod());
         else
-            return Type.method;
+            logger.error("No control for " + vertex.getLabel());
+
+        return null;
     }
 
     private Set<SootMethod> checkGraph(Graph<Vertex, DefaultEdge> graph) {
-        // TODO: Create a method of verifying the graph structure is complete and correct.
-        //  Are all the methods in the graph?
-        //  Do all vertices have input edges (excluding root)?
-        //  Print to the console if a problem is seen?
+        // TODO: Verify graph is complete and correct (all methods present?, all vertices have input edges?, etc.)
+        // TODO: Print to the console if a problem or anomaly is found.
         Chain<SootClass> classes = Scene.v().getClasses();
         Set<SootMethod> notInGraph = new HashSet<>();
 
-        if (graph == null) {
+        if (graph == null)
             graph = this.getControlFlowGraph();
-        }
 
         for (SootClass sootClass : classes) {
             if (this.filter.isValidClass(sootClass)) {
@@ -465,9 +543,8 @@ public class ApplicationAnalysis {
                 for (SootMethod method : methods) {
                     Type methodType = this.getMethodType(method);
                     Vertex vertex = new Vertex(method.hashCode(), getLabel(method), methodType, method);
-                    if (!graph.containsVertex(vertex)) {
+                    if (!graph.containsVertex(vertex))
                         notInGraph.add(method);
-                    }
                 }
             }
         }
@@ -484,12 +561,11 @@ public class ApplicationAnalysis {
             }
         }
 
-
         return notInGraph;
     }
 
     private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) {
-        // TODO: Confirm this is correct?
+        // TODO: Confirm Call Graph Generation is correct?
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         Iterator<MethodOrMethodContext> sourceItr = sootCallGraph.sourceMethods();
@@ -519,12 +595,12 @@ public class ApplicationAnalysis {
             }
         }
 
-        //checkGraph(graph);
+        // checkGraph(graph);
         return graph;
     }
 
     private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph) {
-        // TODO: Confirm this is correct?
+        // TODO: Confirm Control Flow Graph Generation is correct?
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Graphs.addGraph(graph, callGraph);
         JimpleBasedInterproceduralCFG jimpleCFG = new JimpleBasedInterproceduralCFG();
@@ -536,9 +612,8 @@ public class ApplicationAnalysis {
                 if (interfaceVertex != null) {
                     graph.addVertex(interfaceVertex);
                     graph.addEdge(interfaceVertex, vertex);
-                } else {
+                } else
                     logger.error("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
-                }
             }
 
             if (vertex.getType() == Type.listener || vertex.getType() == Type.lifecycle ||
@@ -560,19 +635,17 @@ public class ApplicationAnalysis {
                         for (SootMethod calledMethod : calledMethods) {
                             Vertex callVertex = getVertex(callStatement.hashCode(), graph.vertexSet());
                             Vertex calledVertex = getVertex(calledMethod.hashCode(), graph.vertexSet());
-                            if (callVertex != null && calledVertex != null) {
+                            if (callVertex != null && calledVertex != null)
                                 graph.addEdge(callVertex, calledVertex);
-                            }
                         }
                     }
                 }
             } else if (vertex.getType() != Type.statement && vertex.getType() != Type.control
-                    && vertex.getType() != Type.dummyMethod) {
+                    && vertex.getType() != Type.dummyMethod)
                 logger.error("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
-            }
         }
 
-        //checkGraph(graph);
+        // checkGraph(graph);
         return graph;
     }
 }

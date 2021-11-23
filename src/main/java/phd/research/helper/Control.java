@@ -35,13 +35,11 @@ public class Control {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
+        if (o == this)
             return true;
-        }
 
-        if (!(o instanceof Control)) {
+        if (!(o instanceof Control))
             return false;
-        }
 
         Control control = (Control) o;
         return this.hashcode == control.hashcode && Objects.equals(this.clickListener, control.clickListener) &&

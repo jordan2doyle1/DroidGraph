@@ -28,7 +28,7 @@ public class Viewer {
     private Set<SootMethod> filteredMethods;
     private Set<SootMethod> lifecycleMethods;
     private Set<SootMethod> listenerMethods;
-    private Set<SootMethod> callbackMethods;
+    private Set<SootMethod> otherCallbackMethods;
 
     public Viewer(ApplicationAnalysis analysis) {
         this.analysis = analysis;
@@ -61,52 +61,52 @@ public class Viewer {
     }
 
     public Set<SootClass> getAllClasses() {
-        if (this.allClasses == null) {
+        if (this.allClasses == null)
             this.allClasses = retrieveAllClasses();
-        }
+
         return this.allClasses;
     }
 
     public Set<SootClass> getFilteredClasses() {
-        if (this.filteredClasses == null) {
+        if (this.filteredClasses == null)
             this.filteredClasses = filterClasses();
-        }
+
         return this.filteredClasses;
     }
 
     public Set<SootMethod> getAllMethods() {
-        if (this.allMethods == null) {
+        if (this.allMethods == null)
             this.allMethods = retrieveAllMethods();
-        }
+
         return this.allMethods;
     }
 
     public Set<SootMethod> getFilteredMethods() {
-        if (this.filteredMethods == null) {
+        if (this.filteredMethods == null)
             this.filteredMethods = filterMethods();
-        }
+
         return this.filteredMethods;
     }
 
     public Set<SootMethod> getLifecycleMethods() {
-        if (this.lifecycleMethods == null) {
+        if (this.lifecycleMethods == null)
             this.lifecycleMethods = filterLifecycleMethods();
-        }
+
         return this.lifecycleMethods;
     }
 
     public Set<SootMethod> getListenerMethods() {
-        if (this.listenerMethods == null) {
+        if (this.listenerMethods == null)
             this.listenerMethods = filterListenerMethods();
-        }
+
         return this.listenerMethods;
     }
 
-    public Set<SootMethod> getCallbackMethods() {
-        if (this.callbackMethods == null) {
-            this.callbackMethods = filterCallbackMethods();
-        }
-        return this.callbackMethods;
+    public Set<SootMethod> getOtherCallbackMethods() {
+        if (this.otherCallbackMethods == null)
+            this.otherCallbackMethods = filterOtherCallbackMethods();
+
+        return this.otherCallbackMethods;
     }
 
     public void printAppDetails() {
@@ -123,7 +123,7 @@ public class Viewer {
         System.out.println("Methods: " + getFilteredMethods().size() + " (Total: " + getAllMethods().size() + ")");
         System.out.println("Lifecycle Methods: " + getLifecycleMethods().size());
         System.out.println("Listener Methods: " + getListenerMethods().size());
-        System.out.println("Other Callbacks: " + getCallbackMethods().size());
+        System.out.println("Other Callbacks: " + getOtherCallbackMethods().size());
         System.out.println();
 
         System.out.println("Controls: " + this.analysis.getControls().size());
@@ -140,7 +140,7 @@ public class Viewer {
         writer.writeContent("filtered_methods", getFilteredMethods());
         writer.writeContent("lifecycle", getLifecycleMethods());
         writer.writeContent("listener", getListenerMethods());
-        writer.writeContent("callbacks", getCallbackMethods());
+        writer.writeContent("other", getOtherCallbackMethods());
     }
 
     @SuppressWarnings("unused")
@@ -149,9 +149,9 @@ public class Viewer {
         String stringFormat = "\t%-15s\t%-30s\t%-30s\t%-30s\n";
 
         System.out.println("----------------------------- Control Callback Map -----------------------------");
-        if (this.analysis.getControls().isEmpty()) {
+        if (this.analysis.getControls().isEmpty())
             System.out.println("Control Callback Map is Empty!");
-        } else {
+        else {
             System.out.printf((stringFormat) + "%n", "WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD");
             System.out.println(separator);
 
@@ -201,35 +201,15 @@ public class Viewer {
         }
     }
 
-    private Set<SootMethod> filterCallbackMethods() {
-        Set<SootMethod> callbackMethods = new HashSet<>();
-
-        if (this.filteredMethods == null) {
-            this.filteredMethods = filterMethods();
-        }
-
-        for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isCallbackMethod(this.analysis.getApplication().droidGraphCallbacks, method)) {
-                callbackMethods.add(method);
-            }
-        }
-
-        this.callbackMethods = callbackMethods;
-        return callbackMethods;
-    }
-
     private Set<SootMethod> filterLifecycleMethods() {
         Set<SootMethod> lifecycleMethods = new HashSet<>();
 
-        if (this.filteredMethods == null) {
+        if (this.filteredMethods == null)
             this.filteredMethods = filterMethods();
-        }
-
 
         for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isLifecycleMethod(method)) {
+            if (this.filter.isLifecycleMethod(method))
                 lifecycleMethods.add(method);
-            }
         }
 
         this.lifecycleMethods = lifecycleMethods;
@@ -239,18 +219,31 @@ public class Viewer {
     private Set<SootMethod> filterListenerMethods() {
         Set<SootMethod> listenerMethods = new HashSet<>();
 
-        if (this.filteredMethods == null) {
+        if (this.filteredMethods == null)
             this.filteredMethods = filterMethods();
-        }
 
         for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isListenerMethod(this.analysis.getApplication().droidGraphCallbacks, method)) {
+            if (this.filter.isListenerMethod(method))
                 listenerMethods.add(method);
-            }
         }
 
         this.listenerMethods = listenerMethods;
         return listenerMethods;
+    }
+
+    private Set<SootMethod> filterOtherCallbackMethods() {
+        Set<SootMethod> callbackMethods = new HashSet<>();
+
+        if (this.filteredMethods == null)
+            this.filteredMethods = filterMethods();
+
+        for (SootMethod method : this.filteredMethods) {
+            if (this.filter.isOtherCallbackMethod(method))
+                callbackMethods.add(method);
+        }
+
+        this.otherCallbackMethods = callbackMethods;
+        return callbackMethods;
     }
 
     private Set<SootMethod> retrieveAllMethods() {
@@ -274,9 +267,8 @@ public class Viewer {
             if (this.filter.isValidClass(sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
-                    if (this.filter.isValidMethod(method)) {
+                    if (this.filter.isValidMethod(method))
                         acceptedMethods.add(method);
-                    }
                 }
             }
         }
@@ -297,9 +289,8 @@ public class Viewer {
         Set<SootClass> filteredClasses = new HashSet<>();
 
         for (SootClass sootClass : allClasses) {
-            if (this.filter.isValidClass(sootClass)) {
+            if (this.filter.isValidClass(sootClass))
                 filteredClasses.add(sootClass);
-            }
         }
 
         this.filteredClasses = filteredClasses;

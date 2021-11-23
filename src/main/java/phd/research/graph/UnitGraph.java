@@ -25,23 +25,21 @@ public class UnitGraph extends BriefUnitGraph {
     }
 
     public Graph<Vertex, DefaultEdge> getGraph() {
-        if (graph == null) {
+        if (graph == null)
             this.graph = generateGraph();
-        }
+
         return this.graph;
     }
 
     public Set<Vertex> getRoots() {
         Set<Vertex> rootVertices = new HashSet<>();
 
-        if (graph == null) {
+        if (graph == null)
             generateGraph();
-        }
 
         for (Vertex vertex : this.graph.vertexSet()) {
-            if (this.graph.inDegreeOf(vertex) == 0) {
+            if (this.graph.inDegreeOf(vertex) == 0)
                 rootVertices.add(vertex);
-            }
         }
 
         return rootVertices;

@@ -72,13 +72,11 @@ public class JGraph {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
+        if (o == this)
             return true;
-        }
 
-        if (!(o instanceof JGraph)) {
+        if (!(o instanceof JGraph))
             return false;
-        }
 
         JGraph graph = (JGraph) o;
 

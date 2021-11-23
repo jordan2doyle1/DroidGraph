@@ -94,6 +94,7 @@ public class Writer {
         while ((line = reader.readLine()) != null) {
             output.append(line).append("\n");
         }
+
         // "Error executing command \"" + command + "\": " + e.getMessage()
         return output.toString();
     }
@@ -105,11 +106,12 @@ public class Writer {
 
     private BufferedWriter openFile(String location, String file) throws IOException {
         File directory = new File(location);
+
         if (!directory.exists()) {
-            if (!directory.mkdirs()) {
+            if (!directory.mkdirs())
                 return null;
-            }
         }
+
         return new BufferedWriter(new java.io.FileWriter(location + file));
     }
 }

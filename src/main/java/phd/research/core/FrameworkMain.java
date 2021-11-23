@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import phd.research.enums.Format;
 import phd.research.graph.Viewer;
 import phd.research.graph.Writer;
-import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 
 import java.io.*;
 import java.time.Duration;
@@ -95,9 +94,9 @@ public class FrameworkMain {
                 if (cmd.hasOption("sp")) {
                     String sourceApk = "/Users/jordandoyle/Android_Projects/" + sourceProject +
                             "/app/build/outputs/apk/debug/app-debug.apk";
-                    if (fileExists(sourceApk)) {
+                    if (fileExists(sourceApk))
                         apk = sourceApk;
-                    } else {
+                    else {
                         logger.error("Error: Source project (" + sourceProject + ") does not exist .");
                         System.err.println("Error: Source project (" + sourceProject + ") does not exist .");
                         System.exit(20);
@@ -149,14 +148,7 @@ public class FrameworkMain {
             logger.error("Error cleaning output directory: " + e.getMessage());
         }
 
-        InfoflowAndroidConfiguration configuration = new InfoflowAndroidConfiguration();
-        configuration.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.CreateNewInstance);
-        configuration.setMergeDexFiles(true);
-        configuration.getAnalysisFileConfig().setAndroidPlatformDir(androidPlatform);
-        configuration.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
-        configuration.getAnalysisFileConfig().setTargetAPKFile(apk);
-
-        ApplicationAnalysis appAnalysis = new ApplicationAnalysis(configuration);
+        ApplicationAnalysis appAnalysis = new ApplicationAnalysis();
         appAnalysis.runAnalysis();
 
         Viewer viewer = null;
@@ -184,9 +176,8 @@ public class FrameworkMain {
             }
 
             if (outputControlFlowGraph) {
-                if (writer == null) {
+                if (writer == null)
                     writer = new Writer();
-                }
 
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
                 try {
@@ -211,9 +202,8 @@ public class FrameworkMain {
         }
 
         if (consoleOutput) {
-            if (viewer == null) {
+            if (viewer == null)
                 viewer = new Viewer(appAnalysis);
-            }
 
             viewer.printAppDetails();
             viewer.printCallbackTable();
@@ -237,6 +227,10 @@ public class FrameworkMain {
         return apk;
     }
 
+    public static String getAndroidPlatform() {
+        return androidPlatform;
+    }
+
     public static Set<String> getPackageBlacklist() {
         return packageBlacklist;
     }
@@ -258,9 +252,9 @@ public class FrameworkMain {
             System.err.println("Error Parsing Command Line Arguments: " + e.getMessage());
         }
 
-        if (cmd != null) {
+        if (cmd != null)
             return cmd.hasOption("h");
-        }
+
         return false;
     }
 
