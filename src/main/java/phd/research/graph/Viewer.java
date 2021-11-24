@@ -7,6 +7,7 @@ import phd.research.jGraph.Vertex;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Type;
 import soot.util.Chain;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ public class Viewer {
     private Set<SootMethod> lifecycleMethods;
     private Set<SootMethod> listenerMethods;
     private Set<SootMethod> otherCallbackMethods;
+    private Set<SootMethod> possibleCallbackMethods;
 
     public Viewer(ApplicationAnalysis analysis) {
         this.analysis = analysis;
@@ -109,6 +111,13 @@ public class Viewer {
         return this.otherCallbackMethods;
     }
 
+    public Set<SootMethod> getPossibleCallbacksMethods() {
+        if (this.possibleCallbackMethods == null)
+            this.possibleCallbackMethods = filterPossibleCallbackMethods();
+
+        return this.possibleCallbackMethods;
+    }
+
     public void printAppDetails() {
         System.out.println("------------------------------- Analysis Details -------------------------------");
 
@@ -124,6 +133,7 @@ public class Viewer {
         System.out.println("Lifecycle Methods: " + getLifecycleMethods().size());
         System.out.println("Listener Methods: " + getListenerMethods().size());
         System.out.println("Other Callbacks: " + getOtherCallbackMethods().size());
+        System.out.println("Possible Callbacks: " + getPossibleCallbacksMethods().size());
         System.out.println();
 
         System.out.println("Controls: " + this.analysis.getControls().size());
@@ -131,21 +141,18 @@ public class Viewer {
         System.out.println("--------------------------------------------------------------------------------");
     }
 
-    @SuppressWarnings("unused")
     public void writeContentsToFile() throws IOException {
         Writer writer = new Writer();
-        writer.writeContent("classes", getAllClasses());
-        writer.writeContent("filtered_classes", getFilteredClasses());
-        writer.writeContent("methods", getAllMethods());
-        writer.writeContent("filtered_methods", getFilteredMethods());
+        writer.writeContent("classes", getFilteredClasses());
+        writer.writeContent("methods", getFilteredMethods());
         writer.writeContent("lifecycle", getLifecycleMethods());
         writer.writeContent("listener", getListenerMethods());
         writer.writeContent("other", getOtherCallbackMethods());
+        writer.writeContent("possible", getPossibleCallbacksMethods());
     }
 
-    @SuppressWarnings("unused")
     public void printCallbackTable() {
-        String separator = "--------------------------------------------------------------------------------\n";
+        String separator = "--------------------------------------------------------------------------------";
         String stringFormat = "\t%-15s\t%-30s\t%-30s\t%-30s\n";
 
         System.out.println("----------------------------- Control Callback Map -----------------------------");
@@ -171,19 +178,16 @@ public class Viewer {
         System.out.println(separator);
     }
 
-    @SuppressWarnings("unused")
     public void printCallGraphDetails() {
         Composition callGraphComposition = new Composition(this.analysis.getCallGraph());
-        System.out.println("Call Graph Composition: " + callGraphComposition);
+        System.out.println(callGraphComposition.toTableString("Call Graph Composition"));
     }
 
-    @SuppressWarnings("unused")
     public void printCFGDetails() {
         Composition controlFlowGraphComposition = new Composition(this.analysis.getControlFlowGraph());
-        System.out.println("CFG Composition: " + controlFlowGraphComposition);
+        System.out.println(controlFlowGraphComposition.toTableString("CFG Composition"));
     }
 
-    @SuppressWarnings("unused")
     public void printList(boolean filtered, Parts part) {
         switch (part) {
             case methods:
@@ -243,6 +247,28 @@ public class Viewer {
         }
 
         this.otherCallbackMethods = callbackMethods;
+        return callbackMethods;
+    }
+
+    private Set<SootMethod> filterPossibleCallbackMethods() {
+        Set<SootMethod> callbackMethods = new HashSet<>();
+
+        if (this.filteredMethods == null)
+            this.filteredMethods = filterMethods();
+
+        for (SootMethod method : this.filteredMethods) {
+            if (!this.filter.isLifecycleMethod(method) && !this.filter.isListenerMethod(method) &&
+                    !this.filter.isOtherCallbackMethod(method)) {
+                for (Type paramType : method.getParameterTypes()) {
+                    if (paramType.toString().equals("android.view.View")) {
+                        if ((!method.toString().startsWith("<androidx")))
+                            callbackMethods.add(method);
+                    }
+                }
+            }
+        }
+
+        this.possibleCallbackMethods = callbackMethods;
         return callbackMethods;
     }
 

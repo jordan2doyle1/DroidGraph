@@ -53,7 +53,6 @@ public class ApplicationAnalysis {
     private Set<Control> controls;
     private SetupApplication application;
     private ProcessManifest manifest;
-
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
 
@@ -284,9 +283,34 @@ public class ApplicationAnalysis {
         }
     }
 
-    // TODO: Improve the labels, remove parameter package names and shorten dummy main method labels.
     private String getLabel(SootMethod method) {
-        return method.toString().replace(method.getDeclaringClass().getPackageName() + ".", "");
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("<").append(removePackageName(method.getDeclaringClass().getName())).append(": ")
+                .append(removePackageName(method.getReturnType().toString())).append(" ")
+                .append(removePackageName(method.getName())).append("(");
+
+        List<soot.Type> parameters = method.getParameterTypes();
+        for (int i = 0; i < method.getParameterCount(); i++) {
+            stringBuilder.append(removePackageName(parameters.get(i).toString()));
+            if(i != (method.getParameterCount() - 1) )
+                stringBuilder.append(",");
+        }
+
+        stringBuilder.append(")>");
+        return stringBuilder.toString();
+    }
+
+    private String removePackageName(String name) {
+        int index = name.lastIndexOf(".");
+
+        if (name.contains("dummyMainMethod"))
+            index = name.lastIndexOf("_");
+
+        if(index != -1) {
+            name = name.replace(name.substring(0, index + 1), "");
+        }
+
+        return name;
     }
 
     /**
@@ -315,7 +339,7 @@ public class ApplicationAnalysis {
         else if (this.filter.isLifecycleMethod(method))
             return Type.lifecycle;
         else if (this.filter.isOtherCallbackMethod(method))
-            return Type.callback;
+            return Type.other;
         else
             return Type.method;
     }
@@ -331,11 +355,12 @@ public class ApplicationAnalysis {
                 if (control.getClickListener() != null) {
                     SootMethod clickListener = searchCallbackMethods(control.getClickListener());
                     if (clickListener != null)
-                        uiControls.add(new Control(control.hashCode(), control.getID(), null, clickListener));
+                        uiControls.add(new Control(control.hashCode(), control.getID(), null, null, clickListener));
                 } else {
                     // TODO: why are some of the Control ID's -1.
-                    if (control.getID() != -1)
-                        uiControls.add(new Control(control.hashCode(), control.getID(), null, null));
+                    // TODO: Getting null Pointer exception below. multiple of the same control added to set????
+//                    if (control.getID() != -1)
+//                        uiControls.add(new Control(control.hashCode(), control.getID(), null, null));
                 }
             }
         }
@@ -418,7 +443,7 @@ public class ApplicationAnalysis {
                 if (control.getClickListener() != null) {
                     SootMethod clickListener = searchCallbackMethods(control.getClickListener());
                     if (clickListener != null) {
-                        controls.add(new Control(control.hashCode(), control.getID(), null, clickListener));
+                        controls.add(new Control(control.hashCode(), control.getID(), null, null, clickListener));
                         callbackMethods.remove(clickListener);
                         logger.debug(control.getID() + " linked to \"" + clickListener.getDeclaringClass().getShortName()
                                 + "." + clickListener.getName() + "\".");
@@ -442,7 +467,7 @@ public class ApplicationAnalysis {
                     AndroidLayoutControl control = controlIterator.next().getO2();
 
                     if (control.getID() == interfaceID.getRight()) {
-                        controls.add(new Control(control.hashCode(), control.getID(), interfaceID.getLeft(),
+                        controls.add(new Control(control.hashCode(), control.getID(), interfaceID.getLeft(), null,
                                 listener));
                         controlIterator.remove();
                         iterator.remove();
@@ -469,6 +494,8 @@ public class ApplicationAnalysis {
         }
     }
 
+    // IGNORE BELOW: A PROBLEM FOR ANOTHER DAY!
+    
     private phd.research.helper.Pair<String, Integer> getInterfaceID(final SootMethod callback) {
         PatchingChain<Unit> units = callback.getActiveBody().getUnits();
         final String[] arguments = {""};

@@ -12,12 +12,14 @@ public class Control {
     private final int hashcode;
     private final int id;
     private final String textId;
+    private final String layout;
     private final SootMethod clickListener;
 
-    public Control(int hashcode, int id, String textId, SootMethod clickListener) {
+    public Control(int hashcode, int id, String textId, String layout, SootMethod clickListener) {
         this.hashcode = hashcode;
         this.id = id;
         this.textId = textId;
+        this.layout = layout;
         this.clickListener = clickListener;
     }
 
@@ -27,6 +29,10 @@ public class Control {
 
     public String getTextId() {
         return this.textId;
+    }
+
+    public String getLayoutFile() {
+        return this.layout;
     }
 
     public SootMethod getClickListener() {
@@ -43,11 +49,11 @@ public class Control {
 
         Control control = (Control) o;
         return this.hashcode == control.hashcode && Objects.equals(this.clickListener, control.clickListener) &&
-                this.id == control.id && this.textId.equals(control.textId);
+                this.id == control.id && this.textId.equals(control.textId) && this.layout.equals(control.layout);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.hashcode, this.id, this.textId, this.clickListener);
+        return Objects.hash(this.hashcode, this.id, this.textId, this.layout, this.clickListener);
     }
 }

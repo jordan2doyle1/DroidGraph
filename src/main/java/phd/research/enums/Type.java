@@ -4,5 +4,5 @@ package phd.research.enums;
  * @author Jordan Doyle
  */
 public enum Type {
-    statement, method, callback, listener, lifecycle, control, dummyMethod
+    statement, method, other, listener, lifecycle, control, dummyMethod
 }
