@@ -159,29 +159,24 @@ public class FrameworkMain {
 
             if (outputUnitGraphs)
                 try {
-                    appAnalysis.outputMethods(outputFormat);
+                    ApplicationAnalysis.outputMethods(outputFormat);
                 } catch (Exception e) {
                     logger.error("Error writing methods to output file: " + e.getMessage());
                 }
 
-            Writer writer = null;
             if (outputCallGraph) {
-                writer = new Writer();
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
                 try {
-                    writer.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
+                    Writer.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
                 } catch (Exception e) {
                     logger.error("Error writing call graph to output file: " + e.getMessage());
                 }
             }
 
             if (outputControlFlowGraph) {
-                if (writer == null)
-                    writer = new Writer();
-
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
                 try {
-                    writer.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
+                    Writer.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
                 } catch (Exception e) {
                     logger.error("Error writing CFG to output file: " + e.getMessage());
                 }

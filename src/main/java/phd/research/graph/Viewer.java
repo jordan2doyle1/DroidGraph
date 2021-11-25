@@ -21,7 +21,6 @@ import java.util.Set;
 public class Viewer {
 
     private final ApplicationAnalysis analysis;
-    private final Filter filter;
 
     private Set<SootClass> allClasses;
     private Set<SootClass> filteredClasses;
@@ -34,58 +33,32 @@ public class Viewer {
 
     public Viewer(ApplicationAnalysis analysis) {
         this.analysis = analysis;
-        this.filter = this.analysis.getFilter();
-    }
-
-    private static void printList(Set<?> list) {
-        int counter = 0;
-        int numberOfPrints = 10;
-        for (Object item : list) {
-            if (counter < numberOfPrints) {
-                if (item instanceof String)
-                    System.out.println(item);
-                else if (item instanceof SootClass)
-                    System.out.println(((SootClass) item).getName());
-                else if (item instanceof Vertex)
-                    System.out.println(((Vertex) item).getLabel());
-                else if (item instanceof SootMethod) {
-                    SootMethod method = (SootMethod) item;
-                    System.out.println(method.getDeclaringClass().getName() + ":" + method.getName());
-                }
-            } else {
-                int remaining = list.size() - numberOfPrints;
-                System.out.println("+ " + remaining + " more!");
-                break;
-            }
-            counter++;
-        }
-        System.out.println();
     }
 
     public Set<SootClass> getAllClasses() {
         if (this.allClasses == null)
-            this.allClasses = retrieveAllClasses();
+            this.allClasses = Viewer.retrieveAllClasses();
 
         return this.allClasses;
     }
 
     public Set<SootClass> getFilteredClasses() {
         if (this.filteredClasses == null)
-            this.filteredClasses = filterClasses();
+            this.filteredClasses = Viewer.filterClasses();
 
         return this.filteredClasses;
     }
 
     public Set<SootMethod> getAllMethods() {
         if (this.allMethods == null)
-            this.allMethods = retrieveAllMethods();
+            this.allMethods = Viewer.retrieveAllMethods();
 
         return this.allMethods;
     }
 
     public Set<SootMethod> getFilteredMethods() {
         if (this.filteredMethods == null)
-            this.filteredMethods = filterMethods();
+            this.filteredMethods = Viewer.filterMethods();
 
         return this.filteredMethods;
     }
@@ -142,13 +115,12 @@ public class Viewer {
     }
 
     public void writeContentsToFile() throws IOException {
-        Writer writer = new Writer();
-        writer.writeContent("classes", getFilteredClasses());
-        writer.writeContent("methods", getFilteredMethods());
-        writer.writeContent("lifecycle", getLifecycleMethods());
-        writer.writeContent("listener", getListenerMethods());
-        writer.writeContent("other", getOtherCallbackMethods());
-        writer.writeContent("possible", getPossibleCallbacksMethods());
+        Writer.writeContent("classes", getFilteredClasses());
+        Writer.writeContent("methods", getFilteredMethods());
+        Writer.writeContent("lifecycle", getLifecycleMethods());
+        Writer.writeContent("listener", getListenerMethods());
+        Writer.writeContent("other", getOtherCallbackMethods());
+        Writer.writeContent("possible", getPossibleCallbacksMethods());
     }
 
     public void printCallbackTable() {
@@ -163,8 +135,8 @@ public class Viewer {
             System.out.println(separator);
 
             for (Control control : this.analysis.getControls()) {
-                Integer interfaceID = control.getId();
-                String textID = control.getTextId();
+                Integer interfaceID = control.getControlResource().getResourceID();
+                String textID = control.getControlResource().getResourceName();
                 SootMethod listener = control.getClickListener();
 
                 if (listener != null) {
@@ -192,27 +164,97 @@ public class Viewer {
         switch (part) {
             case methods:
                 if (filtered)
-                    printList(getFilteredMethods());
+                    Viewer.printList(getFilteredMethods());
                 else
-                    printList(getAllMethods());
+                    Viewer.printList(getAllMethods());
                 break;
             case classes:
                 if (filtered)
-                    printList(getFilteredClasses());
+                    Viewer.printList(getFilteredClasses());
                 else
-                    printList(getAllClasses());
+                    Viewer.printList(getAllClasses());
                 break;
         }
+    }
+
+    private static void printList(Set<?> list) {
+        int counter = 0;
+        int numberOfPrints = 10;
+        for (Object item : list) {
+            if (counter < numberOfPrints) {
+                if (item instanceof String)
+                    System.out.println(item);
+                else if (item instanceof SootClass)
+                    System.out.println(((SootClass) item).getName());
+                else if (item instanceof Vertex)
+                    System.out.println(((Vertex) item).getLabel());
+                else if (item instanceof SootMethod) {
+                    SootMethod method = (SootMethod) item;
+                    System.out.println(method.getDeclaringClass().getName() + ":" + method.getName());
+                }
+            } else {
+                int remaining = list.size() - numberOfPrints;
+                System.out.println("+ " + remaining + " more!");
+                break;
+            }
+            counter++;
+        }
+        System.out.println();
+    }
+
+    private static Set<SootMethod> retrieveAllMethods() {
+        Chain<SootClass> classes = Scene.v().getClasses();
+        Set<SootMethod> allMethods = new HashSet<>();
+
+        for (SootClass sootClass : classes) {
+            List<SootMethod> methods = sootClass.getMethods();
+            allMethods.addAll(methods);
+        }
+
+        return allMethods;
+    }
+
+    private static Set<SootMethod> filterMethods() {
+        Chain<SootClass> classes = Scene.v().getClasses();
+        Set<SootMethod> acceptedMethods = new HashSet<>();
+
+        for (SootClass sootClass : classes) {
+            if (Filter.isValidClass(sootClass)) {
+                List<SootMethod> methods = sootClass.getMethods();
+                for (SootMethod method : methods) {
+                    if (Filter.isValidMethod(method))
+                        acceptedMethods.add(method);
+                }
+            }
+        }
+
+        return acceptedMethods;
+    }
+
+    private static Set<SootClass> retrieveAllClasses() {
+        return new HashSet<>(Scene.v().getClasses());
+    }
+
+    private static Set<SootClass> filterClasses() {
+        Chain<SootClass> allClasses = Scene.v().getClasses();
+        Set<SootClass> filteredClasses = new HashSet<>();
+
+        for (SootClass sootClass : allClasses) {
+            if (Filter.isValidClass(sootClass))
+                filteredClasses.add(sootClass);
+        }
+
+        return filteredClasses;
     }
 
     private Set<SootMethod> filterLifecycleMethods() {
         Set<SootMethod> lifecycleMethods = new HashSet<>();
 
         if (this.filteredMethods == null)
-            this.filteredMethods = filterMethods();
+            this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isLifecycleMethod(method))
+            if (Filter.isLifecycleMethod(method))
                 lifecycleMethods.add(method);
         }
 
@@ -224,10 +266,10 @@ public class Viewer {
         Set<SootMethod> listenerMethods = new HashSet<>();
 
         if (this.filteredMethods == null)
-            this.filteredMethods = filterMethods();
+            this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isListenerMethod(method))
+            if (Filter.isListenerMethod(method))
                 listenerMethods.add(method);
         }
 
@@ -239,10 +281,10 @@ public class Viewer {
         Set<SootMethod> callbackMethods = new HashSet<>();
 
         if (this.filteredMethods == null)
-            this.filteredMethods = filterMethods();
+            this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (this.filter.isOtherCallbackMethod(method))
+            if (Filter.isOtherCallbackMethod(method))
                 callbackMethods.add(method);
         }
 
@@ -254,11 +296,11 @@ public class Viewer {
         Set<SootMethod> callbackMethods = new HashSet<>();
 
         if (this.filteredMethods == null)
-            this.filteredMethods = filterMethods();
+            this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (!this.filter.isLifecycleMethod(method) && !this.filter.isListenerMethod(method) &&
-                    !this.filter.isOtherCallbackMethod(method)) {
+            if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(method) &&
+                    !Filter.isOtherCallbackMethod(method)) {
                 for (Type paramType : method.getParameterTypes()) {
                     if (paramType.toString().equals("android.view.View")) {
                         if ((!method.toString().startsWith("<androidx")))
@@ -270,56 +312,5 @@ public class Viewer {
 
         this.possibleCallbackMethods = callbackMethods;
         return callbackMethods;
-    }
-
-    private Set<SootMethod> retrieveAllMethods() {
-        Chain<SootClass> classes = Scene.v().getClasses();
-        Set<SootMethod> allMethods = new HashSet<>();
-
-        for (SootClass sootClass : classes) {
-            List<SootMethod> methods = sootClass.getMethods();
-            allMethods.addAll(methods);
-        }
-
-        this.allMethods = allMethods;
-        return allMethods;
-    }
-
-    private Set<SootMethod> filterMethods() {
-        Chain<SootClass> classes = Scene.v().getClasses();
-        Set<SootMethod> acceptedMethods = new HashSet<>();
-
-        for (SootClass sootClass : classes) {
-            if (this.filter.isValidClass(sootClass)) {
-                List<SootMethod> methods = sootClass.getMethods();
-                for (SootMethod method : methods) {
-                    if (this.filter.isValidMethod(method))
-                        acceptedMethods.add(method);
-                }
-            }
-        }
-
-        this.filteredMethods = acceptedMethods;
-        return acceptedMethods;
-    }
-
-    private Set<SootClass> retrieveAllClasses() {
-        Set<SootClass> classes = new HashSet<>(Scene.v().getClasses());
-
-        this.allClasses = classes;
-        return classes;
-    }
-
-    private Set<SootClass> filterClasses() {
-        Chain<SootClass> allClasses = Scene.v().getClasses();
-        Set<SootClass> filteredClasses = new HashSet<>();
-
-        for (SootClass sootClass : allClasses) {
-            if (this.filter.isValidClass(sootClass))
-                filteredClasses.add(sootClass);
-        }
-
-        this.filteredClasses = filteredClasses;
-        return filteredClasses;
     }
 }

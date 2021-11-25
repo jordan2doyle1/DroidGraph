@@ -19,9 +19,10 @@ public class Filter {
 
     }
 
-    public boolean isValidClass(SootClass sootClass) {
-        if (SystemClassHandler.v().isClassInSystemPackage(sootClass) || !isValidPackage(sootClass.getPackageName())
-                || sootClass.isJavaLibraryClass() || sootClass.isLibraryClass() || sootClass.isPhantomClass())
+    public static boolean isValidClass(SootClass sootClass) {
+        if (SystemClassHandler.v().isClassInSystemPackage(sootClass) || sootClass.isJavaLibraryClass()
+                || !Filter.isValidPackage(sootClass.getPackageName()) || sootClass.isLibraryClass() ||
+                sootClass.isPhantomClass())
             return false;
 
         for (String blacklistClass : FrameworkMain.getClassBlacklist()) {
@@ -32,16 +33,17 @@ public class Filter {
         return true;
     }
 
-    public boolean isValidMethod(SootMethod method) {
-        return isValidClass(method.getDeclaringClass());
+    public static boolean isValidMethod(SootMethod method) {
+        return Filter.isValidClass(method.getDeclaringClass());
     }
 
-    public boolean isLifecycleMethod(SootMethod method) {
+    public static boolean isLifecycleMethod(SootMethod method) {
         AndroidEntryPointUtils entryPointUtils = new AndroidEntryPointUtils();
         return entryPointUtils.isEntryPointMethod(method);
     }
 
-    public boolean isListenerMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
+    public static boolean isListenerMethod(
+            MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
         SootClass methodClass = getParentClass(method);
 
         if (callbacks != null) {
@@ -56,29 +58,30 @@ public class Filter {
         return false;
     }
 
-    public boolean isListenerMethod(SootMethod method) {
+    public static boolean isListenerMethod(SootMethod method) {
         CollectedCallbacks callbacks = ApplicationAnalysis.getCallbacks();
         if (callbacks != null)
-            return isListenerMethod(callbacks.getCallbackMethods(), method);
+            return Filter.isListenerMethod(callbacks.getCallbackMethods(), method);
 
         return false;
     }
 
     @SuppressWarnings("unused")
-    private boolean isListener(SootMethod method) {
+    private static boolean isListener(SootMethod method) {
         // TODO: Why is one fragment listener method left out?
         // TODO: How does FlowDroid recognise listener methods and can I replicate it here?
         return false;
     }
 
-    public boolean isOtherCallbackMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
-        if (isLifecycleMethod(method))
+    public static boolean isOtherCallbackMethod(
+            MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
+        if (Filter.isLifecycleMethod(method))
             return false;
 
-        if (isListenerMethod(method))
+        if (Filter.isListenerMethod(method))
             return false;
 
-        SootClass methodClass = getParentClass(method);
+        SootClass methodClass = Filter.getParentClass(method);
         for (AndroidCallbackDefinition callbackDefinition : callbacks.get(methodClass)) {
             if (callbackDefinition.getTargetMethod().equals(method))
                 return true;
@@ -87,22 +90,22 @@ public class Filter {
         return false;
     }
 
-    public boolean isOtherCallbackMethod(SootMethod method) {
+    public static boolean isOtherCallbackMethod(SootMethod method) {
         CollectedCallbacks callbacks = ApplicationAnalysis.getCallbacks();
         if (callbacks != null)
-            return isOtherCallbackMethod(callbacks.getCallbackMethods(), method);
+            return Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method);
 
         return false;
     }
 
-    private SootClass getParentClass(SootMethod method) {
+    private static SootClass getParentClass(SootMethod method) {
         if (method.getDeclaringClass().hasOuterClass())
             return method.getDeclaringClass().getOuterClass();
         else
             return method.getDeclaringClass();
     }
 
-    private boolean isValidPackage(String packageName) {
+    private static boolean isValidPackage(String packageName) {
         for (String blacklistPackage : FrameworkMain.getPackageBlacklist()) {
             if (blacklistPackage.startsWith(".")) {
                 if (packageName.contains(blacklistPackage))

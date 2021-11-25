@@ -24,7 +24,7 @@ public class Writer {
         FileUtils.cleanDirectory(new File(directory));
     }
 
-    public void writeGraph(Format format, String name, Graph<Vertex, DefaultEdge> graph) throws Exception {
+    public static void writeGraph(Format format, String name, Graph<Vertex, DefaultEdge> graph) throws Exception {
         String file = getFileName(name);
 
         switch (format) {
@@ -41,7 +41,7 @@ public class Writer {
         }
     }
 
-    public void writeContent(String name, Set<?> list) throws IOException {
+    public static void writeContent(String name, Set<?> list) throws IOException {
         String outputLocation = FrameworkMain.getOutputDirectory() + "CONTENT/";
         BufferedWriter writer = openFile(outputLocation, getFileName(name) + ".txt");
 
@@ -54,7 +54,7 @@ public class Writer {
         }
     }
 
-    private void exportDOT(String file, Graph<Vertex, DefaultEdge> graph) throws Exception {
+    private static void exportDOT(String file, Graph<Vertex, DefaultEdge> graph) throws Exception {
         String outputLocation = FrameworkMain.getOutputDirectory() + "DOT/";
         BufferedWriter writer = openFile(outputLocation, file + ".dot");
 
@@ -70,7 +70,7 @@ public class Writer {
         }
     }
 
-    private void exportJSON(String file, Graph<Vertex, DefaultEdge> graph) throws IOException {
+    private static void exportJSON(String file, Graph<Vertex, DefaultEdge> graph) throws IOException {
         String outputLocation = FrameworkMain.getOutputDirectory() + "JSON/";
         BufferedWriter writer = openFile(outputLocation, file + ".json");
 
@@ -84,7 +84,7 @@ public class Writer {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    private String executeCommand(String command) throws Exception {
+    private static String executeCommand(String command) throws Exception {
         StringBuilder output = new StringBuilder();
         Process process = Runtime.getRuntime().exec(command);
         process.waitFor();
@@ -99,12 +99,12 @@ public class Writer {
         return output.toString();
     }
 
-    private String getFileName(String name) {
+    private static String getFileName(String name) {
         // Windows does not allow filenames with these characters: / \ : * ? " < > |
         return name.replaceAll("[:]", "_");
     }
 
-    private BufferedWriter openFile(String location, String file) throws IOException {
+    private static BufferedWriter openFile(String location, String file) throws IOException {
         File directory = new File(location);
 
         if (!directory.exists()) {

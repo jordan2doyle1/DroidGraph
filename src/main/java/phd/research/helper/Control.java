@@ -1,6 +1,7 @@
 package phd.research.helper;
 
 import soot.SootMethod;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import java.util.Objects;
 
@@ -10,28 +11,23 @@ import java.util.Objects;
 public class Control {
 
     private final int hashcode;
-    private final int id;
-    private final String textId;
-    private final String layout;
+    private final ARSCFileParser.AbstractResource control;
+    private final ARSCFileParser.AbstractResource layout;
     private final SootMethod clickListener;
 
-    public Control(int hashcode, int id, String textId, String layout, SootMethod clickListener) {
+    public Control(int hashcode, ARSCFileParser.AbstractResource control, ARSCFileParser.AbstractResource layout,
+                   SootMethod clickListener) {
         this.hashcode = hashcode;
-        this.id = id;
-        this.textId = textId;
+        this.control = control;
         this.layout = layout;
         this.clickListener = clickListener;
     }
 
-    public int getId() {
-        return this.id;
+    public ARSCFileParser.AbstractResource getControlResource() {
+        return this.control;
     }
 
-    public String getTextId() {
-        return this.textId;
-    }
-
-    public String getLayoutFile() {
+    public ARSCFileParser.AbstractResource getLayoutResource() {
         return this.layout;
     }
 
@@ -49,11 +45,11 @@ public class Control {
 
         Control control = (Control) o;
         return this.hashcode == control.hashcode && Objects.equals(this.clickListener, control.clickListener) &&
-                this.id == control.id && this.textId.equals(control.textId) && this.layout.equals(control.layout);
+                this.control.equals(control.control) && this.layout.equals(control.layout);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.hashcode, this.id, this.textId, this.layout, this.clickListener);
+        return Objects.hash(this.hashcode, this.control, this.layout, this.clickListener);
     }
 }
