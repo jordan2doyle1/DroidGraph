@@ -94,22 +94,22 @@ public class Viewer {
     public void printAppDetails() {
         System.out.println("------------------------------- Analysis Details -------------------------------");
 
-        System.out.println("Base Package Name: " + this.analysis.getBasePackageName());
+        System.out.println("\tBase Package Name: " + this.analysis.getBasePackageName());
         System.out.println();
 
-        System.out.println("Classes: " + getFilteredClasses().size() + " (Total: " + getAllClasses().size() + ")");
-        System.out.println("Entry Points: " + this.analysis.getEntryPointClasses().size());
-        System.out.println("Launch Activities: " + this.analysis.getLaunchActivities().size());
+        System.out.println("\tClasses: " + getFilteredClasses().size() + " (Total: " + getAllClasses().size() + ")");
+        System.out.println("\tEntry Points: " + ApplicationAnalysis.getEntryPointClasses().size());
+        System.out.println("\tLaunch Activities: " + ApplicationAnalysis.getLaunchActivities().size());
         System.out.println();
 
-        System.out.println("Methods: " + getFilteredMethods().size() + " (Total: " + getAllMethods().size() + ")");
-        System.out.println("Lifecycle Methods: " + getLifecycleMethods().size());
-        System.out.println("Listener Methods: " + getListenerMethods().size());
-        System.out.println("Other Callbacks: " + getOtherCallbackMethods().size());
-        System.out.println("Possible Callbacks: " + getPossibleCallbacksMethods().size());
+        System.out.println("\tMethods: " + getFilteredMethods().size() + " (Total: " + getAllMethods().size() + ")");
+        System.out.println("\tLifecycle Methods: " + getLifecycleMethods().size());
+        System.out.println("\tListener Methods: " + getListenerMethods().size());
+        System.out.println("\tOther Callbacks: " + getOtherCallbackMethods().size());
+        System.out.println("\tPossible Callbacks: " + getPossibleCallbacksMethods().size());
         System.out.println();
 
-        System.out.println("Controls: " + this.analysis.getControls().size());
+        System.out.println("\tControls: " + this.analysis.getControls().size());
 
         System.out.println("--------------------------------------------------------------------------------");
     }
@@ -125,26 +125,25 @@ public class Viewer {
 
     public void printCallbackTable() {
         String separator = "--------------------------------------------------------------------------------";
-        String stringFormat = "\t%-15s\t%-30s\t%-30s\t%-30s\n";
+        String stringFormat = "\t%-15s\t%-35s\t%-15s\t%-15s\n";
 
         System.out.println("----------------------------- Control Callback Map -----------------------------");
         if (this.analysis.getControls().isEmpty())
             System.out.println("Control Callback Map is Empty!");
         else {
-            System.out.printf((stringFormat) + "%n", "WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD");
+            System.out.printf((stringFormat), "WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD");
             System.out.println(separator);
 
             for (Control control : this.analysis.getControls()) {
-                Integer interfaceID = control.getControlResource().getResourceID();
-                String textID = control.getControlResource().getResourceName();
                 SootMethod listener = control.getClickListener();
 
-                if (listener != null) {
-                    System.out.printf((stringFormat) + "%n", interfaceID, textID,
+                if (listener != null)
+                    System.out.printf((stringFormat), control.getControlResource().getResourceID(),
+                            control.getControlResource().getResourceName(),
                             listener.getDeclaringClass().getShortName(), listener.getName());
-                } else {
-                    System.out.printf((stringFormat) + "%n", interfaceID, null, null, null);
-                }
+                else
+                    System.out.printf((stringFormat), control.getControlResource().getResourceID(),
+                            control.getControlResource().getResourceName(), null, null);
             }
         }
         System.out.println(separator);

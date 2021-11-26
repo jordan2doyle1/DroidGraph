@@ -78,6 +78,40 @@ public class ApplicationAnalysis {
         return callbacks;
     }
 
+    public static Set<SootClass> getEntryPointClasses() {
+        if (manifest == null)
+            ApplicationAnalysis.getManifest();
+
+        Set<SootClass> entryPoints = new HashSet<>();
+
+        for (String entryPoint : manifest.getEntryPointClasses()) {
+            //SootClass entryPointClass = getClass(entryPoint);
+            SootClass entryPointClass = Scene.v().getSootClass(entryPoint);
+            if (entryPointClass != null)
+                entryPoints.add(entryPointClass);
+        }
+
+        return entryPoints;
+    }
+
+    public static Set<SootClass> getLaunchActivities() {
+        if (manifest == null)
+            ApplicationAnalysis.getManifest();
+
+        Set<SootClass> launchActivities = new HashSet<>();
+        for (AXmlNode activity : manifest.getLaunchableActivityNodes()) {
+            if (activity.hasAttribute("name")) {
+                // WARNING: Excluding valid launch activities if the developer doesn't provide the name attribute.
+                String activityName = activity.getAttribute("name").getValue().toString();
+                SootClass launchActivity = Scene.v().getSootClass(activityName);
+                if (launchActivity != null)
+                    launchActivities.add(launchActivity);
+            }
+        }
+
+        return launchActivities;
+    }
+
     public void runAnalysis() {
         logger.info("Running graph generation...");
         System.out.println("Running graph generation...");
@@ -98,15 +132,13 @@ public class ApplicationAnalysis {
         return this.controls;
     }
 
-    @SuppressWarnings("unused")
     public SetupApplication getApplication() {
         return this.application;
     }
 
     public String getBasePackageName() {
-        if (manifest == null) {
+        if (manifest == null)
             ApplicationAnalysis.getManifest();
-        }
 
         return manifest.getPackageName();
     }
@@ -125,46 +157,11 @@ public class ApplicationAnalysis {
         return this.controlFlowGraph;
     }
 
-    public Set<SootClass> getEntryPointClasses() {
-        if (manifest == null)
-            ApplicationAnalysis.getManifest();
-
-        Set<SootClass> entryPoints = new HashSet<>();
-
-        for (String entryPoint : manifest.getEntryPointClasses()) {
-            SootClass entryPointClass = getClass(entryPoint);
-            if (entryPointClass != null)
-                entryPoints.add(entryPointClass);
-        }
-
-        return entryPoints;
-    }
-
-    public Set<SootClass> getLaunchActivities() {
-        if (manifest == null)
-            ApplicationAnalysis.getManifest();
-
-        Set<SootClass> launchActivities = new HashSet<>();
-
-        for (AXmlNode activity : manifest.getLaunchableActivityNodes()) {
-            if (activity.hasAttribute("name")) {
-                // Could be excluding valid activities if the app developer has not provided the name attribute.
-                String activityName = activity.getAttribute("name").getValue().toString();
-                SootClass launchActivity = getClass(activityName);
-                if (launchActivity != null)
-                    launchActivities.add(launchActivity);
-            }
-        }
-
-        return launchActivities;
-    }
-
     private static ARSCFileParser getResources() {
         if (resources != null)
             return resources;
 
         resources = new ARSCFileParser();
-
         try {
             resources.parse(FrameworkMain.getApk());
         } catch (IOException e) {
@@ -255,15 +252,6 @@ public class ApplicationAnalysis {
         patcher.patchLibraries();
     }
 
-    private static SootClass getClass(String search) {
-        for (SootClass sootClass : Scene.v().getClasses()) {
-            if (search.equals(sootClass.getName()))
-                return sootClass;
-        }
-
-        return null;
-    }
-
     protected static void outputMethods(Format format) throws Exception {
         for (SootClass sootClass : Scene.v().getClasses()) {
             if (Filter.isValidClass(sootClass)) {
@@ -284,13 +272,13 @@ public class ApplicationAnalysis {
 
     private static String getLabel(SootMethod method) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("<").append(removePackageName(method.getDeclaringClass().getName())).append(": ")
-                .append(removePackageName(method.getReturnType().toString())).append(" ")
-                .append(removePackageName(method.getName())).append("(");
+        stringBuilder.append("<").append(ApplicationAnalysis.removePackageName(method.getDeclaringClass().getName()))
+                .append(": ").append(ApplicationAnalysis.removePackageName(method.getReturnType().toString()))
+                .append(" ").append(ApplicationAnalysis.removePackageName(method.getName())).append("(");
 
         List<soot.Type> parameters = method.getParameterTypes();
         for (int i = 0; i < method.getParameterCount(); i++) {
-            stringBuilder.append(removePackageName(parameters.get(i).toString()));
+            stringBuilder.append(ApplicationAnalysis.removePackageName(parameters.get(i).toString()));
             if(i != (method.getParameterCount() - 1) )
                 stringBuilder.append(",");
         }
@@ -356,19 +344,21 @@ public class ApplicationAnalysis {
     }
 
     private static ARSCFileParser.AbstractResource getResourceById(int resourceId) {
-        if (resources == null) {
+        if (resources == null)
             resources = getResources();
-        }
 
         ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
-        List<ARSCFileParser.AbstractResource> resources = resType.getAllResources(resourceId);
+        if (resType == null)
+            return null;
 
-        if (resources.size() > 1)
+        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
+        if (foundResources.isEmpty())
+            return null;
+
+        if (foundResources.size() > 1)
             logger.error("Error: Multiple resources with ID " + resourceId + ", returning the first.");
-        else if (resources.isEmpty())
-            logger.error("Error: Found no resource with ID" + resourceId + ".");
 
-        return resources.get(0);
+        return foundResources.get(0);
     }
 
     private void runFlowDroid() {
@@ -386,6 +376,8 @@ public class ApplicationAnalysis {
         System.out.println("FlowDroid took " + (endTime - startTime) / 1000 + " second(s).");
     }
 
+    // Refactor from here...
+
     private Set<Control> getUIControls() {
         Set<Control> uiControls = new HashSet<>();
 
@@ -393,22 +385,33 @@ public class ApplicationAnalysis {
             layoutParser = ApplicationAnalysis.getLayoutFileParser();
 
         assert layoutParser != null;
-        for (Pair<String, AndroidLayoutControl> controlPair : layoutParser.getUserControls()) {
-            AndroidLayoutControl control = controlPair.getO2();
-            if (control.getID() != -1) {
-                // TODO: Getting a null prointer exception, why??
-                ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName(
-                        "layout", ApplicationAnalysis.getResourceName(controlPair.getO1()));
-                ARSCFileParser.AbstractResource controlResource = ApplicationAnalysis.getResourceById(
-                        controlPair.getO2().getID());
-                if (control.getClickListener() != null) {
-                    SootMethod clickListener = searchCallbackMethods(control.getClickListener());
-                    if (clickListener != null) {
-                        uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
+        for (String layoutFile : layoutParser.getUserControls().keySet()) {
+            ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName(
+                    "layout", ApplicationAnalysis.getResourceName(layoutFile));
+
+            for (AndroidLayoutControl control : layoutParser.getUserControls().get(layoutFile)) {
+                if (control.getID() != -1) {
+                    ARSCFileParser.AbstractResource controlResource = ApplicationAnalysis.getResourceById(
+                            control.getID());
+
+                    if (controlResource == null) {
+                        logger.error("Error: No resource found with ID " + control.getID() + ".");
+                        continue;
                     }
-                } else {
-                    // TODO: Getting null Pointer exception below. multiple of the same control added to set?
-                    uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, null));
+
+                    if (control.getClickListener() != null) {
+                        SootMethod clickListener = searchCallbackMethods(control.getClickListener());
+                        uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
+
+                        if (clickListener == null)
+                            logger.error("Error: Couldn't find click listener method: " + control.getClickListener());
+                    } else {
+                        SootMethod clickListener = findCallbackMethod(layoutResource, control.getID());
+                        uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
+
+                        if (clickListener == null)
+                            logger.error("Error: Couldn't find click listener method with ID: " + control.getID());
+                    }
                 }
             }
         }
@@ -416,8 +419,37 @@ public class ApplicationAnalysis {
         return uiControls;
     }
 
+    private SootMethod findCallbackMethod(ARSCFileParser.AbstractResource layout, int id) {
+        for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
+            SootMethod onCreateMethod = entryClass.getMethodByName("onCreate");
+
+            if (onCreateMethod != null && onCreateMethod.hasActiveBody()) {
+                PatchingChain<Unit> units = onCreateMethod.getActiveBody().getUnits();
+
+                for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
+                    Unit unit = iterator.next();
+
+                    unit.apply(new AbstractStmtSwitch() {
+                        @Override
+                        public void caseInvokeStmt(InvokeStmt stmt) {
+                            super.caseInvokeStmt(stmt);
+
+                            InvokeExpr invokeExpr = stmt.getInvokeExpr();
+                            if (invokeExpr.getMethod().getName().equals("setContentView")) {
+                                if (invokeExpr.getArg(0).toString().equals(String.valueOf(layout.getResourceID()))) {
+                                    System.out.println("Class:" + entryClass + " - Layout:" + layout.getResourceName());
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        return null;
+    }
+
     @SuppressWarnings("unused")
-    private void temp() {
+    private void tempName0() {
         if (layoutParser == null)
             layoutParser = getLayoutFileParser();
 
@@ -439,19 +471,6 @@ public class ApplicationAnalysis {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private void tempName0() {
-        if (resources == null) {
-            getResources();
-        }
-
-        for (ARSCFileParser.ResPackage resPackage : resources.getPackages()) {
-            for (ARSCFileParser.ResType type : resPackage.getDeclaredTypes()) {
-                System.out.println("Type: " + type);
             }
         }
     }
@@ -539,8 +558,9 @@ public class ApplicationAnalysis {
             this.controls = getUIControls();
 
         for (Control control : this.controls) {
-            if (control.getClickListener().equals(callback))
-                return control;
+            if (control.getClickListener() != null)
+                if (control.getClickListener().equals(callback))
+                    return control;
         }
 
         return null;
@@ -552,8 +572,9 @@ public class ApplicationAnalysis {
             this.controls = getUIControls();
 
         for (Control control : this.controls) {
-            if (control.getControlResource().getResourceName().equals(resourceName))
-                return control;
+            if (control.getControlResource() != null)
+                if (control.getControlResource().getResourceName().equals(resourceName))
+                    return control;
         }
 
         return null;
