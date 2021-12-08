@@ -377,7 +377,12 @@ public class ApplicationAnalysis {
 
     private SootClass findLayoutClass(int layoutId) {
         for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
-            SootMethod onCreateMethod = entryClass.getMethodByName("onCreate");
+            SootMethod onCreateMethod = null;
+            try {
+                onCreateMethod = entryClass.getMethodByName("onCreate");
+            } catch (RuntimeException e) {
+                logger.error("No onCreate Method Found: " + e);
+            }
 
             if (onCreateMethod != null && onCreateMethod.hasActiveBody()) {
                 PatchingChain<Unit> units = onCreateMethod.getActiveBody().getUnits();
