@@ -64,6 +64,7 @@ public class Status {
         foundLayout = false;
         foundClass = false;
         foundMethod = false;
+        foundView = false;
         clazz = null;
         method = null;
     }

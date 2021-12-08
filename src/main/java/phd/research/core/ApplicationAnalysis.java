@@ -416,13 +416,10 @@ public class ApplicationAnalysis {
                 PatchingChain<Unit> units = method.getActiveBody().getUnits();
 
                 //final Status test = new Status();
-
-                // Don't use work arounds, instead create our own classes that inherit from FlowDroid.
+                // Don't use workarounds, instead create our own classes that inherit from FlowDroid.
 
                 for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext();) {
                     Unit unit = iterator.next();
-
-
 
                     unit.apply(new AbstractStmtSwitch() {
                         @Override
@@ -433,7 +430,6 @@ public class ApplicationAnalysis {
                                 InvokeExpr invokeExpr = stmt.getInvokeExpr();
                                 if (invokeExpr.getMethod().getName().equals("<init>")) {
                                     Status.foundClass(true);
-                                    //test.foun = true;
                                     Status.setFoundClass(invokeExpr.getMethod().getDeclaringClass());
                                 }
                             }
@@ -454,16 +450,20 @@ public class ApplicationAnalysis {
                         }
                     });
 
-                    if (Status.isClassFound()) {
+                    if (Status.isViewFound() && Status.isClassFound()) {
                         if (Status.getFoundClass().getMethodCount() > 2)
                             logger.warn("Warning: Class contains multiple callback methods. Using the first method.");
 
                         for (SootMethod classMethod : Status.getFoundClass().getMethods()) {
-                            if(!classMethod.getName().equals("<init>"))
+                            if(!classMethod.getName().equals("<init>")) {
+                                Status.reset();
                                 return classMethod;
+                            }
                         }
                     }
                 }
+
+                Status.reset();
             }
         }
 
