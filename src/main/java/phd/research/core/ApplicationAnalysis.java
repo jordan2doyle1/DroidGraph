@@ -377,41 +377,54 @@ public class ApplicationAnalysis {
 
     private SootClass findLayoutClass(int layoutId) {
         for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
-            SootMethod onCreateMethod = null;
-            try {
-                onCreateMethod = entryClass.getMethodByName("onCreate");
-            } catch (RuntimeException e) {
-                logger.error("No onCreate Method Found: " + e);
-            }
-
-            if (onCreateMethod != null && onCreateMethod.hasActiveBody()) {
-                PatchingChain<Unit> units = onCreateMethod.getActiveBody().getUnits();
-
-                for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
-                    Unit unit = iterator.next();
-
-                    unit.apply(new AbstractStmtSwitch() {
-                        @Override
-                        public void caseInvokeStmt(InvokeStmt stmt) {
-                            super.caseInvokeStmt(stmt);
-
-                            InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                            if (invokeExpr.getMethod().getName().equals("setContentView")) {
-                                if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId)))
-                                    Status.foundClass(true);
-                            }
-                        }
-                    });
-
-                    if (Status.isClassFound()) {
-                        Status.reset();
-                        return entryClass;
-                    }
+            SootClass entryClass1 = getSootClass(layoutId, entryClass);
+            if (entryClass1 != null) {
+                return entryClass1;
+            } else if (entryClass.hasSuperclass()) { //TODO: also check that child classe's onCreate() calls super.onCreate()?
+                SootClass entryClass2 = getSootClass(layoutId, entryClass.getSuperclassUnsafe());
+                if (entryClass2 != null) {
+                    return entryClass;
                 }
             }
         }
 
         Status.reset();
+        return null;
+    }
+
+    private SootClass getSootClass(int layoutId, SootClass entryClass) {
+        SootMethod onCreateMethod = null;
+        try {
+            onCreateMethod = entryClass.getMethodByName("onCreate");
+        } catch (RuntimeException e) {
+            logger.error("No onCreate Method Found: " + e);
+        }
+
+        if (onCreateMethod != null && onCreateMethod.hasActiveBody()) {
+            PatchingChain<Unit> units = onCreateMethod.getActiveBody().getUnits();
+
+            for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
+                Unit unit = iterator.next();
+
+                unit.apply(new AbstractStmtSwitch() {
+                    @Override
+                    public void caseInvokeStmt(InvokeStmt stmt) {
+                        super.caseInvokeStmt(stmt);
+
+                        InvokeExpr invokeExpr = stmt.getInvokeExpr();
+                        if (invokeExpr.getMethod().getName().equals("setContentView")) {
+                            if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId)))
+                                Status.foundClass(true);
+                        }
+                    }
+                });
+
+                if (Status.isClassFound()) {
+                    Status.reset();
+                    return entryClass;
+                }
+            }
+        }
         return null;
     }
 
