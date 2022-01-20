@@ -377,14 +377,10 @@ public class ApplicationAnalysis {
 
     private SootClass findLayoutClass(int layoutId) {
         for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
-            SootClass entryClass1 = getSootClass(layoutId, entryClass);
-            if (entryClass1 != null) {
-                return entryClass1;
-            } else if (entryClass.hasSuperclass()) { //TODO: also check that child classe's onCreate() calls super.onCreate()?
-                SootClass entryClass2 = getSootClass(layoutId, entryClass.getSuperclassUnsafe());
-                if (entryClass2 != null) {
-                    return entryClass;
-                }
+            SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass);
+
+            if (layoutClass != null) {
+                return layoutClass;
             }
         }
 
@@ -392,7 +388,17 @@ public class ApplicationAnalysis {
         return null;
     }
 
-    private SootClass getSootClass(int layoutId, SootClass entryClass) {
+    private SootClass findLayoutClassRecursively(int layoutId, SootClass entryClass) {
+        SootClass layoutClass = findSetContentView(layoutId, entryClass);
+
+        if (layoutClass == null && entryClass.hasSuperclass()) {
+            layoutClass = findLayoutClassRecursively(layoutId, entryClass.getSuperclassUnsafe());
+        }
+
+        return layoutClass;
+    }
+
+    private SootClass findSetContentView(int layoutId, SootClass entryClass) {
         SootMethod onCreateMethod = null;
         try {
             onCreateMethod = entryClass.getMethodByName("onCreate");
@@ -425,6 +431,7 @@ public class ApplicationAnalysis {
                 }
             }
         }
+
         return null;
     }
 
