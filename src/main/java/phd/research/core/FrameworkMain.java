@@ -115,11 +115,16 @@ public class FrameworkMain {
             outputContent = cmd.hasOption("cf");
 
             outputDirectory = (cmd.hasOption("od") ? cmd.getOptionValue("od") :
-                    System.getProperty("user.dir") + "/sootOutput/");
+                    System.getProperty("user.dir") + "/output/");
             if (!directoryExists(outputDirectory)) {
-                outputDirectory = System.getProperty("user.dir") + "/sootOutput/";
-                logger.warn("Warning: Output directory does not exist, using default directory instead.");
-                System.err.println("Warning: Output directory does not exist, using default directory instead.");
+                outputDirectory = System.getProperty("user.dir") + "/output/";
+                if (createDirectory(outputDirectory)) {
+                    logger.warn("Warning: Output directory does not exist, using default directory instead.");
+                    System.err.println("Warning: Output directory does not exist, using default directory instead.");
+                } else {
+                    logger.error("Error: Output directory does not exist.");
+                    System.err.println("Error: Output directory does not exist.");
+                }
             }
             String outputFormat = (cmd.hasOption("of") ? cmd.getOptionValue("of") : "JSON");
             if (!isRecognisedFormat(outputFormat)) {
@@ -257,6 +262,11 @@ public class FrameworkMain {
     private static boolean directoryExists(String directoryName) {
         File directory = new File(directoryName);
         return directory.isDirectory();
+    }
+
+    private static boolean createDirectory(String directoryName) {
+        File directory = new File(directoryName);
+        return directory.mkdir();
     }
 
     private static boolean fileExists(String fileName) {
