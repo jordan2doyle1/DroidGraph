@@ -119,8 +119,10 @@ public class FrameworkMain {
             if (!directoryExists(outputDirectory)) {
                 outputDirectory = System.getProperty("user.dir") + "/output/";
                 if (createDirectory(outputDirectory)) {
-                    logger.warn("Warning: Output directory does not exist, using default directory instead.");
-                    System.err.println("Warning: Output directory does not exist, using default directory instead.");
+                    if (cmd.hasOption("od")) {
+                        logger.warn("Warning: Output directory doesn't exist, using default directory instead.");
+                        System.err.println("Warning: Output directory doesn't exist, using default directory instead.");
+                    }
                 } else {
                     logger.error("Error: Output directory does not exist.");
                     System.err.println("Error: Output directory does not exist.");
