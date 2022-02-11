@@ -208,6 +208,7 @@ public class FrameworkMain {
                 viewer = new Viewer(appAnalysis);
 
             viewer.printAppDetails();
+            viewer.printUnassignedCallbacks();
             viewer.printCallbackTable();
             viewer.printCallGraphDetails();
             viewer.printCFGDetails();

@@ -123,6 +123,40 @@ public class Viewer {
         Writer.writeContent("possible", getPossibleCallbacksMethods());
     }
 
+    public void printUnassignedCallbacks() {
+        String separator = "--------------------------------------------------------------------------------";
+        String stringFormat = "\t%-35s\t%-20s\t%-10s\n";
+
+        System.out.println("----------------------------- Unassigned Callbacks -----------------------------");
+        System.out.printf((stringFormat), "LISTENER CLASS", "LISTENER METHOD", "POSSIBLE");
+        System.out.println(separator);
+
+        for (SootMethod method : this.getListenerMethods()) {
+            if (!findCallbackControl(method)) {
+                System.out.printf((stringFormat), method.getDeclaringClass().getShortName(), method.getName(), false);
+            }
+        }
+
+        for (SootMethod method : this.getPossibleCallbacksMethods()) {
+            if (!findCallbackControl(method)) {
+                System.out.printf((stringFormat), method.getDeclaringClass().getShortName(), method.getName(), true);
+            }
+        }
+
+        System.out.println(separator);
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean findCallbackControl(SootMethod method) {
+        for (Control control : this.analysis.getControls()) {
+            SootMethod controlClickListener = control.getClickListener();
+            if (controlClickListener != null && controlClickListener.equals(method))
+                return true;
+        }
+
+        return false;
+    }
+
     public void printCallbackTable() {
         String separator = "--------------------------------------------------------------------------------";
         String stringFormat = "\t%-15s\t%-35s\t%-15s\t%-15s\n";
