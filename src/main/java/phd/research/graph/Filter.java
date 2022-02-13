@@ -4,6 +4,7 @@ import phd.research.core.ApplicationAnalysis;
 import phd.research.core.FrameworkMain;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Type;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.infoflow.android.entryPointCreators.AndroidEntryPointUtils;
@@ -66,10 +67,17 @@ public class Filter {
         return false;
     }
 
-    @SuppressWarnings("unused")
-    private static boolean isListener(SootMethod method) {
-        // TODO: Why is one fragment listener method left out?
-        // TODO: How does FlowDroid recognise listener methods and can I replicate it here?
+    public static boolean isPossibleListenerMethod(SootMethod method) {
+        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(method) &&
+                !Filter.isOtherCallbackMethod(method)) {
+            for (Type paramType : method.getParameterTypes()) {
+                if (paramType.toString().equals("android.view.View")) {
+                    if ((!method.toString().startsWith("<androidx")))
+                        return true;
+                }
+            }
+        }
+
         return false;
     }
 

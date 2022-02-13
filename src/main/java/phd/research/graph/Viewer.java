@@ -7,7 +7,6 @@ import phd.research.jGraph.Vertex;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
-import soot.Type;
 import soot.util.Chain;
 
 import java.io.IOException;
@@ -332,15 +331,8 @@ public class Viewer {
             this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(method) &&
-                    !Filter.isOtherCallbackMethod(method)) {
-                for (Type paramType : method.getParameterTypes()) {
-                    if (paramType.toString().equals("android.view.View")) {
-                        if ((!method.toString().startsWith("<androidx")))
-                            callbackMethods.add(method);
-                    }
-                }
-            }
+            if (Filter.isPossibleListenerMethod(method))
+                callbackMethods.add(method);
         }
 
         this.possibleCallbackMethods = callbackMethods;
