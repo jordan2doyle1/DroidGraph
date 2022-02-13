@@ -34,6 +34,15 @@ public class Filter {
         return true;
     }
 
+    public static boolean isEntryPointClass(SootClass sootClass) {
+        for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
+            if (entryClass.equals(sootClass))
+                return true;
+        }
+
+        return false;
+    }
+
     public static boolean isValidMethod(SootMethod method) {
         return Filter.isValidClass(method.getDeclaringClass());
     }
