@@ -653,6 +653,72 @@ public class ApplicationAnalysis {
         return null;
     }
 
+//    private Set<Control> getUIControls() {
+//        if (layoutParser == null)
+//            layoutParser = ApplicationAnalysis.getLayoutFileParser();
+//
+//        Set<Control> uiControls = new HashSet<>();
+//        MultiMap<String, AndroidLayoutControl> userControls;
+//        if (layoutParser != null)
+//            userControls = layoutParser.getUserControls();
+//        else {
+//            logger.error("Error: Problem getting Layout File Parser. Can't get UI Controls!");
+//            return uiControls;
+//        }
+//
+//        for (String layoutFile : userControls.keySet()) {
+//            ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName("layout",
+//                    ApplicationAnalysis.getResourceName(layoutFile));
+//
+//            for (AndroidLayoutControl control : userControls.get(layoutFile)) {
+//                if (control.getID() == -1)
+//                    continue;
+//
+//                ARSCFileParser.AbstractResource controlResource = ApplicationAnalysis.getResourceById(control.getID());
+//                if (controlResource == null) {
+//                    logger.error("Error: No resource found with ID " + control.getID() + ".");
+//                    continue;
+//                }
+//
+//                SootClass callbackClass = findLayoutClass(layoutResource.getResourceID());
+//                if (callbackClass == null) {
+//                    logger.error("Error: No class found for layout resource: " + layoutResource.getResourceID());
+//                    continue;
+//                }
+//
+//                SootMethod clickListener;
+//                if (control.getClickListener() != null)
+//                    clickListener = searchForCallbackMethod(callbackClass, control.getClickListener());
+//                else {
+//                    if ((clickListener = findCallbackMethod(callbackClass, control.getID())) == null) {
+//                        if ((clickListener = findCallbackMethodInEntryClass(control.getID())) == null)
+//                            clickListener = findCallbackMethodAnywhere(control.getID());
+//                    }
+//                }
+//
+//                if (clickListener == null)
+//                    logger.error("Error: Couldn't find click listener method with ID: " + control.getID());
+//
+//                uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
+//            }
+//        }
+//
+//        return uiControls;
+//    }
+
+    private Vertex getInterfaceControl(Vertex vertex) {
+        Control control = this.getControl(vertex.getSootMethod());
+        if (control != null)
+            return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()),
+                    Type.control, vertex.getSootMethod());
+        else
+            logger.error("No control for " + vertex.getLabel());
+
+        return null;
+    }
+
+    // TODO: Refactor from here...
+
     private Set<Control> getUIControls() {
         if (layoutParser == null)
             layoutParser = ApplicationAnalysis.getLayoutFileParser();
@@ -663,6 +729,15 @@ public class ApplicationAnalysis {
             userControls = layoutParser.getUserControls();
         else {
             logger.error("Error: Problem getting Layout File Parser. Can't get UI Controls!");
+            return uiControls;
+        }
+
+        FrontMatter frontMatter;
+        try {
+            frontMatter = new FrontMatter();
+        } catch (IOException e) {
+            logger.error("Error: Problem reading Front Matter output file!" + e);
+            System.err.println("Error: Problem reading Front Matter output file!" + e);
             return uiControls;
         }
 
@@ -680,21 +755,19 @@ public class ApplicationAnalysis {
                     continue;
                 }
 
-                SootClass callbackClass = findLayoutClass(layoutResource.getResourceID());
-                if (callbackClass == null) {
-                    logger.error("Error: No class found for layout resource: " + layoutResource.getResourceID());
-                    continue;
+                SootMethod clickListener = null;
+                try {
+                    if (frontMatter.containsControl(control.getID()))
+                        clickListener = frontMatter.getClickListener(control.getID());
+                    else {
+                        logger.warn("WARN: FrontMatter output did not contain control ID " + control.getID());
+                    }
+                } catch(IOException e) {
+                    logger.error("Error: Problem searching FrontMatter output." + e.getMessage());
+                    System.err.println("Error: Problem searching FrontMatter output." + e.getMessage());
+                    return uiControls;
                 }
 
-                SootMethod clickListener;
-                if (control.getClickListener() != null)
-                    clickListener = searchForCallbackMethod(callbackClass, control.getClickListener());
-                else {
-                    if ((clickListener = findCallbackMethod(callbackClass, control.getID())) == null) {
-                        if ((clickListener = findCallbackMethodInEntryClass(control.getID())) == null)
-                            clickListener = findCallbackMethodAnywhere(control.getID());
-                    }
-                }
 
                 if (clickListener == null)
                     logger.error("Error: Couldn't find click listener method with ID: " + control.getID());
@@ -706,20 +779,7 @@ public class ApplicationAnalysis {
         return uiControls;
     }
 
-    private Vertex getInterfaceControl(Vertex vertex) {
-        Control control = this.getControl(vertex.getSootMethod());
-        if (control != null)
-            return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()),
-                    Type.control, vertex.getSootMethod());
-        else
-            logger.error("No control for " + vertex.getLabel());
-
-        return null;
-    }
-
-    // TODO: Refactor from here...
     // TODO: IGNORE EVERYTHING BELOW: A PROBLEM FOR ANOTHER DAY!
-
     private Set<SootMethod> checkGraph(Graph<Vertex, DefaultEdge> graph) {
         // TODO: Verify graph is complete and correct (all methods present?, all vertices have input edges?, etc.)
         // TODO: Print to the console if a problem or anomaly is found.
