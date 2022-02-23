@@ -4,6 +4,7 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.core.FrameworkMain;
+import phd.research.graph.Writer;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -22,6 +23,7 @@ public class Main {
 
     private static String fmOutput1;
     private static String fmOutput2;
+    private static String outputDirectory;
 
     public static void main(String[] args) {
         LocalDateTime startDate = LocalDateTime.now();
@@ -34,6 +36,8 @@ public class Main {
                 .desc("Output file 1 from Front Matter Analysis of an APK.").numberOfArgs(1).argName("FILE").build());
         options.addOption(Option.builder("fmo2").longOpt("Front Matter Output 2").required().hasArg()
                 .desc("Output file 2 from Front Matter Analysis of an APK.").numberOfArgs(1).argName("FILE").build());
+        options.addOption(Option.builder("od").longOpt("output-directory").desc("Directory for output files.")
+                .hasArg().numberOfArgs(1).argName("DIRECTORY").build());
 
         CommandLine cmd = null;
         try {
@@ -67,11 +71,35 @@ public class Main {
                 System.err.println("Error: Front Matter output file does not exist (" + fmOutput2 + ").");
                 System.exit(10);
             }
+
+            outputDirectory = (cmd.hasOption("od") ? cmd.getOptionValue("od") :
+                    System.getProperty("user.dir") + "/output/");
+            if (!directoryExists(outputDirectory)) {
+                outputDirectory = System.getProperty("user.dir") + "/output/";
+                if (createDirectory(outputDirectory)) {
+                    if (cmd.hasOption("od")) {
+                        logger.warn("Warning: Output directory doesn't exist, using default directory instead.");
+                        System.err.println("Warning: Output directory doesn't exist, using default directory instead.");
+                    }
+                } else {
+                    logger.error("Error: Output directory does not exist.");
+                    System.err.println("Error: Output directory does not exist.");
+                }
+            }
+        }
+
+        try {
+            Writer.cleanDirectory(outputDirectory);
+        } catch (IOException e) {
+            logger.error("Error cleaning output directory: " + e.getMessage());
         }
 
         try {
             Compare fmCompare = new Compare(readJSONOutput(fmOutput1), readJSONOutput(fmOutput2));
             fmCompare.findDiff();
+            fmCompare.writeDiffToFile(
+                    "fmDiff:" + new File(fmOutput1).getName() + "->" + new File(fmOutput2).getName());
+            System.out.println(fmCompare.getDiffJsonString());
         } catch (IOException e) {
             logger.error("Error: Problem reading output files." + e);
             System.err.println("Error: Problem reading output files." + e);
@@ -83,6 +111,10 @@ public class Main {
         Duration duration = Duration.between(startDate, endDate);
         logger.info("Execution time: " + duration.getSeconds() + " second(s).");
         System.out.println("Execution time: " + duration.getSeconds() + " second(s).");
+    }
+
+    public static String getOutputDirectory() {
+        return outputDirectory;
     }
 
     private static boolean checkForHelp(String[] args) {
@@ -104,12 +136,15 @@ public class Main {
         return false;
     }
 
-    public static String getFmOutput1() {
-        return fmOutput1;
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean directoryExists(String directoryName) {
+        File directory = new File(directoryName);
+        return directory.isDirectory();
     }
 
-    public static String getFmOutput2() {
-        return fmOutput2;
+    private static boolean createDirectory(String directoryName) {
+        File directory = new File(directoryName);
+        return directory.mkdir();
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

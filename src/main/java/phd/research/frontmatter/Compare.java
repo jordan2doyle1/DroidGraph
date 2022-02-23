@@ -2,8 +2,7 @@ package phd.research.frontmatter;
 
 import javax.json.*;
 import javax.json.stream.JsonGenerator;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.util.Collections;
 import java.util.Map;
 
@@ -11,6 +10,7 @@ public class Compare {
 
     JsonObject obj1;
     JsonObject obj2;
+    JsonPatch diff;
 
     public Compare(JsonObject obj1, JsonObject obj2) {
         this.obj1 = obj1;
@@ -18,8 +18,21 @@ public class Compare {
     }
 
     public void findDiff() {
-        JsonPatch diff = Json.createDiff(obj1, obj2);
-        System.out.println(format(diff.toJsonArray()) + "\n");
+        this.diff = findDifferences(this.obj1, this.obj2);
+    }
+
+    public String getDiffJsonString() {
+        return format(this.diff.toJsonArray());
+    }
+
+    public void writeDiffToFile(String fileName) throws FileNotFoundException {
+        OutputStream outputStream = new FileOutputStream(Main.getOutputDirectory() + fileName);
+        JsonWriter jsonWriter = Json.createWriter(outputStream);
+        jsonWriter.write(diff.toJsonArray());
+    }
+
+    public static JsonPatch findDifferences(JsonObject obj1, JsonObject obj2) {
+        return Json.createDiff(obj1, obj2);
     }
 
     public static String format(JsonValue json) {
