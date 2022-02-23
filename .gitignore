@@ -5,3 +5,4 @@ output/
 target/
 console_output.txt
 sootOutput/
+FrontMatterOutput.json
