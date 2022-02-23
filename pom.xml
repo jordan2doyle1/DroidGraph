@@ -81,6 +81,18 @@
             <artifactId>json</artifactId>
             <version>20210307</version>
         </dependency>
+        <!-- Java API for JSON Processing (API) -->
+        <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+            <version>1.1.2</version>
+        </dependency>
+        <!-- Java API for JSON Processing (implementation) -->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>1.1.2</version>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
