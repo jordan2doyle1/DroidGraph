@@ -21,7 +21,7 @@ public class FrontMatter {
         this.output = readJSONOutput();
     }
 
-    public boolean containsControl(int id) throws IOException {
+    public boolean containsControl(String className, int id) throws IOException {
         if (this.output == null) {
             this.output = readJSONOutput();
         }
@@ -29,12 +29,14 @@ public class FrontMatter {
         JSONArray activities = this.output.getJSONArray("activities");
         for (int i = 0; i < activities.length(); i++) {
             JSONObject activity = activities.getJSONObject(i);
-            JSONArray layouts = activity.getJSONArray("layouts");
-            for (int j = 0; j < layouts.length(); j++) {
-                JSONObject view = layouts.getJSONObject(j);
-                JSONObject viewWithID = searchForID(view, id);
-                if (viewWithID != null) {
-                    return true;
+            if (activity.getString("name").equals(className)) {
+                JSONArray layouts = activity.getJSONArray("layouts");
+                for (int j = 0; j < layouts.length(); j++) {
+                    JSONObject view = layouts.getJSONObject(j);
+                    JSONObject viewWithID = searchForID(view, id);
+                    if (viewWithID != null) {
+                        return true;
+                    }
                 }
             }
         }

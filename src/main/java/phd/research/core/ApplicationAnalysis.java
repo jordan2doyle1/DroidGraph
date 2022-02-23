@@ -725,8 +725,9 @@ public class ApplicationAnalysis {
 
         Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;
-        if (layoutParser != null)
+        if (layoutParser != null) {
             userControls = layoutParser.getUserControls();
+        }
         else {
             logger.error("Error: Problem getting Layout File Parser. Can't get UI Controls!");
             return uiControls;
@@ -739,6 +740,11 @@ public class ApplicationAnalysis {
             logger.error("Error: Problem reading Front Matter output file!" + e);
             System.err.println("Error: Problem reading Front Matter output file!" + e);
             return uiControls;
+        }
+
+        Map<Integer, AndroidLayoutControl> controlMap = layoutParser.getUserControlsByID();
+        for (Integer id : controlMap.keySet()) {
+            AndroidLayoutControl control = controlMap.get(id);
         }
 
         for (String layoutFile : userControls.keySet()) {
@@ -755,9 +761,15 @@ public class ApplicationAnalysis {
                     continue;
                 }
 
+                SootClass callbackClass = findLayoutClass(layoutResource.getResourceID());
+                if (callbackClass == null) {
+                    logger.error("Error: No class found for layout resource: " + layoutResource.getResourceID());
+                    continue;
+                }
+
                 SootMethod clickListener = null;
                 try {
-                    if (frontMatter.containsControl(control.getID()))
+                    if (frontMatter.containsControl(callbackClass.getName(), control.getID()))
                         clickListener = frontMatter.getClickListener(control.getID());
                     else {
                         logger.warn("WARN: FrontMatter output did not contain control ID " + control.getID());
