@@ -1,0 +1,4 @@
+Possible Callbacks should be included in the interface linking process. False positives will result in a null return
+(no harm done). Excluding possible callbacks will result in an in-complete graph.
+
+Fragment callback methods are not linked to their associated interface controls. Don't know why?
