@@ -99,7 +99,7 @@ public class Main {
             fmCompare.findDiff();
             fmCompare.writeDiffToFile(
                     "fmDiff:" + new File(fmOutput1).getName() + "->" + new File(fmOutput2).getName());
-            System.out.println(fmCompare.getDiffJsonString());
+            System.out.println(fmCompare.getDiffJsonString() + "\n");
         } catch (IOException e) {
             logger.error("Error: Problem reading output files." + e);
             System.err.println("Error: Problem reading output files." + e);
