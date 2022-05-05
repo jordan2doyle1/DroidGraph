@@ -192,6 +192,7 @@ public class Viewer {
         System.out.println(controlFlowGraphComposition.toTableString("CFG Composition"));
     }
 
+    @SuppressWarnings("unused")
     public void printList(boolean filtered, Parts part) {
         switch (part) {
             case methods:
