@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Format;
 import phd.research.enums.Type;
+import phd.research.frontmatter.FrontMatter;
 import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
 import phd.research.graph.Writer;
@@ -122,6 +123,40 @@ public class ApplicationAnalysis {
         long endTime = System.currentTimeMillis();
         logger.info("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
         System.out.println("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
+
+        test();
+    }
+
+    public void test() {
+        printMethodUnitsToConsole("com.example.android.lifecycle.ActivityA$1", "onClick");
+
+        SootClass sc = Scene.v().getSootClass("com.example.android.lifecycle.ActivityA$1");
+        for (SootMethod method : sc.getMethods() ) {
+            if (method.getName().contains("onClick")) {
+                if (method.hasActiveBody()) {
+                    PatchingChain<Unit> units = method.getActiveBody().getUnits();
+                    for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
+                        Unit unit = iterator.next();
+                        unit.apply(new AbstractStmtSwitch<Stmt>() {
+                            @Override
+                            public void caseAssignStmt(AssignStmt stmt) {
+                                super.caseAssignStmt(stmt);
+
+                                // Get the left and right operand, if the right operand is a virtual invoke with name.
+                                InvokeExpr invokeExpr = stmt.getInvokeExpr();
+                                if (invokeExpr.getMethod().getName().equals("getId")) {
+                                    System.out.println(unit.getUseBoxes());
+                                }
+                            }
+                        });
+                    }
+//                    for (Unit unit : method.getActiveBody().getUnits()) {
+//                        System.out.println(unit.toString());
+//                        if (unit.)
+//                    }
+                }
+            }
+        }
     }
 
     public Set<Control> getControls() {
@@ -653,6 +688,7 @@ public class ApplicationAnalysis {
         return null;
     }
 
+// My method of getting UI Controls.
 //    private Set<Control> getUIControls() {
 //        if (layoutParser == null)
 //            layoutParser = ApplicationAnalysis.getLayoutFileParser();
@@ -706,6 +742,86 @@ public class ApplicationAnalysis {
 //        return uiControls;
 //    }
 
+// TODO: Implement callback hash set.
+
+    private void extractUI() {
+        //TODO: Find alternative to instrumentation.
+        Map<SootClass, Set<CallbackDefinition>> customCallbacks = new HashMap<>();
+
+        for (Pair<SootClass, AndroidCallbackDefinition> callbacks : this.application.droidGraphCallbacks) {
+            if (customCallbacks.containsKey(callbacks.getO1())) {
+                customCallbacks.get(callbacks.getO1()).add(callbacks.getO2());
+            } else {
+                Set<CallbackDefinition> callbackDefinitions = new HashSet<>();
+                callbackDefinitions.add(callbacks.getO2());
+                customCallbacks.put(callbacks.getO1(), callbackDefinitions);
+            }
+        }
+
+        // Getting all the callbacks without the lifecycle methods.
+
+        Set<SootMethod> callbackMethods = new HashSet<>(); //this.callbacks;
+
+        Set<Control> controls = new HashSet<>();
+        Set<Pair<String, AndroidLayoutControl>> nullControls = new HashSet<>();
+        LayoutFileParser lfp = retrieveLayoutFileParser();
+        if (lfp != null) {
+            for (Pair<String, AndroidLayoutControl> userControl : lfp.getUserControls()) {
+                AndroidLayoutControl control = userControl.getO2();
+                if (control.getClickListener() != null) {
+                    SootMethod clickListener = searchCallbackMethods(control.getClickListener());
+                    if (clickListener != null) {
+                        controls.add(new Control(control.hashCode(), control.getID(), null, -1, null, clickListener));
+                        callbackMethods.remove(clickListener);
+                        logger.debug(control.getID() + " linked to \"" + clickListener.getDeclaringClass().getShortName()
+                                + "." + clickListener.getName() + "\".");
+                    } else
+                        logger.error("Problem linking controls with listeners: Two callback methods have the same name.");
+                } else {
+                    if (control.getID() != -1)
+                        nullControls.add(userControl);
+                }
+            }
+        }
+
+        Iterator<SootMethod> iterator = callbackMethods.iterator();
+        while (iterator.hasNext()) {
+            SootMethod listener = iterator.next();
+            phd.research.helper.Pair<String, Integer> interfaceID = getInterfaceID(listener);
+
+            if (interfaceID != null) {
+                Iterator<Pair<String, AndroidLayoutControl>> controlIterator = nullControls.iterator();
+                while (controlIterator.hasNext()) {
+                    AndroidLayoutControl control = controlIterator.next().getO2();
+
+                    if (control.getID() == interfaceID.getRight()) {
+                        controls.add(new Control(control.hashCode(), control.getID(), interfaceID.getLeft(), -1, null,
+                                listener));
+                        controlIterator.remove();
+                        iterator.remove();
+                        logger.debug(control.getID() + ":" + interfaceID.getLeft() + " linked to \"" +
+                                listener.getDeclaringClass().getShortName() + "." + listener.getName() + "\".");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (callbackMethods.size() > 0) {
+            for (SootMethod sootMethod : callbackMethods) {
+                logger.error("No control linked to \"" + sootMethod.getDeclaringClass().getShortName() + "." +
+                        sootMethod.getName() + "\".");
+            }
+        }
+
+        if (nullControls.size() > 0) {
+            for (Pair<String, AndroidLayoutControl> nullControl : nullControls) {
+                AndroidLayoutControl control = nullControl.getO2();
+                logger.error("No listener linked to " + control.getID() + ".");
+            }
+        }
+    }
+
     private Vertex getInterfaceControl(Vertex vertex) {
         Control control = this.getControl(vertex.getSootMethod());
         if (control != null)
@@ -718,7 +834,7 @@ public class ApplicationAnalysis {
     }
 
     // TODO: Refactor from here...
-
+ // FrontMatter method of getting the UI Controls.
     private Set<Control> getUIControls() {
         if (layoutParser == null)
             layoutParser = ApplicationAnalysis.getLayoutFileParser();

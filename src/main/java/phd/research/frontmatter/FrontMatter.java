@@ -1,4 +1,4 @@
-package phd.research.core;
+package phd.research.frontmatter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
