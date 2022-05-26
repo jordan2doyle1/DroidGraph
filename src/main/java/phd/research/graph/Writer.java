@@ -101,7 +101,7 @@ public class Writer {
 
     private static String getFileName(String name) {
         // Windows does not allow filenames with these characters: / \ : * ? " < > |
-        return name.replaceAll("[:]", "_");
+        return name.replaceAll(":", "_");
     }
 
     private static BufferedWriter openFile(String location, String file) throws IOException {
