@@ -5,7 +5,6 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.nio.dot.DOTExporter;
 import org.jgrapht.nio.json.JSONExporter;
-import phd.research.core.FrameworkMain;
 import phd.research.enums.Format;
 import phd.research.jGraph.Vertex;
 
@@ -24,25 +23,25 @@ public class Writer {
         FileUtils.cleanDirectory(new File(directory));
     }
 
-    public static void writeGraph(Format format, String name, Graph<Vertex, DefaultEdge> graph) throws Exception {
+    public static void writeGraph(Format format, String directory, String name, Graph<Vertex, DefaultEdge> graph) throws Exception {
         String file = getFileName(name);
 
         switch (format) {
             case dot:
-                exportDOT(file, graph);
+                exportDOT(directory, file, graph);
                 break;
             case json:
-                exportJSON(file, graph);
+                exportJSON(directory, file, graph);
                 break;
             case all:
-                exportDOT(file, graph);
-                exportJSON(file, graph);
+                exportDOT(directory, file, graph);
+                exportJSON(directory, file, graph);
                 break;
         }
     }
 
-    public static void writeContent(String name, Set<?> list) throws IOException {
-        String outputLocation = FrameworkMain.getOutputDirectory() + "CONTENT/";
+    public static void writeContent(String directory, String name, Set<?> list) throws IOException {
+        String outputLocation = directory + "CONTENT/";
         BufferedWriter writer = openFile(outputLocation, getFileName(name) + ".txt");
 
         if (writer != null) {
@@ -54,8 +53,8 @@ public class Writer {
         }
     }
 
-    private static void exportDOT(String file, Graph<Vertex, DefaultEdge> graph) throws Exception {
-        String outputLocation = FrameworkMain.getOutputDirectory() + "DOT/";
+    private static void exportDOT(String directory, String file, Graph<Vertex, DefaultEdge> graph) throws Exception {
+        String outputLocation = directory + "DOT/";
         BufferedWriter writer = openFile(outputLocation, file + ".dot");
 
         if (writer != null) {
@@ -70,8 +69,8 @@ public class Writer {
         }
     }
 
-    private static void exportJSON(String file, Graph<Vertex, DefaultEdge> graph) throws IOException {
-        String outputLocation = FrameworkMain.getOutputDirectory() + "JSON/";
+    private static void exportJSON(String directory, String file, Graph<Vertex, DefaultEdge> graph) throws IOException {
+        String outputLocation = directory + "JSON/";
         BufferedWriter writer = openFile(outputLocation, file + ".json");
 
         if (writer != null) {

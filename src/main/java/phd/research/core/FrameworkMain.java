@@ -186,7 +186,7 @@ public class FrameworkMain {
             if (outputCallGraph) {
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
                 try {
-                    Writer.writeGraph(outputFormat, outputName, appAnalysis.getCallGraph());
+                    Writer.writeGraph(outputFormat, outputDirectory, outputName, appAnalysis.getCallGraph());
                 } catch (Exception e) {
                     logger.error("Error writing call graph to output file: " + e.getMessage());
                 }
@@ -195,7 +195,7 @@ public class FrameworkMain {
             if (outputControlFlowGraph) {
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
                 try {
-                    Writer.writeGraph(outputFormat, outputName, appAnalysis.getControlFlowGraph());
+                    Writer.writeGraph(outputFormat, outputDirectory, outputName, appAnalysis.getControlFlowGraph());
                 } catch (Exception e) {
                     logger.error("Error writing CFG to output file: " + e.getMessage());
                 }
