@@ -47,12 +47,11 @@ public class Tuple<L, M, R> implements Cloneable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
+        if (this == obj) return true;
 
         if (obj instanceof Tuple<?, ?, ?>)
-            return ((Tuple<?, ?, ?>) obj).left.equals(this.left) && ((Tuple<?, ?, ?>) obj).middle.equals(this.middle) &&
-                    ((Tuple<?, ?, ?>) obj).right.equals(this.right);
+            return ((Tuple<?, ?, ?>) obj).left.equals(this.left) && ((Tuple<?, ?, ?>) obj).middle.equals(this.middle)
+                    && ((Tuple<?, ?, ?>) obj).right.equals(this.right);
 
         return false;
     }
