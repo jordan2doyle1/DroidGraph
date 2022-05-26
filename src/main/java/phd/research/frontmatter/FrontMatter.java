@@ -51,7 +51,7 @@ public class FrontMatter {
                 for (int i = 0; i < children.length(); i++) {
                     JSONObject child = children.getJSONObject(i);
                     JSONObject viewWithID = searchForID(child, id);
-                    if(viewWithID != null) {
+                    if (viewWithID != null) {
                         return viewWithID;
                     }
                 }
@@ -82,15 +82,13 @@ public class FrontMatter {
             }
         }
 
-        if (listenerMethods != null)
-            return Scene.v().getMethod(listenerMethods.getString(0));
+        if (listenerMethods != null) return Scene.v().getMethod(listenerMethods.getString(0));
 
         return null;
     }
 
     private JSONObject readJSONOutput(File outputFile) throws IOException {
-        if (!outputFile.exists())
-            throw new IOException("Error: Front Matter output file does not exist!");
+        if (!outputFile.exists()) throw new IOException("Error: Front Matter output file does not exist!");
 
         String outputContent = new String(Files.readAllBytes(Paths.get(outputFile.toURI())));
         return new JSONObject(outputContent);
