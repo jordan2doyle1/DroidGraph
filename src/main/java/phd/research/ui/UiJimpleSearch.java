@@ -1,6 +1,5 @@
 package phd.research.ui;
 
-import phd.research.core.ApplicationAnalysis;
 import phd.research.core.FlowDroidUtils;
 import phd.research.core.FrameworkMain;
 import phd.research.graph.Filter;
@@ -55,7 +54,7 @@ public class UiJimpleSearch extends UiSearch {
     }
 
     private SootMethod findCallbackMethodInEntryClass(int id) {
-        for (SootClass sootClass : ApplicationAnalysis.getEntryPointClasses()) {
+        for (SootClass sootClass : FlowDroidUtils.getEntryPointClasses(apk)) {
             SootMethod callbackMethod = findCallbackMethod(sootClass, id);
             if (callbackMethod != null) {
                 return callbackMethod;

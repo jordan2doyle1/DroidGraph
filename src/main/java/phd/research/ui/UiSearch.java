@@ -1,6 +1,5 @@
 package phd.research.ui;
 
-import phd.research.core.ApplicationAnalysis;
 import phd.research.core.FlowDroidUtils;
 import phd.research.core.FrameworkMain;
 import phd.research.helper.Status;
@@ -153,7 +152,7 @@ public class UiSearch {
     }
 
     protected SootClass findLayoutClass(int layoutId) {
-        for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
+        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
             SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
 
             if (layoutClass == null) layoutClass = findLayoutClassRecursively(layoutId, entryClass, false);
