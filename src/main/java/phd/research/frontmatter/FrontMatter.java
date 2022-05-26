@@ -19,6 +19,32 @@ public class FrontMatter {
         this.outputFile = outputFile;
     }
 
+    private static JSONObject searchForID(JSONObject view, int id) {
+        if (view.getInt("id") == id) {
+            return view;
+        } else {
+            if (view.has("children")) {
+                JSONArray children = view.getJSONArray("children");
+                for (int i = 0; i < children.length(); i++) {
+                    JSONObject child = children.getJSONObject(i);
+                    JSONObject viewWithID = FrontMatter.searchForID(child, id);
+                    if (viewWithID != null) {
+                        return viewWithID;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static JSONObject readJSONOutput(File outputFile) throws IOException {
+        if (!outputFile.exists()) throw new IOException("Error: Front Matter output file does not exist!");
+
+        String outputContent = new String(Files.readAllBytes(Paths.get(outputFile.toURI())));
+        return new JSONObject(outputContent);
+    }
+
     public boolean containsControl(String className, int id) throws IOException {
         if (this.output == null) {
             this.output = FrontMatter.readJSONOutput(this.outputFile);
@@ -40,25 +66,6 @@ public class FrontMatter {
         }
 
         return false;
-    }
-
-    private static JSONObject searchForID(JSONObject view, int id) {
-        if (view.getInt("id") == id) {
-            return view;
-        } else {
-            if (view.has("children")) {
-                JSONArray children = view.getJSONArray("children");
-                for (int i = 0; i < children.length(); i++) {
-                    JSONObject child = children.getJSONObject(i);
-                    JSONObject viewWithID = FrontMatter.searchForID(child, id);
-                    if (viewWithID != null) {
-                        return viewWithID;
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
     public SootMethod getClickListener(int id) throws IOException {
@@ -85,12 +92,5 @@ public class FrontMatter {
         if (listenerMethods != null) return Scene.v().getMethod(listenerMethods.getString(0));
 
         return null;
-    }
-
-    private static JSONObject readJSONOutput(File outputFile) throws IOException {
-        if (!outputFile.exists()) throw new IOException("Error: Front Matter output file does not exist!");
-
-        String outputContent = new String(Files.readAllBytes(Paths.get(outputFile.toURI())));
-        return new JSONObject(outputContent);
     }
 }
