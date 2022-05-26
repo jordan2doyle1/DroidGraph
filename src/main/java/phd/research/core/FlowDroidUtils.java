@@ -6,6 +6,8 @@ import soot.SootClass;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.LayoutFileParser;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,6 +46,31 @@ public class FlowDroidUtils {
         }
 
         return entryPoints;
+    }
+
+    public static ARSCFileParser getResources(String apk) {
+        ARSCFileParser resources = new ARSCFileParser();
+
+        try {
+            resources.parse(apk);
+        } catch (IOException e) {
+            System.err.println("Error getting resources: " + e.getMessage());
+        }
+
+        return resources;
+    }
+
+    public static LayoutFileParser getLayoutFileParser(String apk) {
+        LayoutFileParser layoutParser;
+        ProcessManifest manifest = getManifest(apk);
+
+        if (manifest != null) {
+            layoutParser = new LayoutFileParser(manifest.getPackageName(), getResources(apk));
+            layoutParser.parseLayoutFileDirect(FrameworkMain.getApk());
+            return layoutParser;
+        }
+
+        return null;
     }
 
     public static CollectedCallbacks readCollectedCallbacks(File callbackFile) {
