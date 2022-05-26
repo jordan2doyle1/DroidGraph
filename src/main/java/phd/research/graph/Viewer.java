@@ -1,6 +1,8 @@
 package phd.research.graph;
 
-import phd.research.core.ApplicationAnalysis;
+import phd.research.core.DroidGraph;
+import phd.research.core.FlowDroidUtils;
+import phd.research.core.FrameworkMain;
 import phd.research.enums.Parts;
 import phd.research.helper.Control;
 import phd.research.jGraph.Vertex;
@@ -9,6 +11,7 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.util.Chain;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -19,7 +22,7 @@ import java.util.Set;
  */
 public class Viewer {
 
-    private final ApplicationAnalysis analysis;
+    private final DroidGraph analysis;
 
     private Set<SootClass> allClasses;
     private Set<SootClass> filteredClasses;
@@ -30,7 +33,7 @@ public class Viewer {
     private Set<SootMethod> otherCallbackMethods;
     private Set<SootMethod> possibleCallbackMethods;
 
-    public Viewer(ApplicationAnalysis analysis) {
+    public Viewer(DroidGraph analysis) {
         this.analysis = analysis;
     }
 
@@ -93,12 +96,12 @@ public class Viewer {
     public void printAppDetails() {
         System.out.println("------------------------------- Analysis Details -------------------------------");
 
-        System.out.println("\tBase Package Name: " + this.analysis.getBasePackageName());
+        System.out.println("\tBase Package Name: " + FlowDroidUtils.getBasePackageName(FrameworkMain.getApk()));
         System.out.println();
 
         System.out.println("\tClasses: " + getFilteredClasses().size() + " (Total: " + getAllClasses().size() + ")");
-        System.out.println("\tEntry Points: " + ApplicationAnalysis.getEntryPointClasses().size());
-        System.out.println("\tLaunch Activities: " + ApplicationAnalysis.getLaunchActivities().size());
+        System.out.println("\tEntry Points: " + FlowDroidUtils.getEntryPointClasses(FrameworkMain.getApk()).size());
+        System.out.println("\tLaunch Activities: " + FlowDroidUtils.getLaunchActivities(FrameworkMain.getApk()).size());
         System.out.println();
 
         System.out.println("\tMethods: " + getFilteredMethods().size() + " (Total: " + getAllMethods().size() + ")");
@@ -114,12 +117,12 @@ public class Viewer {
     }
 
     public void writeContentsToFile() throws IOException {
-        Writer.writeContent("classes", getFilteredClasses());
-        Writer.writeContent("methods", getFilteredMethods());
-        Writer.writeContent("lifecycle", getLifecycleMethods());
-        Writer.writeContent("listener", getListenerMethods());
-        Writer.writeContent("other", getOtherCallbackMethods());
-        Writer.writeContent("possible", getPossibleCallbacksMethods());
+        Writer.writeContent(FrameworkMain.getOutputDirectory(), "classes", getFilteredClasses());
+        Writer.writeContent(FrameworkMain.getOutputDirectory(), "methods", getFilteredMethods());
+        Writer.writeContent(FrameworkMain.getOutputDirectory(), "lifecycle", getLifecycleMethods());
+        Writer.writeContent(FrameworkMain.getOutputDirectory(), "listener", getListenerMethods());
+        Writer.writeContent(FrameworkMain.getOutputDirectory(), "other", getOtherCallbackMethods());
+        Writer.writeContent(FrameworkMain.getOutputDirectory(), "possible", getPossibleCallbacksMethods());
     }
 
     public void printUnassignedCallbacks() {
@@ -252,10 +255,10 @@ public class Viewer {
         Set<SootMethod> acceptedMethods = new HashSet<>();
 
         for (SootClass sootClass : classes) {
-            if (Filter.isValidClass(sootClass)) {
+            if (Filter.isValidClass(null, null, sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
-                    if (Filter.isValidMethod(method))
+                    if (Filter.isValidMethod(null, null, method))
                         acceptedMethods.add(method);
                 }
             }
@@ -273,7 +276,7 @@ public class Viewer {
         Set<SootClass> filteredClasses = new HashSet<>();
 
         for (SootClass sootClass : allClasses) {
-            if (Filter.isValidClass(sootClass))
+            if (Filter.isValidClass(null, null, sootClass))
                 filteredClasses.add(sootClass);
         }
 
@@ -302,7 +305,7 @@ public class Viewer {
             this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isListenerMethod(method))
+            if (Filter.isListenerMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
                 listenerMethods.add(method);
         }
 
@@ -317,7 +320,7 @@ public class Viewer {
             this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isOtherCallbackMethod(method))
+            if (Filter.isOtherCallbackMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
                 callbackMethods.add(method);
         }
 
@@ -332,7 +335,7 @@ public class Viewer {
             this.filteredMethods = Viewer.filterMethods();
 
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isPossibleListenerMethod(method))
+            if (Filter.isPossibleListenerMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
                 callbackMethods.add(method);
         }
 

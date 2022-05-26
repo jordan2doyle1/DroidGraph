@@ -4,8 +4,6 @@ import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import phd.research.enums.Format;
 import phd.research.enums.Type;
 import phd.research.graph.Filter;
@@ -31,7 +29,6 @@ import java.util.*;
  */
 public class DroidGraph {
 
-    private static final Logger logger = LoggerFactory.getLogger(DroidGraph.class);
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
     private Set<Control> controls;
@@ -108,17 +105,9 @@ public class DroidGraph {
 
     // TODO: The below methods should stay in this class but the class needs to be renamed.
 
-    public void runAnalysis() {
-        logger.info("Running graph generation...");
-        System.out.println("Running graph generation...");
-        long startTime = System.currentTimeMillis();
-
+    public void generateGraphs() {
         this.callGraph = generateGraph(Scene.v().getCallGraph());
         this.controlFlowGraph = generateGraph(this.callGraph);
-
-        long endTime = System.currentTimeMillis();
-        logger.info("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
-        System.out.println("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
     }
 
     public Graph<Vertex, DefaultEdge> getCallGraph() {
@@ -228,7 +217,7 @@ public class DroidGraph {
             return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()),
                     Type.control, vertex.getSootMethod());
         else
-            logger.error("No control for " + vertex.getLabel());
+            System.err.println("No control for " + vertex.getLabel());
 
         return null;
     }
@@ -255,11 +244,9 @@ public class DroidGraph {
         }
 
         if (notInGraph.isEmpty()) {
-            logger.info("All methods in the graph.");
             System.out.println("All methods in the graph.");
         } else {
-            logger.error(notInGraph.size() + " methods are not in the graph. ");
-            System.out.println(notInGraph.size() + " methods are not in the graph. ");
+            System.err.println(notInGraph.size() + " methods are not in the graph. ");
 
             for (SootMethod method : notInGraph) {
                 System.out.println(method.toString());
@@ -318,7 +305,7 @@ public class DroidGraph {
                     graph.addVertex(interfaceVertex);
                     graph.addEdge(interfaceVertex, vertex);
                 } else
-                    logger.error("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
+                    System.err.println("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
             }
 
             if (vertex.getType() == Type.listener || vertex.getType() == Type.lifecycle ||
@@ -347,7 +334,7 @@ public class DroidGraph {
                 }
             } else if (vertex.getType() != Type.statement && vertex.getType() != Type.control
                     && vertex.getType() != Type.dummyMethod)
-                logger.error("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
+                System.err.println("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
         }
 
         // checkGraph(graph);

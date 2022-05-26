@@ -157,8 +157,16 @@ public class FrameworkMain {
         logger.info("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
         System.out.println("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
 
-        DroidGraph appAnalysis = new DroidGraph();
-        appAnalysis.runAnalysis();
+        logger.info("Running graph generation...");
+        System.out.println("Running graph generation...");
+        long dgStartTime = System.currentTimeMillis();
+
+        DroidGraph droidGraph = new DroidGraph();
+        droidGraph.generateGraphs();
+
+        long dgEndTime = System.currentTimeMillis();
+        logger.info("Graph generation took " + (dgEndTime - dgStartTime) / 1000 + " second(s).");
+        System.out.println("Graph generation took " + (dgEndTime - dgStartTime) / 1000 + " second(s).");
 
         Viewer viewer = null;
         if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph || outputContent) {
@@ -176,7 +184,7 @@ public class FrameworkMain {
             if (outputCallGraph) {
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CG" : "App-CG");
                 try {
-                    Writer.writeGraph(outputFormat, outputDirectory, outputName, appAnalysis.getCallGraph());
+                    Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getCallGraph());
                 } catch (Exception e) {
                     logger.error("Error writing call graph to output file: " + e.getMessage());
                 }
@@ -185,14 +193,14 @@ public class FrameworkMain {
             if (outputControlFlowGraph) {
                 String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
                 try {
-                    Writer.writeGraph(outputFormat, outputDirectory, outputName, appAnalysis.getControlFlowGraph());
+                    Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getControlFlowGraph());
                 } catch (Exception e) {
                     logger.error("Error writing CFG to output file: " + e.getMessage());
                 }
             }
 
             if (outputContent) {
-                viewer = new Viewer(appAnalysis);
+                viewer = new Viewer(droidGraph);
                 try {
                     viewer.writeContentsToFile();
                 } catch (IOException e) {
@@ -207,7 +215,7 @@ public class FrameworkMain {
 
         if (consoleOutput) {
             if (viewer == null)
-                viewer = new Viewer(appAnalysis);
+                viewer = new Viewer(droidGraph);
 
             viewer.printAppDetails();
             viewer.printUnassignedCallbacks();
