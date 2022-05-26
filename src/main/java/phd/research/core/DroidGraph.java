@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Format;
 import phd.research.enums.Type;
-import phd.research.frontmatter.FrontMatter;
 import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
 import phd.research.graph.Writer;
@@ -27,13 +26,11 @@ import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
-import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
 import soot.jimple.infoflow.cfg.LibraryClassPatcher;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.util.Chain;
-import soot.util.MultiMap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -123,8 +120,6 @@ public class ApplicationAnalysis {
         long endTime = System.currentTimeMillis();
         logger.info("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
         System.out.println("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
-
-        test();
     }
 
     public void test() {
@@ -166,6 +161,10 @@ public class ApplicationAnalysis {
         return this.controls;
     }
 
+    private Set<Control> getUIControls() {
+        return new HashSet<>();
+    }
+
     public SetupApplication getApplication() {
         return this.application;
     }
@@ -196,7 +195,7 @@ public class ApplicationAnalysis {
 
     protected static void outputMethods(Format format) throws Exception {
         for (SootClass sootClass : Scene.v().getClasses()) {
-            if (Filter.isValidClass(sootClass)) {
+            if (Filter.isValidClass(null, null, sootClass)) {
                 for (SootMethod method : sootClass.getMethods()) {
                     if (method.hasActiveBody()) {
                         Body body = method.getActiveBody();
@@ -205,7 +204,7 @@ public class ApplicationAnalysis {
                         String name = sootClass.getName().substring(sootClass.getName().lastIndexOf(".") + 1)
                                 + "_" + method.getName();
 
-                        Writer.writeGraph(format, name, unitGraph.getGraph());
+                        Writer.writeGraph(format, FrameworkMain.getOutputDirectory(), name, unitGraph.getGraph());
                     }
                 }
             }
@@ -360,44 +359,14 @@ public class ApplicationAnalysis {
     private static Type getMethodType(SootMethod method) {
         if (method.getDeclaringClass().getName().equals("dummyMainClass"))
             return Type.dummyMethod;
-        else if (Filter.isListenerMethod(method))
+        else if (Filter.isListenerMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
             return Type.listener;
         else if (Filter.isLifecycleMethod(method))
             return Type.lifecycle;
-        else if (Filter.isOtherCallbackMethod(method))
+        else if (Filter.isOtherCallbackMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
             return Type.other;
         else
             return Type.method;
-    }
-
-    private static String getResourceName(String name) {
-        int index = name.lastIndexOf("/");
-
-        if(index != -1)
-            name = name.replace(name.substring(0, index + 1), "");
-
-        if(name.contains(".xml"))
-            name = name.replace(".xml", "");
-
-        return name;
-    }
-
-    private static ARSCFileParser.AbstractResource getResourceById(int resourceId) {
-        if (resources == null)
-            resources = getResources();
-
-        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
-        if (resType == null)
-            return null;
-
-        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
-        if (foundResources.isEmpty())
-            return null;
-
-        if (foundResources.size() > 1)
-            logger.error("Error: Multiple resources with ID " + resourceId + ", returning the first.");
-
-        return foundResources.get(0);
     }
 
     private void runFlowDroid() {
@@ -428,7 +397,6 @@ public class ApplicationAnalysis {
         return null;
     }
 
-    @SuppressWarnings("unused")
     private Control getControl(String resourceName) {
         if (this.controls == null)
             this.controls = getUIControls();
@@ -442,7 +410,6 @@ public class ApplicationAnalysis {
         return null;
     }
 
-    @SuppressWarnings("unused")
     // For Testing Purposes Only. E.g. className: com.example.android.lifecycle.ActivityA, methodName: onCreate
     private void printMethodUnitsToConsole(String className, String methodName) {
         System.out.println("**** Printing method units: " + className + " " + methodName + " ****");
@@ -459,368 +426,7 @@ public class ApplicationAnalysis {
         System.out.println("**** END ****");
     }
 
-    private SootClass findLayoutClass(int layoutId) {
-        for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
-            SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
 
-            if (layoutClass == null)
-                layoutClass = findLayoutClassRecursively(layoutId, entryClass, false);
-
-            if (layoutClass != null)
-                return layoutClass;
-        }
-
-        return null;
-    }
-
-    private SootClass findLayoutClassRecursively(int layoutId, SootClass entryClass, boolean onCreate) {
-        SootClass layoutClass;
-        if (onCreate)
-            layoutClass = findOnCreateSetContentView(layoutId, entryClass);
-        else
-            layoutClass = findAnySetContentView(layoutId, entryClass);
-
-        if (layoutClass == null && entryClass.hasSuperclass()) {
-            layoutClass = findLayoutClassRecursively(layoutId, entryClass.getSuperclassUnsafe(), onCreate);
-        }
-
-        return layoutClass;
-    }
-
-    private SootClass findOnCreateSetContentView(int layoutId, SootClass entryClass) {
-        SootMethod onCreateMethod;
-        try {
-            onCreateMethod = entryClass.getMethodByNameUnsafe("onCreate");
-        } catch (AmbiguousMethodException ignored) {
-            return null;
-        }
-
-        if (onCreateMethod == null)
-            return null;
-
-        try {
-            onCreateMethod.retrieveActiveBody();
-        } catch (RuntimeException ignored) {
-            return null;
-        }
-
-        if (searchForSetContentView(layoutId, onCreateMethod)) {
-            return entryClass;
-        }
-
-        return null;
-    }
-
-    private SootClass findAnySetContentView(int layoutId, SootClass entryClass) {
-        for (SootMethod method : entryClass.getMethods()) {
-            try {
-                method.retrieveActiveBody();
-            } catch (RuntimeException ignored) {
-                continue;
-            }
-
-            if (!method.hasActiveBody()) {
-                continue;
-            }
-
-            if (searchForSetContentView(layoutId, method)) {
-                return entryClass;
-            }
-        }
-
-        return null;
-    }
-
-    private boolean searchForSetContentView(int layoutId, SootMethod method) {
-        PatchingChain<Unit> units = method.getActiveBody().getUnits();
-        for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
-            Unit unit = iterator.next();
-
-            Status searchStatus = new Status();
-            unit.apply(new AbstractStmtSwitch<Stmt>() {
-                @Override
-                public void caseInvokeStmt(InvokeStmt stmt) {
-                    super.caseInvokeStmt(stmt);
-
-                    InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                    if (invokeExpr.getMethod().getName().equals("setContentView")) {
-                        if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
-                            searchStatus.foundClass(true);
-                        }
-                    }
-                }
-            });
-
-            if (searchStatus.isClassFound())
-                return true;
-        }
-
-        return false;
-    }
-
-    private SootMethod searchForCallbackMethod(SootClass callbackClass, String methodName) {
-        SootMethod foundMethod = null;
-
-        for (SootMethod method : callbackClass.getMethods()) {
-            if (method.getName().equals(methodName)) {
-                if (foundMethod != null) {
-                    logger.error("Multiple callbacks with the name " + methodName + " in class " + callbackClass + ".");
-                    return null;
-                }
-                foundMethod = method;
-            }
-        }
-
-        return foundMethod;
-    }
-
-    @SuppressWarnings("unused")
-    private SootMethod searchForCallbackMethod(String methodName) {
-        if (callbacks == null)
-            callbacks = getCallbacks();
-
-        SootMethod foundMethod = null;
-
-        for (SootClass currentClass : callbacks.getCallbackMethods().keySet()) {
-            for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(currentClass)) {
-                if (callbackDefinition.getTargetMethod().getName().equals(methodName)) {
-                    if (foundMethod != null) {
-                        logger.error("Multiple callbacks with the name " + methodName + ".");
-                        return null;
-                    }
-                    foundMethod = callbackDefinition.getTargetMethod();
-                }
-            }
-        }
-
-        return foundMethod;
-    }
-
-    private SootMethod findCallbackMethodAnywhere(int id) {
-        for (SootClass sootClass : Scene.v().getClasses()) {
-            if (Filter.isValidClass(sootClass) && !Filter.isEntryPointClass(sootClass)) {
-                SootMethod callbackMethod = findCallbackMethod(sootClass, id);
-                if (callbackMethod != null)
-                    return callbackMethod;
-            }
-        }
-
-        return null;
-    }
-
-    private SootMethod findCallbackMethodInEntryClass(int id) {
-        for (SootClass sootClass : ApplicationAnalysis.getEntryPointClasses()) {
-            SootMethod callbackMethod = findCallbackMethod(sootClass, id);
-            if (callbackMethod != null) {
-                return callbackMethod;
-            }
-        }
-
-        return null;
-    }
-
-    private SootMethod findCallbackMethod(SootClass callbackClass, int id) {
-        for (SootMethod method : callbackClass.getMethods()) {
-            if (!method.hasActiveBody()) {
-                try {
-                    method.retrieveActiveBody();
-                } catch (RuntimeException ignored) {
-                    continue;
-                }
-            }
-
-            if (method.hasActiveBody()) {
-                Status searchStatus = new Status();
-                PatchingChain<Unit> units = method.getActiveBody().getUnits();
-
-                for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext();) {
-                    Unit unit = iterator.next();
-
-                    unit.apply(new AbstractStmtSwitch<Stmt>() {
-                        @Override
-                        public void caseAssignStmt(AssignStmt stmt) {
-                            super.caseAssignStmt(stmt);
-
-                            if (stmt.containsInvokeExpr()) {
-                                InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                                if (invokeExpr.getMethod().getName().equals("findViewById")) {
-                                    int intArg = -1;
-                                    try {
-                                        intArg = Integer.parseInt(invokeExpr.getArg(0).toString());
-                                    } catch(NumberFormatException ignored) {
-                                        logger.error("Error: findViewByID() has unknown argument! Stmt: " + stmt);
-                                    }
-
-                                    if (intArg != -1 && intArg == id) {
-                                        searchStatus.foundView(true);
-                                    }
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void caseInvokeStmt(InvokeStmt stmt) {
-                            super.caseInvokeStmt(stmt);
-
-                            if (searchStatus.isViewFound()) {
-                                InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                                if (invokeExpr.getMethod().getName().equals("<init>")) {
-                                    searchStatus.foundClass(true);
-                                    searchStatus.setFoundClass(invokeExpr.getMethod().getDeclaringClass());
-                                }
-                            }
-                        }
-                    });
-
-                    if (searchStatus.isViewFound() && searchStatus.isClassFound()) {
-                        if (searchStatus.getFoundClass().getMethodCount() > 2)
-                            logger.warn("Warning: Class contains multiple callback methods. Using the first method.");
-
-                        for (SootMethod classMethod : searchStatus.getFoundClass().getMethods()) {
-                            if(!classMethod.getName().equals("<init>"))
-                                return classMethod;
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-// My method of getting UI Controls.
-//    private Set<Control> getUIControls() {
-//        if (layoutParser == null)
-//            layoutParser = ApplicationAnalysis.getLayoutFileParser();
-//
-//        Set<Control> uiControls = new HashSet<>();
-//        MultiMap<String, AndroidLayoutControl> userControls;
-//        if (layoutParser != null)
-//            userControls = layoutParser.getUserControls();
-//        else {
-//            logger.error("Error: Problem getting Layout File Parser. Can't get UI Controls!");
-//            return uiControls;
-//        }
-//
-//        for (String layoutFile : userControls.keySet()) {
-//            ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName("layout",
-//                    ApplicationAnalysis.getResourceName(layoutFile));
-//
-//            for (AndroidLayoutControl control : userControls.get(layoutFile)) {
-//                if (control.getID() == -1)
-//                    continue;
-//
-//                ARSCFileParser.AbstractResource controlResource = ApplicationAnalysis.getResourceById(control.getID());
-//                if (controlResource == null) {
-//                    logger.error("Error: No resource found with ID " + control.getID() + ".");
-//                    continue;
-//                }
-//
-//                SootClass callbackClass = findLayoutClass(layoutResource.getResourceID());
-//                if (callbackClass == null) {
-//                    logger.error("Error: No class found for layout resource: " + layoutResource.getResourceID());
-//                    continue;
-//                }
-//
-//                SootMethod clickListener;
-//                if (control.getClickListener() != null)
-//                    clickListener = searchForCallbackMethod(callbackClass, control.getClickListener());
-//                else {
-//                    if ((clickListener = findCallbackMethod(callbackClass, control.getID())) == null) {
-//                        if ((clickListener = findCallbackMethodInEntryClass(control.getID())) == null)
-//                            clickListener = findCallbackMethodAnywhere(control.getID());
-//                    }
-//                }
-//
-//                if (clickListener == null)
-//                    logger.error("Error: Couldn't find click listener method with ID: " + control.getID());
-//
-//                uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
-//            }
-//        }
-//
-//        return uiControls;
-//    }
-
-// TODO: Implement callback hash set.
-
-    private void extractUI() {
-        //TODO: Find alternative to instrumentation.
-        Map<SootClass, Set<CallbackDefinition>> customCallbacks = new HashMap<>();
-
-        for (Pair<SootClass, AndroidCallbackDefinition> callbacks : this.application.droidGraphCallbacks) {
-            if (customCallbacks.containsKey(callbacks.getO1())) {
-                customCallbacks.get(callbacks.getO1()).add(callbacks.getO2());
-            } else {
-                Set<CallbackDefinition> callbackDefinitions = new HashSet<>();
-                callbackDefinitions.add(callbacks.getO2());
-                customCallbacks.put(callbacks.getO1(), callbackDefinitions);
-            }
-        }
-
-        // Getting all the callbacks without the lifecycle methods.
-
-        Set<SootMethod> callbackMethods = new HashSet<>(); //this.callbacks;
-
-        Set<Control> controls = new HashSet<>();
-        Set<Pair<String, AndroidLayoutControl>> nullControls = new HashSet<>();
-        LayoutFileParser lfp = retrieveLayoutFileParser();
-        if (lfp != null) {
-            for (Pair<String, AndroidLayoutControl> userControl : lfp.getUserControls()) {
-                AndroidLayoutControl control = userControl.getO2();
-                if (control.getClickListener() != null) {
-                    SootMethod clickListener = searchCallbackMethods(control.getClickListener());
-                    if (clickListener != null) {
-                        controls.add(new Control(control.hashCode(), control.getID(), null, -1, null, clickListener));
-                        callbackMethods.remove(clickListener);
-                        logger.debug(control.getID() + " linked to \"" + clickListener.getDeclaringClass().getShortName()
-                                + "." + clickListener.getName() + "\".");
-                    } else
-                        logger.error("Problem linking controls with listeners: Two callback methods have the same name.");
-                } else {
-                    if (control.getID() != -1)
-                        nullControls.add(userControl);
-                }
-            }
-        }
-
-        Iterator<SootMethod> iterator = callbackMethods.iterator();
-        while (iterator.hasNext()) {
-            SootMethod listener = iterator.next();
-            phd.research.helper.Pair<String, Integer> interfaceID = getInterfaceID(listener);
-
-            if (interfaceID != null) {
-                Iterator<Pair<String, AndroidLayoutControl>> controlIterator = nullControls.iterator();
-                while (controlIterator.hasNext()) {
-                    AndroidLayoutControl control = controlIterator.next().getO2();
-
-                    if (control.getID() == interfaceID.getRight()) {
-                        controls.add(new Control(control.hashCode(), control.getID(), interfaceID.getLeft(), -1, null,
-                                listener));
-                        controlIterator.remove();
-                        iterator.remove();
-                        logger.debug(control.getID() + ":" + interfaceID.getLeft() + " linked to \"" +
-                                listener.getDeclaringClass().getShortName() + "." + listener.getName() + "\".");
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (callbackMethods.size() > 0) {
-            for (SootMethod sootMethod : callbackMethods) {
-                logger.error("No control linked to \"" + sootMethod.getDeclaringClass().getShortName() + "." +
-                        sootMethod.getName() + "\".");
-            }
-        }
-
-        if (nullControls.size() > 0) {
-            for (Pair<String, AndroidLayoutControl> nullControl : nullControls) {
-                AndroidLayoutControl control = nullControl.getO2();
-                logger.error("No listener linked to " + control.getID() + ".");
-            }
-        }
-    }
 
     private Vertex getInterfaceControl(Vertex vertex) {
         Control control = this.getControl(vertex.getSootMethod());
@@ -833,81 +439,6 @@ public class ApplicationAnalysis {
         return null;
     }
 
-    // TODO: Refactor from here...
- // FrontMatter method of getting the UI Controls.
-    private Set<Control> getUIControls() {
-        if (layoutParser == null)
-            layoutParser = ApplicationAnalysis.getLayoutFileParser();
-
-        Set<Control> uiControls = new HashSet<>();
-        MultiMap<String, AndroidLayoutControl> userControls;
-        if (layoutParser != null) {
-            userControls = layoutParser.getUserControls();
-        }
-        else {
-            logger.error("Error: Problem getting Layout File Parser. Can't get UI Controls!");
-            return uiControls;
-        }
-
-        FrontMatter frontMatter;
-        try {
-            frontMatter = new FrontMatter();
-        } catch (IOException e) {
-            logger.error("Error: Problem reading Front Matter output file!" + e);
-            System.err.println("Error: Problem reading Front Matter output file!" + e);
-            return uiControls;
-        }
-
-        Map<Integer, AndroidLayoutControl> controlMap = layoutParser.getUserControlsByID();
-        for (Integer id : controlMap.keySet()) {
-            AndroidLayoutControl control = controlMap.get(id);
-        }
-
-        for (String layoutFile : userControls.keySet()) {
-            ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName("layout",
-                    ApplicationAnalysis.getResourceName(layoutFile));
-
-            for (AndroidLayoutControl control : userControls.get(layoutFile)) {
-                if (control.getID() == -1)
-                    continue;
-
-                ARSCFileParser.AbstractResource controlResource = ApplicationAnalysis.getResourceById(control.getID());
-                if (controlResource == null) {
-                    logger.error("Error: No resource found with ID " + control.getID() + ".");
-                    continue;
-                }
-
-                SootClass callbackClass = findLayoutClass(layoutResource.getResourceID());
-                if (callbackClass == null) {
-                    logger.error("Error: No class found for layout resource: " + layoutResource.getResourceID());
-                    continue;
-                }
-
-                SootMethod clickListener = null;
-                try {
-                    if (frontMatter.containsControl(callbackClass.getName(), control.getID()))
-                        clickListener = frontMatter.getClickListener(control.getID());
-                    else {
-                        logger.warn("WARN: FrontMatter output did not contain control ID " + control.getID());
-                    }
-                } catch(IOException e) {
-                    logger.error("Error: Problem searching FrontMatter output." + e.getMessage());
-                    System.err.println("Error: Problem searching FrontMatter output." + e.getMessage());
-                    return uiControls;
-                }
-
-
-                if (clickListener == null)
-                    logger.error("Error: Couldn't find click listener method with ID: " + control.getID());
-
-                uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
-            }
-        }
-
-        return uiControls;
-    }
-
-    // TODO: IGNORE EVERYTHING BELOW: A PROBLEM FOR ANOTHER DAY!
     private Set<SootMethod> checkGraph(Graph<Vertex, DefaultEdge> graph) {
         // TODO: Verify graph is complete and correct (all methods present?, all vertices have input edges?, etc.)
         // TODO: Print to the console if a problem or anomaly is found.
@@ -918,7 +449,7 @@ public class ApplicationAnalysis {
             graph = this.getControlFlowGraph();
 
         for (SootClass sootClass : classes) {
-            if (Filter.isValidClass(sootClass)) {
+            if (Filter.isValidClass(null, null, sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
                     Type methodType = ApplicationAnalysis.getMethodType(method);
@@ -952,7 +483,7 @@ public class ApplicationAnalysis {
         while (sourceItr.hasNext()) {
             SootMethod srcMethod = sourceItr.next().method();
 
-            if (Filter.isValidMethod(srcMethod) ||
+            if (Filter.isValidMethod(null, null, srcMethod) ||
                     srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                 Type methodType = ApplicationAnalysis.getMethodType(srcMethod);
                 Vertex srcVertex = new Vertex(srcMethod.hashCode(), getLabel(srcMethod), methodType, srcMethod);
@@ -962,7 +493,7 @@ public class ApplicationAnalysis {
                 while (edgeItr.hasNext()) {
                     SootMethod tgtMethod = edgeItr.next().tgt();
 
-                    if (Filter.isValidMethod(tgtMethod) ||
+                    if (Filter.isValidMethod(null, null, tgtMethod) ||
                             srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                         methodType = ApplicationAnalysis.getMethodType(tgtMethod);
                         Vertex tgtVertex = new Vertex(tgtMethod.hashCode(), getLabel(tgtMethod), methodType,
