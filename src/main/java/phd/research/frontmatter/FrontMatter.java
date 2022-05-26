@@ -2,6 +2,7 @@ package phd.research.frontmatter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import phd.research.core.FrameworkMain;
 import soot.Scene;
 import soot.SootMethod;
 
@@ -11,9 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class FrontMatter {
-
-    //TODO: Add command line arguments to tell the program where FrontMatter is stored and where to store output files.
-    //TODO: Set ANDROID_HOME system variable.
 
     private JSONObject output;
 
@@ -91,7 +89,7 @@ public class FrontMatter {
     }
 
     private JSONObject readJSONOutput() throws IOException {
-        File outputFile = new File(System.getProperty("user.dir") + "/FrontMatterOutput.json");
+        File outputFile = new File(FrameworkMain.getFrontMatterOutputFile());
         if (!outputFile.exists())
             throw new IOException("Error: Front Matter output file does not exist!");
 

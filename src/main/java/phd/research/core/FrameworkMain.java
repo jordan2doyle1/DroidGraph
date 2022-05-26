@@ -31,6 +31,7 @@ public class FrameworkMain {
     private static Format outputFormat;
     private static Set<String> packageBlacklist;
     private static Set<String> classBlacklist;
+    private static String fmOutputFile;
 
     public static void main(String[] args) {
         LocalDateTime startDate = LocalDateTime.now();
@@ -59,7 +60,9 @@ public class FrameworkMain {
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
         options.addOption(Option.builder("sp").longOpt("source-project").desc("Name of source project.").hasArg()
                 .numberOfArgs(1).argName("NAME").build());
-        options.addOption(Option.builder("cf").longOpt("content-files").desc("Output Content Files.").build());
+        options.addOption(Option.builder("cf").longOpt("content-files").desc("Output content files.").build());
+        options.addOption(Option.builder("fof").longOpt("fm-output-file").desc("FrontMatter analysis output file.").hasArg()
+                .numberOfArgs(1).argName("FILE").build());
 
         CommandLine cmd = null;
         try {
@@ -147,6 +150,15 @@ public class FrameworkMain {
                 classBlacklistFile = System.getProperty("user.dir") + "/class_blacklist";
             }
             classBlacklist = readBlacklist(classBlacklistFile);
+
+            if (cmd.hasOption("fof")) {
+                fmOutputFile = cmd.getOptionValue("a");
+                if (!fileExists(fmOutputFile)) {
+                    logger.error("Error: FrontMatter output file does not exist (" + fmOutputFile + ").");
+                    System.err.println("Error: FrontMatter output file does not exist (" + fmOutputFile + ").");
+                    System.exit(30);
+                }
+            }
         }
 
         try {
@@ -224,6 +236,10 @@ public class FrameworkMain {
 
     public static String getOutputDirectory() {
         return outputDirectory;
+    }
+
+    public static String getFrontMatterOutputFile() {
+        return fmOutputFile;
     }
 
     public static String getApk() {
