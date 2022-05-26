@@ -42,8 +42,7 @@ public class JGraph {
 
     public Vertex getVertex(int id) {
         for (Vertex vertex : this.vertices) {
-            if (vertex.getID() == id)
-                return vertex;
+            if (vertex.getID() == id) return vertex;
         }
         return null;
     }
@@ -72,11 +71,9 @@ public class JGraph {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this)
-            return true;
+        if (o == this) return true;
 
-        if (!(o instanceof JGraph))
-            return false;
+        if (!(o instanceof JGraph)) return false;
 
         JGraph graph = (JGraph) o;
 

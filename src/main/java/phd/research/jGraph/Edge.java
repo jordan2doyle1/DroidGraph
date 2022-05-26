@@ -8,31 +8,28 @@ import java.util.Objects;
 public class Edge {
 
     private final int id;
-    private final Vertex source;
-    private final Vertex target;
+    private final Vertex src;
+    private final Vertex tgt;
 
-    public Edge(Vertex source, Vertex target) {
-        this.id = source.hashCode() + target.hashCode();
-        this.source = source;
-        this.target = target;
+    public Edge(Vertex src, Vertex tgt) {
+        this.id = src.hashCode() + tgt.hashCode();
+        this.src = src;
+        this.tgt = tgt;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == this)
-            return true;
+        if (o == this) return true;
 
-        if (!(o instanceof Edge))
-            return false;
+        if (!(o instanceof Edge)) return false;
 
         Edge edge = (Edge) o;
 
-        return this.id == edge.id && Objects.equals(this.source, edge.source) &&
-                Objects.equals(this.target, edge.target);
+        return this.id == edge.id && Objects.equals(this.src, edge.src) && Objects.equals(this.tgt, edge.tgt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.source, this.target);
+        return Objects.hash(this.id, this.src, this.tgt);
     }
 }
