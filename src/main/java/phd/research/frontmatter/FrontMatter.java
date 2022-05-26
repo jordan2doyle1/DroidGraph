@@ -21,7 +21,7 @@ public class FrontMatter {
 
     public boolean containsControl(String className, int id) throws IOException {
         if (this.output == null) {
-            this.output = readJSONOutput(this.outputFile);
+            this.output = FrontMatter.readJSONOutput(this.outputFile);
         }
 
         JSONArray activities = this.output.getJSONArray("activities");
@@ -31,7 +31,7 @@ public class FrontMatter {
                 JSONArray layouts = activity.getJSONArray("layouts");
                 for (int j = 0; j < layouts.length(); j++) {
                     JSONObject view = layouts.getJSONObject(j);
-                    JSONObject viewWithID = searchForID(view, id);
+                    JSONObject viewWithID = FrontMatter.searchForID(view, id);
                     if (viewWithID != null) {
                         return true;
                     }
@@ -42,7 +42,7 @@ public class FrontMatter {
         return false;
     }
 
-    private JSONObject searchForID(JSONObject view, int id) {
+    private static JSONObject searchForID(JSONObject view, int id) {
         if (view.getInt("id") == id) {
             return view;
         } else {
@@ -50,7 +50,7 @@ public class FrontMatter {
                 JSONArray children = view.getJSONArray("children");
                 for (int i = 0; i < children.length(); i++) {
                     JSONObject child = children.getJSONObject(i);
-                    JSONObject viewWithID = searchForID(child, id);
+                    JSONObject viewWithID = FrontMatter.searchForID(child, id);
                     if (viewWithID != null) {
                         return viewWithID;
                     }
@@ -63,7 +63,7 @@ public class FrontMatter {
 
     public SootMethod getClickListener(int id) throws IOException {
         if (this.output == null) {
-            this.output = readJSONOutput(this.outputFile);
+            this.output = FrontMatter.readJSONOutput(this.outputFile);
         }
 
         JSONArray listenerMethods = null;
@@ -73,7 +73,7 @@ public class FrontMatter {
             JSONArray layouts = activity.getJSONArray("layouts");
             for (int j = 0; j < layouts.length(); j++) {
                 JSONObject view = layouts.getJSONObject(j);
-                JSONObject viewWithID = searchForID(view, id);
+                JSONObject viewWithID = FrontMatter.searchForID(view, id);
                 if (viewWithID != null) {
                     if (viewWithID.has("listeners")) {
                         listenerMethods = viewWithID.getJSONArray("listeners");
@@ -87,7 +87,7 @@ public class FrontMatter {
         return null;
     }
 
-    private JSONObject readJSONOutput(File outputFile) throws IOException {
+    private static JSONObject readJSONOutput(File outputFile) throws IOException {
         if (!outputFile.exists()) throw new IOException("Error: Front Matter output file does not exist!");
 
         String outputContent = new String(Files.readAllBytes(Paths.get(outputFile.toURI())));
