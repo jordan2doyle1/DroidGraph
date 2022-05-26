@@ -7,12 +7,12 @@ import phd.research.enums.Format;
 import phd.research.graph.Viewer;
 import phd.research.graph.Writer;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Jordan Doyle
@@ -29,8 +29,6 @@ public class FrameworkMain {
     private static boolean outputContent;
     private static String outputDirectory;
     private static Format outputFormat;
-    private static Set<String> packageBlacklist;
-    private static Set<String> classBlacklist;
     private static String fmOutputFile;
 
     public static void main(String[] args) {
@@ -53,10 +51,6 @@ public class FrameworkMain {
                 .hasArg().numberOfArgs(1).argName("DIRECTORY").build());
         options.addOption(Option.builder("of").longOpt("output-format").hasArg()
                 .desc("Graph output format ('DOT', 'JSON', 'ALL').").numberOfArgs(1).argName("FORMAT").build());
-        options.addOption(Option.builder("pb").longOpt("package-blacklist")
-                .desc("File containing ignored packages.").hasArg().numberOfArgs(1).argName("FILE").build());
-        options.addOption(Option.builder("cb").longOpt("class-blacklist").desc("File containing ignored classes.")
-                .hasArg().numberOfArgs(1).argName("FILE").build());
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
         options.addOption(Option.builder("sp").longOpt("source-project").desc("Name of source project.").hasArg()
                 .numberOfArgs(1).argName("NAME").build());
@@ -136,20 +130,6 @@ public class FrameworkMain {
                 logger.error("Warning: Unrecognised output format, using default format instead.");
                 System.err.println("Warning: Unrecognised output format, using default format instead.");
             }
-            String packageBlacklistFile = (cmd.hasOption("pb") ? cmd.getOptionValue("pb") :
-                    System.getProperty("user.dir") + "/package_blacklist");
-            if (!fileExists(packageBlacklistFile)) {
-                logger.warn("Warning: Package blacklist file does not exist, using default instead.");
-                packageBlacklistFile = System.getProperty("user.dir") + "/package_blacklist";
-            }
-            packageBlacklist = readBlacklist(packageBlacklistFile);
-            String classBlacklistFile = (cmd.hasOption("cb") ? cmd.getOptionValue("cb") :
-                    System.getProperty("user.dir") + "/class_blacklist");
-            if (!fileExists(classBlacklistFile)) {
-                logger.warn("Warning: Class blacklist file does not exist, using default instead.");
-                classBlacklistFile = System.getProperty("user.dir") + "/class_blacklist";
-            }
-            classBlacklist = readBlacklist(classBlacklistFile);
 
             if (cmd.hasOption("fof")) {
                 fmOutputFile = cmd.getOptionValue("a");
@@ -167,7 +147,17 @@ public class FrameworkMain {
             logger.error("Error cleaning output directory: " + e.getMessage());
         }
 
-        ApplicationAnalysis appAnalysis = new ApplicationAnalysis();
+        logger.info("Running FlowDroid...");
+        System.out.println("Running FlowDroid...");
+        long fdStartTime = System.currentTimeMillis();
+
+        FlowDroidUtils.runFlowDroid();
+
+        long fdEndTime = System.currentTimeMillis();
+        logger.info("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
+        System.out.println("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
+
+        DroidGraph appAnalysis = new DroidGraph();
         appAnalysis.runAnalysis();
 
         Viewer viewer = null;
@@ -178,7 +168,7 @@ public class FrameworkMain {
 
             if (outputUnitGraphs)
                 try {
-                    ApplicationAnalysis.outputMethods(outputFormat);
+                    DroidGraph.outputMethods(outputFormat);
                 } catch (Exception e) {
                     logger.error("Error writing methods to output file: " + e.getMessage());
                 }
@@ -250,14 +240,6 @@ public class FrameworkMain {
         return androidPlatform;
     }
 
-    public static Set<String> getPackageBlacklist() {
-        return packageBlacklist;
-    }
-
-    public static Set<String> getClassBlacklist() {
-        return classBlacklist;
-    }
-
     private static boolean checkForHelp(String[] args) {
         Options options = new Options();
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
@@ -307,23 +289,5 @@ public class FrameworkMain {
             default:
                 return false;
         }
-    }
-
-    private static Set<String> readBlacklist(String file) {
-        Set<String> items = new HashSet<>();
-
-        BufferedReader bufferedReader;
-        String currentItem;
-        try {
-            bufferedReader = new BufferedReader(new FileReader(file));
-            while ((currentItem = bufferedReader.readLine()) != null) {
-                items.add(currentItem);
-            }
-        } catch (IOException e) {
-            logger.error("Error reading blacklist: " + e.getMessage());
-            return items;
-        }
-
-        return items;
     }
 }

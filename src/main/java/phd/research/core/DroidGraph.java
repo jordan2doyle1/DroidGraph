@@ -6,125 +6,44 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Format;
 import phd.research.enums.Type;
 import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
 import phd.research.graph.Writer;
 import phd.research.helper.Control;
-import phd.research.helper.Status;
 import phd.research.jGraph.Vertex;
 import soot.*;
-import soot.jimple.*;
-import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
-import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.axml.AXmlNode;
-import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
-import soot.jimple.infoflow.android.manifest.ProcessManifest;
-import soot.jimple.infoflow.android.resources.ARSCFileParser;
-import soot.jimple.infoflow.android.resources.LayoutFileParser;
-import soot.jimple.infoflow.cfg.LibraryClassPatcher;
+import soot.jimple.AbstractStmtSwitch;
+import soot.jimple.AssignStmt;
+import soot.jimple.InvokeExpr;
+import soot.jimple.Stmt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.util.Chain;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.*;
 
 /**
  * @author Jordan Doyle
  */
-public class ApplicationAnalysis {
+public class DroidGraph {
 
-    private static final Logger logger = LoggerFactory.getLogger(ApplicationAnalysis.class);
-
-    private static CollectedCallbacks callbacks;
-    private static ARSCFileParser resources;
-    private static LayoutFileParser layoutParser;
-    private static ProcessManifest manifest;
-
-    private SetupApplication application;
+    private static final Logger logger = LoggerFactory.getLogger(DroidGraph.class);
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
     private Set<Control> controls;
 
-    public ApplicationAnalysis() {
-        runFlowDroid();
+    public DroidGraph() {
+
     }
 
-    public static CollectedCallbacks getCallbacks() {
-        if (callbacks != null)
-            return callbacks;
+    // TODO: Find somewhere to put the below testing methods for future reference.
 
-        try {
-            callbacks = CollectedCallbacksSerializer.deserialize(
-                    new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"));
-        } catch (FileNotFoundException e) {
-            logger.error("Error CollectedCallbacks File Not Found:" + e.getMessage());
-        }
-
-        return callbacks;
-    }
-
-    public static Set<SootClass> getEntryPointClasses() {
-        if (manifest == null)
-            manifest = ApplicationAnalysis.getManifest();
-
-        Set<SootClass> entryPoints = new HashSet<>();
-
-        if (manifest != null) {
-            for (String entryPoint : manifest.getEntryPointClasses()) {
-                SootClass entryPointClass = Scene.v().getSootClass(entryPoint);
-                if (entryPointClass != null)
-                    entryPoints.add(entryPointClass);
-            }
-        }
-
-        return entryPoints;
-    }
-
-    public static Set<SootClass> getLaunchActivities() {
-        if (manifest == null)
-            manifest = ApplicationAnalysis.getManifest();
-
-        Set<SootClass> launchActivities = new HashSet<>();
-        if (manifest != null) {
-            for (AXmlNode activity : manifest.getLaunchableActivityNodes()) {
-                if (activity.hasAttribute("name")) {
-                    // WARNING: Excluding valid launch activities if the developer doesn't provide the name attribute.
-                    String activityName = activity.getAttribute("name").getValue().toString();
-                    SootClass launchActivity = Scene.v().getSootClass(activityName);
-                    if (launchActivity != null)
-                        launchActivities.add(launchActivity);
-                }
-            }
-        }
-
-        return launchActivities;
-    }
-
-    public void runAnalysis() {
-        logger.info("Running graph generation...");
-        System.out.println("Running graph generation...");
-        long startTime = System.currentTimeMillis();
-
-        this.callGraph = generateGraph(Scene.v().getCallGraph());
-        this.controlFlowGraph = generateGraph(this.callGraph);
-
-        long endTime = System.currentTimeMillis();
-        logger.info("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
-        System.out.println("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
-    }
-
-    public void test() {
-        printMethodUnitsToConsole("com.example.android.lifecycle.ActivityA$1", "onClick");
-
+    public void getValueFromGetIdMethod() {
+        // For Testing Purposes Only.
         SootClass sc = Scene.v().getSootClass("com.example.android.lifecycle.ActivityA$1");
         for (SootMethod method : sc.getMethods() ) {
             if (method.getName().contains("onClick")) {
@@ -145,53 +64,28 @@ public class ApplicationAnalysis {
                             }
                         });
                     }
-//                    for (Unit unit : method.getActiveBody().getUnits()) {
-//                        System.out.println(unit.toString());
-//                        if (unit.)
-//                    }
                 }
             }
         }
     }
 
-    public Set<Control> getControls() {
-        if (this.controls == null)
-            this.controls = getUIControls();
-
-        return this.controls;
+    private void printMethodUnitsToConsole(String className, String methodName) {
+        // For Testing Purposes Only. E.g. className: com.example.android.lifecycle.ActivityA, methodName: onCreate
+        System.out.println("**** Printing method units: " + className + " " + methodName + " ****");
+        SootClass sc = Scene.v().getSootClass(className);
+        for (SootMethod method : sc.getMethods() ) {
+            if (method.getName().contains(methodName)) {
+                if (method.hasActiveBody()) {
+                    for (Unit unit : method.getActiveBody().getUnits()) {
+                        System.out.println(unit.toString());
+                    }
+                }
+            }
+        }
+        System.out.println("**** END ****");
     }
 
-    private Set<Control> getUIControls() {
-        return new HashSet<>();
-    }
-
-    public SetupApplication getApplication() {
-        return this.application;
-    }
-
-    public String getBasePackageName() {
-        if (manifest == null)
-            manifest = ApplicationAnalysis.getManifest();
-
-        if (manifest != null)
-            return manifest.getPackageName();
-
-        return null;
-    }
-
-    public Graph<Vertex, DefaultEdge> getCallGraph() {
-        if (this.callGraph == null)
-            this.callGraph = generateGraph(Scene.v().getCallGraph());
-
-        return this.callGraph;
-    }
-
-    public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
-        if (this.controlFlowGraph == null)
-            this.controlFlowGraph = generateGraph(this.getCallGraph());
-
-        return this.controlFlowGraph;
-    }
+    // TODO: Find somewhere to put the below method.
 
     protected static void outputMethods(Format format) throws Exception {
         for (SootClass sootClass : Scene.v().getClasses()) {
@@ -211,101 +105,34 @@ public class ApplicationAnalysis {
         }
     }
 
-    private static ARSCFileParser getResources() {
-        if (resources != null)
-            return resources;
 
-        resources = new ARSCFileParser();
-        try {
-            resources.parse(FrameworkMain.getApk());
-        } catch (IOException e) {
-            logger.error("Error getting resources: " + e.getMessage());
-        }
+    // TODO: The below methods should stay in this class but the class needs to be renamed.
 
-        return resources;
+    public void runAnalysis() {
+        logger.info("Running graph generation...");
+        System.out.println("Running graph generation...");
+        long startTime = System.currentTimeMillis();
+
+        this.callGraph = generateGraph(Scene.v().getCallGraph());
+        this.controlFlowGraph = generateGraph(this.callGraph);
+
+        long endTime = System.currentTimeMillis();
+        logger.info("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
+        System.out.println("Graph generation took " + (endTime - startTime) / 1000 + " second(s).");
     }
 
-    private static ProcessManifest getManifest() {
-        if (manifest != null)
-            return manifest;
+    public Graph<Vertex, DefaultEdge> getCallGraph() {
+        if (this.callGraph == null)
+            this.callGraph = generateGraph(Scene.v().getCallGraph());
 
-        try {
-            manifest = new ProcessManifest(FrameworkMain.getApk());
-        } catch (IOException | XmlPullParserException e) {
-            logger.error("Failure processing manifest: " + e.getMessage());
-            return null;
-        }
-
-        return manifest;
+        return this.callGraph;
     }
 
-    private static LayoutFileParser getLayoutFileParser() {
-        if (layoutParser != null)
-            return layoutParser;
+    public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
+        if (this.controlFlowGraph == null)
+            this.controlFlowGraph = generateGraph(this.getCallGraph());
 
-        if (manifest == null)
-            manifest = ApplicationAnalysis.getManifest();
-
-        if (manifest != null) {
-            layoutParser = new LayoutFileParser(manifest.getPackageName(), ApplicationAnalysis.getResources());
-            layoutParser.parseLayoutFileDirect(FrameworkMain.getApk());
-            return layoutParser;
-        }
-
-        return null;
-    }
-
-    private static InfoflowAndroidConfiguration getFlowDroidConfiguration() {
-        InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
-        config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
-        config.setMergeDexFiles(true);
-        config.getAnalysisFileConfig().setAndroidPlatformDir(FrameworkMain.getAndroidPlatform());
-        config.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
-        config.getAnalysisFileConfig().setTargetAPKFile(FrameworkMain.getApk());
-        config.getCallbackConfig().setSerializeCallbacks(true);
-        config.getCallbackConfig().setCallbacksFile(FrameworkMain.getOutputDirectory() + "CollectedCallbacks");
-        return config;
-    }
-
-    private static void initializeSoot() {
-        G.reset();  // Clean up any old Soot instance we may have
-
-        soot.options.Options.v().set_no_bodies_for_excluded(true);
-        soot.options.Options.v().set_allow_phantom_refs(true);
-        soot.options.Options.v().set_output_format(soot.options.Options.output_format_none);
-        soot.options.Options.v().set_whole_program(true);
-        soot.options.Options.v().set_process_dir(Collections.singletonList(FrameworkMain.getApk()));
-        soot.options.Options.v().set_android_jars(FrameworkMain.getAndroidPlatform());
-        soot.options.Options.v().set_src_prec(soot.options.Options.src_prec_apk_class_jimple);
-        soot.options.Options.v().set_keep_offset(false);
-        soot.options.Options.v().set_keep_line_number(false);
-        soot.options.Options.v().set_throw_analysis(soot.options.Options.throw_analysis_dalvik);
-        soot.options.Options.v().set_process_multiple_dex(true);
-        soot.options.Options.v().set_ignore_resolution_errors(true);
-        soot.options.Options.v().set_output_dir(FrameworkMain.getOutputDirectory());
-
-        Scene.v().addBasicClass("android.view.View", soot.SootClass.BODIES);
-
-        // Set Soot configuration options. Note this needs to be done before computing the classpath.
-        // (SA) Exclude classes of android.* will cause layout class cannot be loaded for layout file based callback
-        // analysis. Added back the exclusion, because removing it breaks calls to Android SDK stubs.
-        // (JD) Remove the android.* and androidx.* within FlowDroid and see what happens.
-        List<String> excludeList = new LinkedList<>(Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*",
-                "org.eclipse.*", "soot.*", "android.*", "androidx.*"));
-        soot.options.Options.v().set_exclude(excludeList);
-
-        soot.options.Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(FrameworkMain.getAndroidPlatform(),
-                FrameworkMain.getApk()));
-        Main.v().autoSetOptions();
-
-        Scene.v().loadNecessaryClasses();
-
-        PackManager.v().getPack("wjpp").apply();
-
-        // Patch the callgraph to support additional edges. We do this now, because during callback discovery, the
-        // context-insensitive callgraph algorithm would flood us with invalid edges.
-        LibraryClassPatcher patcher = new LibraryClassPatcher();
-        patcher.patchLibraries();
+        return this.controlFlowGraph;
     }
 
     private static String removePackageName(String name) {
@@ -323,13 +150,13 @@ public class ApplicationAnalysis {
 
     private static String getLabel(SootMethod method) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("<").append(ApplicationAnalysis.removePackageName(method.getDeclaringClass().getName()))
-                .append(": ").append(ApplicationAnalysis.removePackageName(method.getReturnType().toString()))
-                .append(" ").append(ApplicationAnalysis.removePackageName(method.getName())).append("(");
+        stringBuilder.append("<").append(DroidGraph.removePackageName(method.getDeclaringClass().getName()))
+                .append(": ").append(DroidGraph.removePackageName(method.getReturnType().toString()))
+                .append(" ").append(DroidGraph.removePackageName(method.getName())).append("(");
 
         List<soot.Type> parameters = method.getParameterTypes();
         for (int i = 0; i < method.getParameterCount(); i++) {
-            stringBuilder.append(ApplicationAnalysis.removePackageName(parameters.get(i).toString()));
+            stringBuilder.append(DroidGraph.removePackageName(parameters.get(i).toString()));
             if(i != (method.getParameterCount() - 1) )
                 stringBuilder.append(",");
         }
@@ -369,21 +196,6 @@ public class ApplicationAnalysis {
             return Type.method;
     }
 
-    private void runFlowDroid() {
-        logger.info("Running FlowDroid...");
-        System.out.println("Running FlowDroid...");
-        long startTime = System.currentTimeMillis();
-
-        ApplicationAnalysis.initializeSoot();
-        InfoflowAndroidConfiguration configuration = ApplicationAnalysis.getFlowDroidConfiguration();
-        this.application = new SetupApplication(configuration);
-        this.application.constructCallgraph();
-
-        long endTime = System.currentTimeMillis();
-        logger.info("FlowDroid took " + (endTime - startTime) / 1000 + " second(s).");
-        System.out.println("FlowDroid took " + (endTime - startTime) / 1000 + " second(s).");
-    }
-
     private Control getControl(SootMethod callback) {
         if (this.controls == null)
             this.controls = getUIControls();
@@ -410,24 +222,6 @@ public class ApplicationAnalysis {
         return null;
     }
 
-    // For Testing Purposes Only. E.g. className: com.example.android.lifecycle.ActivityA, methodName: onCreate
-    private void printMethodUnitsToConsole(String className, String methodName) {
-        System.out.println("**** Printing method units: " + className + " " + methodName + " ****");
-        SootClass sc = Scene.v().getSootClass(className);
-        for (SootMethod method : sc.getMethods() ) {
-            if (method.getName().contains(methodName)) {
-                if (method.hasActiveBody()) {
-                    for (Unit unit : method.getActiveBody().getUnits()) {
-                        System.out.println(unit.toString());
-                    }
-                }
-            }
-        }
-        System.out.println("**** END ****");
-    }
-
-
-
     private Vertex getInterfaceControl(Vertex vertex) {
         Control control = this.getControl(vertex.getSootMethod());
         if (control != null)
@@ -452,7 +246,7 @@ public class ApplicationAnalysis {
             if (Filter.isValidClass(null, null, sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
-                    Type methodType = ApplicationAnalysis.getMethodType(method);
+                    Type methodType = DroidGraph.getMethodType(method);
                     Vertex vertex = new Vertex(method.hashCode(), getLabel(method), methodType, method);
                     if (!graph.containsVertex(vertex))
                         notInGraph.add(method);
@@ -485,7 +279,7 @@ public class ApplicationAnalysis {
 
             if (Filter.isValidMethod(null, null, srcMethod) ||
                     srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
-                Type methodType = ApplicationAnalysis.getMethodType(srcMethod);
+                Type methodType = DroidGraph.getMethodType(srcMethod);
                 Vertex srcVertex = new Vertex(srcMethod.hashCode(), getLabel(srcMethod), methodType, srcMethod);
                 graph.addVertex(srcVertex);
 
@@ -495,7 +289,7 @@ public class ApplicationAnalysis {
 
                     if (Filter.isValidMethod(null, null, tgtMethod) ||
                             srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
-                        methodType = ApplicationAnalysis.getMethodType(tgtMethod);
+                        methodType = DroidGraph.getMethodType(tgtMethod);
                         Vertex tgtVertex = new Vertex(tgtMethod.hashCode(), getLabel(tgtMethod), methodType,
                                 tgtMethod);
                         graph.addVertex(tgtVertex);
