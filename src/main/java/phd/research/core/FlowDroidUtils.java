@@ -150,8 +150,8 @@ public class FlowDroidUtils {
 
         PackManager.v().getPack("wjpp").apply();
 
-        // Patch the callgraph to support additional edges. We do this now, because during callback discovery, the
-        // context-insensitive callgraph algorithm would flood us with invalid edges.
+        // Patch the call graph to support additional edges. We do this now, because during callback discovery, the
+        // context-insensitive call graph algorithm would flood us with invalid edges.
         LibraryClassPatcher patcher = new LibraryClassPatcher();
         patcher.patchLibraries();
     }

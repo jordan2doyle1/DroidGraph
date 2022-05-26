@@ -134,7 +134,7 @@ public class UiJimpleSearch extends UiSearch {
         return null;
     }
 
-    public Set<Control> getUIControls() {
+    public Set<Control> getControlListenerMethods() {
         LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(super.apk);
 
         Set<Control> uiControls = new HashSet<>();

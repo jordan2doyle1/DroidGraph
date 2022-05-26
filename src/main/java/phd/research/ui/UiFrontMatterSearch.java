@@ -23,7 +23,7 @@ public class UiFrontMatterSearch extends UiSearch {
         super(apk);
     }
 
-    public Set<Control> getUIControls() {
+    public Set<Control> getControlListenerMethods() {
         LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(super.apk);
 
         Set<Control> uiControls = new HashSet<>();

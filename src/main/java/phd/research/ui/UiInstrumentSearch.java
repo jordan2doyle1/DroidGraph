@@ -29,7 +29,7 @@ public class UiInstrumentSearch extends UiSearch {
         super(apk);
     }
 
-    private Pair<String, Integer> getInterfaceID(final SootMethod callback) {
+    private Pair<String, Integer> getInterfaceId(final SootMethod callback) {
         PatchingChain<Unit> units = callback.getActiveBody().getUnits();
         final String[] arguments = {""};
         Pair<String, Integer> interfaceID = null;
@@ -78,7 +78,7 @@ public class UiInstrumentSearch extends UiSearch {
     }
 
 
-    public Set<Control> getUIControls() {
+    public Set<Control> getControlListenerMethods() {
         Set<SootMethod> callbackMethods = new HashSet<>();
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(
                 new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks")
@@ -116,7 +116,7 @@ public class UiInstrumentSearch extends UiSearch {
         Iterator<SootMethod> iterator = callbackMethods.iterator();
         while (iterator.hasNext()) {
             SootMethod listener = iterator.next();
-            Pair<String, Integer> interfaceID = getInterfaceID(listener);
+            Pair<String, Integer> interfaceID = getInterfaceId(listener);
 
             if (interfaceID != null) {
                 Iterator<Pair<String, AndroidLayoutControl>> controlIterator = nullControls.iterator();
