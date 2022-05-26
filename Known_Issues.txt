@@ -1,5 +1,0 @@
-## Known Issues
-
- - Possible callbacks should be included in the view-callback search. False positives will result in a null being
-   returned (no harm done). Excluding possible callbacks will result in an in-complete graph.
- - Fragment callback methods are not linked to their associated view controls. Don't know why?

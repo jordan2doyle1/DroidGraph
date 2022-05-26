@@ -1,7 +1,6 @@
 package phd.research.graph;
 
-import phd.research.core.ApplicationAnalysis;
-import phd.research.core.FrameworkMain;
+import phd.research.core.FlowDroidUtils;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Type;
@@ -10,6 +9,9 @@ import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.infoflow.android.entryPointCreators.AndroidEntryPointUtils;
 import soot.jimple.infoflow.util.SystemClassHandler;
 import soot.util.MultiMap;
+
+import java.io.File;
+import java.util.Set;
 
 /**
  * @author Jordan Doyle
@@ -20,31 +22,12 @@ public class Filter {
 
     }
 
-    public static boolean isValidClass(SootClass sootClass) {
-        if (SystemClassHandler.v().isClassInSystemPackage(sootClass) || sootClass.isJavaLibraryClass()
-                || !Filter.isValidPackage(sootClass.getPackageName()) || sootClass.isLibraryClass() ||
-                sootClass.isPhantomClass())
-            return false;
-
-        for (String blacklistClass : FrameworkMain.getClassBlacklist()) {
-            if (sootClass.getShortName().contains(blacklistClass))
-                return false;
-        }
-
-        return true;
-    }
-
-    public static boolean isEntryPointClass(SootClass sootClass) {
-        for (SootClass entryClass : ApplicationAnalysis.getEntryPointClasses()) {
-            if (entryClass.equals(sootClass))
-                return true;
+    public static boolean isEntryPointClass(String apk, SootClass sootClass) {
+        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
+            if (entryClass.equals(sootClass)) return true;
         }
 
         return false;
-    }
-
-    public static boolean isValidMethod(SootMethod method) {
-        return Filter.isValidClass(method.getDeclaringClass());
     }
 
     public static boolean isLifecycleMethod(SootMethod method) {
@@ -52,86 +35,100 @@ public class Filter {
         return entryPointUtils.isEntryPointMethod(method);
     }
 
+    public static boolean isListenerMethod(File callbackFile, SootMethod method) {
+        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbackFile);
+        if (callbacks != null) return Filter.isListenerMethod(callbacks.getCallbackMethods(), method);
+
+        return false;
+    }
+
     public static boolean isListenerMethod(
             MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
         SootClass methodClass = getParentClass(method);
 
-        if (callbacks != null) {
-            for (AndroidCallbackDefinition callbackDefinition : callbacks.get(methodClass)) {
-                if (callbackDefinition.getTargetMethod().equals(method)) {
-                    if (callbackDefinition.getCallbackType() == AndroidCallbackDefinition.CallbackType.Widget)
-                        return true;
-                }
+        for (AndroidCallbackDefinition callbackDefinition : callbacks.get(methodClass)) {
+            if (callbackDefinition.getTargetMethod().equals(method)) {
+                if (callbackDefinition.getCallbackType() == AndroidCallbackDefinition.CallbackType.Widget) return true;
             }
         }
 
         return false;
     }
 
-    public static boolean isListenerMethod(SootMethod method) {
-        CollectedCallbacks callbacks = ApplicationAnalysis.getCallbacks();
-        if (callbacks != null)
-            return Filter.isListenerMethod(callbacks.getCallbackMethods(), method);
-
-        return false;
-    }
-
-    public static boolean isPossibleListenerMethod(SootMethod method) {
-        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(method) &&
-                !Filter.isOtherCallbackMethod(method)) {
-            for (Type paramType : method.getParameterTypes()) {
-                if (paramType.toString().equals("android.view.View")) {
-                    if ((!method.toString().startsWith("<androidx")))
-                        return true;
-                }
-            }
-        }
+    public static boolean isOtherCallbackMethod(File callbackFile, SootMethod method) {
+        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbackFile);
+        if (callbacks != null) return Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method);
 
         return false;
     }
 
     public static boolean isOtherCallbackMethod(
             MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
-        if (Filter.isLifecycleMethod(method))
-            return false;
-
-        if (Filter.isListenerMethod(method))
-            return false;
-
-        SootClass methodClass = Filter.getParentClass(method);
-        for (AndroidCallbackDefinition callbackDefinition : callbacks.get(methodClass)) {
-            if (callbackDefinition.getTargetMethod().equals(method))
-                return true;
+        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks, method)) {
+            SootClass methodClass = Filter.getParentClass(method);
+            for (AndroidCallbackDefinition callbackDefinition : callbacks.get(methodClass)) {
+                if (callbackDefinition.getTargetMethod().equals(method)) return true;
+            }
         }
 
         return false;
     }
 
-    public static boolean isOtherCallbackMethod(SootMethod method) {
-        CollectedCallbacks callbacks = ApplicationAnalysis.getCallbacks();
-        if (callbacks != null)
-            return Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method);
+    public static boolean isPossibleListenerMethod(File callbackFile, SootMethod method) {
+        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbackFile);
+        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks.getCallbackMethods(), method)
+                && !Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method)) {
+            for (Type paramType : method.getParameterTypes()) {
+                if (paramType.toString().equals("android.view.View")) {
+                    if ((!method.toString().startsWith("<androidx"))) return true;
+                }
+            }
+        }
 
         return false;
     }
 
     private static SootClass getParentClass(SootMethod method) {
-        if (method.getDeclaringClass().hasOuterClass())
-            return method.getDeclaringClass().getOuterClass();
-        else
-            return method.getDeclaringClass();
+        if (method.getDeclaringClass().hasOuterClass()) return method.getDeclaringClass().getOuterClass();
+        else return method.getDeclaringClass();
     }
 
-    private static boolean isValidPackage(String packageName) {
-        for (String blacklistPackage : FrameworkMain.getPackageBlacklist()) {
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean isValidPackage(Set<String> blacklist, String packageName) {
+        if (blacklist == null) {
+            return true;
+        }
+
+        for (String blacklistPackage : blacklist) {
             if (blacklistPackage.startsWith(".")) {
-                if (packageName.contains(blacklistPackage))
-                    return false;
+                if (packageName.contains(blacklistPackage)) return false;
             } else {
-                if (packageName.startsWith(blacklistPackage))
-                    return false;
+                if (packageName.startsWith(blacklistPackage)) return false;
             }
         }
+
         return true;
+    }
+
+    public static boolean isValidClass(Set<String> packageBlacklist, Set<String> classBlacklist, SootClass sootClass) {
+        if (SystemClassHandler.v().isClassInSystemPackage(sootClass) || sootClass.isJavaLibraryClass()
+                || sootClass.isLibraryClass() || sootClass.isPhantomClass())
+            return false;
+
+        if (packageBlacklist != null) {
+            if (!isValidPackage(packageBlacklist, sootClass.getPackageName())) return false;
+        }
+
+        if (classBlacklist != null) {
+            for (String blacklistClass : classBlacklist) {
+                if (sootClass.getShortName().contains(blacklistClass)) return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean isValidMethod(Set<String> packageBlacklist, Set<String> classBlacklist, SootMethod method) {
+        return Filter.isValidClass(packageBlacklist, classBlacklist, method.getDeclaringClass());
     }
 }

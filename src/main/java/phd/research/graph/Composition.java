@@ -54,28 +54,28 @@ public class Composition {
         String stringFormat = "\t%-40s\t%-40s\n";
         boolean even = true;
 
-        int numDashes = (80 - (tableTitle.length() + 2) );
+        int numDashes = (80 - (tableTitle.length() + 2));
         if ((numDashes % 2) != 0) {
             numDashes = numDashes - 1;
             even = false;
         }
 
         StringBuilder dashStringBuilder = new StringBuilder();
-        for(int i = 0; i < (numDashes / 2); i++) {
+        for (int i = 0; i < (numDashes / 2); i++) {
             dashStringBuilder.append("-");
         }
 
         String before = even ? dashStringBuilder + " " : dashStringBuilder + "- ";
         String after = " " + dashStringBuilder;
 
-        return before + tableTitle + after + String.format("\n" + stringFormat, "Vertex", this.vertex) +
-                String.format(stringFormat, "Edge", this.edge) +
-                String.format(stringFormat, "Lifecycle", this.lifecycle) +
-                String.format(stringFormat, "Listener", this.listener) +
-                String.format(stringFormat, "Other", this.other) +
-                String.format(stringFormat, "Method", this.method) +
-                String.format(stringFormat, "Dummy", this.dummy) +
-                String.format(stringFormat, "Interface", this.control) + separator;
+        return before + tableTitle + after + String.format("\n" + stringFormat, "Vertex", this.vertex)
+                + String.format(stringFormat, "Edge", this.edge)
+                + String.format(stringFormat, "Lifecycle", this.lifecycle)
+                + String.format(stringFormat, "Listener", this.listener)
+                + String.format(stringFormat, "Other", this.other)
+                + String.format(stringFormat, "Method", this.method)
+                + String.format(stringFormat, "Dummy", this.dummy)
+                + String.format(stringFormat, "Interface", this.control) + separator;
     }
 
     @Override
@@ -87,22 +87,21 @@ public class Composition {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this)
-            return true;
+        if (o == this) return true;
 
-        if (!(o instanceof Composition))
-            return false;
+        if (!(o instanceof Composition)) return false;
 
         Composition composition = (Composition) o;
-        return this.edge == composition.edge && this.vertex == composition.vertex
-                && this.other == composition.other && this.listener == composition.listener
-                && this.lifecycle == composition.lifecycle && this.method == composition.method
-                && this.dummy == composition.dummy && this.control == composition.control;
+        return this.edge == composition.edge && this.vertex == composition.vertex && this.other == composition.other
+                && this.listener == composition.listener && this.lifecycle == composition.lifecycle
+                && this.method == composition.method && this.dummy == composition.dummy
+                && this.control == composition.control;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.edge, this.vertex, this.other, this.listener, this.lifecycle, this.method,
-                this.dummy, this.control);
+        return Objects.hash(
+                this.edge, this.vertex, this.other, this.listener, this.lifecycle, this.method, this.dummy, this.control
+        );
     }
 }

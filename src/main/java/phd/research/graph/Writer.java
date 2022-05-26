@@ -107,8 +107,7 @@ public class Writer {
         File directory = new File(location);
 
         if (!directory.exists()) {
-            if (!directory.mkdirs())
-                return null;
+            if (!directory.mkdirs()) return null;
         }
 
         return new BufferedWriter(new java.io.FileWriter(location + file));
