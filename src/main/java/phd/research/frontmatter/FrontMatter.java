@@ -2,7 +2,6 @@ package phd.research.frontmatter;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import phd.research.core.FrameworkMain;
 import soot.Scene;
 import soot.SootMethod;
 
@@ -13,15 +12,16 @@ import java.nio.file.Paths;
 
 public class FrontMatter {
 
+    private final File outputFile;
     private JSONObject output;
 
-    public FrontMatter() throws IOException {
-        this.output = readJSONOutput();
+    public FrontMatter(File outputFile) throws IOException {
+        this.outputFile = outputFile;
     }
 
     public boolean containsControl(String className, int id) throws IOException {
         if (this.output == null) {
-            this.output = readJSONOutput();
+            this.output = readJSONOutput(this.outputFile);
         }
 
         JSONArray activities = this.output.getJSONArray("activities");
@@ -63,7 +63,7 @@ public class FrontMatter {
 
     public SootMethod getClickListener(int id) throws IOException {
         if (this.output == null) {
-            this.output = readJSONOutput();
+            this.output = readJSONOutput(this.outputFile);
         }
 
         JSONArray listenerMethods = null;
@@ -88,8 +88,7 @@ public class FrontMatter {
         return null;
     }
 
-    private JSONObject readJSONOutput() throws IOException {
-        File outputFile = new File(FrameworkMain.getFrontMatterOutputFile());
+    private JSONObject readJSONOutput(File outputFile) throws IOException {
         if (!outputFile.exists())
             throw new IOException("Error: Front Matter output file does not exist!");
 
