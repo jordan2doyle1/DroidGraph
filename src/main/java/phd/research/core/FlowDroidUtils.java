@@ -96,7 +96,7 @@ public class FlowDroidUtils {
 
         if (manifest != null) {
             layoutParser = new LayoutFileParser(manifest.getPackageName(), getResources(apk));
-            layoutParser.parseLayoutFileDirect(FrameworkMain.getApk());
+            layoutParser.parseLayoutFileDirect(apk);
             return layoutParser;
         }
 
