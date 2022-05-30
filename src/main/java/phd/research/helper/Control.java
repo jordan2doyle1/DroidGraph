@@ -13,7 +13,7 @@ public class Control {
     private final int hashcode;
     private final ARSCFileParser.AbstractResource control;
     private final ARSCFileParser.AbstractResource layout;
-    private final SootMethod clickListener;
+    private SootMethod clickListener;
 
     public Control(int hashcode, ARSCFileParser.AbstractResource control, ARSCFileParser.AbstractResource layout,
                    SootMethod clickListener) {
@@ -33,6 +33,10 @@ public class Control {
 
     public SootMethod getClickListener() {
         return this.clickListener;
+    }
+
+    public void setClickListener(SootMethod method) {
+        this.clickListener = method;
     }
 
     @Override

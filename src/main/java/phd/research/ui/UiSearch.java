@@ -26,6 +26,7 @@ public class UiSearch {
         this.resources = FlowDroidUtils.getResources(this.apk);
     }
 
+    //TODO: Remove
     protected static String getResourceName(String name) {
         int index = name.lastIndexOf("/");
 
@@ -36,6 +37,7 @@ public class UiSearch {
         return name;
     }
 
+    //TODO: Remove
     protected ARSCFileParser.AbstractResource getResourceById(int resourceId) {
         ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
         if (resType == null) return null;
@@ -49,7 +51,8 @@ public class UiSearch {
         return foundResources.get(0);
     }
 
-    protected SootMethod searchForCallbackMethod(String methodName) {
+    // TODO: Remove
+    protected static SootMethod searchForCallbackMethod(String methodName) {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(
                 new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks")
         );

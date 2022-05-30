@@ -166,7 +166,10 @@ public class FrameworkMain {
         System.out.println("Running graph generation...");
         long dgStartTime = System.currentTimeMillis();
 
-        UiControls uiControls = new UiControls();
+        UiControls uiControls = new UiControls(
+                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"),
+                FrameworkMain.getApk()
+        );
         DroidGraph droidGraph = new DroidGraph(
                 new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), uiControls);
         droidGraph.generateGraphs();

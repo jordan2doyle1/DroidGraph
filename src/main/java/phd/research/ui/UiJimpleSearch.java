@@ -50,7 +50,7 @@ public class UiJimpleSearch extends UiSearch {
         }
     }
 
-    private SootMethod searchForCallbackMethod(SootClass callbackClass, String methodName) {
+    private static SootMethod searchForCallbackMethod(SootClass callbackClass, String methodName) {
         SootMethod foundMethod = null;
 
         for (SootMethod method : callbackClass.getMethods()) {
