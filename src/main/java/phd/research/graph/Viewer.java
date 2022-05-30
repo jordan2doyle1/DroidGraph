@@ -10,6 +10,7 @@ import phd.research.ui.UiControls;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Unit;
 import soot.util.Chain;
 
 import java.io.File;
@@ -51,6 +52,22 @@ public class Viewer {
     public static void printCFGDetails(Graph<Vertex, DefaultEdge> controlFlowGraph) {
         Composition controlFlowGraphComposition = new Composition(controlFlowGraph);
         System.out.println(controlFlowGraphComposition.toTableString("CFG Composition"));
+    }
+
+    private static void printMethodUnitsToConsole(String className, String methodName) {
+        // For Testing Purposes Only. E.g. className: com.example.android.lifecycle.ActivityA, methodName: onCreate
+        System.out.println("**** Printing method units: " + className + " " + methodName + " ****");
+        SootClass sc = Scene.v().getSootClass(className);
+        for (SootMethod method : sc.getMethods()) {
+            if (method.getName().contains(methodName)) {
+                if (method.hasActiveBody()) {
+                    for (Unit unit : method.getActiveBody().getUnits()) {
+                        System.out.println(unit.toString());
+                    }
+                }
+            }
+        }
+        System.out.println("**** END ****");
     }
 
     private static void printList(Set<?> list) {
@@ -253,8 +270,8 @@ public class Viewer {
 
                 if (listener != null)
                     System.out.printf((stringFormat), control.getControlResource().getResourceID(),
-                            control.getControlResource().getResourceName(), listener.getDeclaringClass().getShortName(),
-                            listener.getName());
+                            control.getControlResource().getResourceName(),
+                            listener.getDeclaringClass().getShortName(), listener.getName());
                 else
                     System.out.printf((stringFormat), control.getControlResource().getResourceID(),
                             control.getControlResource().getResourceName(), null, null);

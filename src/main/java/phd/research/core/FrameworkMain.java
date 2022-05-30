@@ -167,7 +167,8 @@ public class FrameworkMain {
         long dgStartTime = System.currentTimeMillis();
 
         UiControls uiControls = new UiControls();
-        DroidGraph droidGraph = new DroidGraph();
+        DroidGraph droidGraph = new DroidGraph(
+                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), uiControls);
         droidGraph.generateGraphs();
 
         long dgEndTime = System.currentTimeMillis();
@@ -181,7 +182,7 @@ public class FrameworkMain {
             System.out.println("Starting file output...");
 
             if (outputUnitGraphs) try {
-                DroidGraph.outputMethods(outputFormat);
+                Writer.outputMethods(FrameworkMain.getOutputDirectory(), outputFormat);
             } catch (Exception e) {
                 logger.error("Error writing methods to output file: " + e.getMessage());
             }

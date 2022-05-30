@@ -23,6 +23,33 @@ public class UiJimpleSearch extends UiSearch {
         super(apk);
     }
 
+    public static void getValueFromGetIdMethod() {
+        // For Testing Purposes Only. Trying to get value from getId() method in static Jimple.
+        SootClass sc = Scene.v().getSootClass("com.example.android.lifecycle.ActivityA$1");
+        for (SootMethod method : sc.getMethods()) {
+            if (method.getName().contains("onClick")) {
+                if (method.hasActiveBody()) {
+                    PatchingChain<Unit> units = method.getActiveBody().getUnits();
+                    for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
+                        Unit unit = iterator.next();
+                        unit.apply(new AbstractStmtSwitch<Stmt>() {
+                            @Override
+                            public void caseAssignStmt(AssignStmt stmt) {
+                                super.caseAssignStmt(stmt);
+
+                                // Get the left and right operand, if the right operand is a virtual invoke with name.
+                                InvokeExpr invokeExpr = stmt.getInvokeExpr();
+                                if (invokeExpr.getMethod().getName().equals("getId")) {
+                                    System.out.println(unit.getUseBoxes());
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
     private SootMethod searchForCallbackMethod(SootClass callbackClass, String methodName) {
         SootMethod foundMethod = null;
 

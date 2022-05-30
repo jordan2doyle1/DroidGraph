@@ -4,18 +4,14 @@ import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
-import phd.research.enums.Format;
 import phd.research.enums.Type;
 import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
-import phd.research.graph.Writer;
 import phd.research.helper.Control;
 import phd.research.jGraph.Vertex;
+import phd.research.ui.UiControls;
 import soot.*;
-import soot.jimple.AbstractStmtSwitch;
-import soot.jimple.AssignStmt;
-import soot.jimple.InvokeExpr;
-import soot.jimple.Stmt;
+import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
@@ -29,30 +25,17 @@ import java.util.*;
  */
 public class DroidGraph {
 
+    private final File collectedCallbacksFile;
+    private final UiControls uiControls;
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
 
-    public DroidGraph() {
+    public DroidGraph(File collectedCallbacksFile, UiControls controls) {
+        if (!collectedCallbacksFile.exists())
+            System.err.println();
 
-    }
-
-    // TODO: Find somewhere to put the below testing methods for future reference.
-
-    protected static void outputMethods(Format format) throws Exception {
-        for (SootClass sootClass : Scene.v().getClasses()) {
-            if (Filter.isValidClass(null, null, sootClass)) {
-                for (SootMethod method : sootClass.getMethods()) {
-                    if (method.hasActiveBody()) {
-                        Body body = method.getActiveBody();
-                        UnitGraph unitGraph = new UnitGraph(body);
-
-                        String name = sootClass.getName().substring(sootClass.getName().lastIndexOf(".") + 1) + "_" + method.getName();
-
-                        Writer.writeGraph(format, FrameworkMain.getOutputDirectory(), name, unitGraph.getGraph());
-                    }
-                }
-            }
-        }
+        this.collectedCallbacksFile = collectedCallbacksFile;
+        this.uiControls = controls;
     }
 
     private static String removePackageName(String name) {
@@ -67,11 +50,11 @@ public class DroidGraph {
         return name;
     }
 
-    // TODO: Find somewhere to put the below method.
-
     private static String getLabel(SootMethod method) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("<").append(DroidGraph.removePackageName(method.getDeclaringClass().getName())).append(": ").append(DroidGraph.removePackageName(method.getReturnType().toString())).append(" ").append(DroidGraph.removePackageName(method.getName())).append("(");
+        stringBuilder.append("<").append(DroidGraph.removePackageName(method.getDeclaringClass().getName()))
+                .append(": ").append(DroidGraph.removePackageName(method.getReturnType().toString())).append(" ")
+                .append(DroidGraph.removePackageName(method.getName())).append("(");
 
         List<soot.Type> parameters = method.getParameterTypes();
         for (int i = 0; i < method.getParameterCount(); i++) {
@@ -82,9 +65,6 @@ public class DroidGraph {
         stringBuilder.append(")>");
         return stringBuilder.toString();
     }
-
-
-    // TODO: The below methods should stay in this class but the class needs to be renamed.
 
     /**
      * For some reason JGraphT does not have a method to retrieve individual vertices that already exist in the graph.
@@ -103,57 +83,14 @@ public class DroidGraph {
         return null;
     }
 
-    private static Type getMethodType(SootMethod method) {
+    private Type getMethodType(SootMethod method) {
+        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(this.collectedCallbacksFile);
+
         if (method.getDeclaringClass().getName().equals("dummyMainClass")) return Type.dummyMethod;
-        else if (Filter.isListenerMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
-            return Type.listener;
+        else if (Filter.isListenerMethod(callbacks.getCallbackMethods(), method)) return Type.listener;
         else if (Filter.isLifecycleMethod(method)) return Type.lifecycle;
-        else if (Filter.isOtherCallbackMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
-            return Type.other;
+        else if (Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method)) return Type.other;
         else return Type.method;
-    }
-
-    public void getValueFromGetIdMethod() {
-        // For Testing Purposes Only.
-        SootClass sc = Scene.v().getSootClass("com.example.android.lifecycle.ActivityA$1");
-        for (SootMethod method : sc.getMethods()) {
-            if (method.getName().contains("onClick")) {
-                if (method.hasActiveBody()) {
-                    PatchingChain<Unit> units = method.getActiveBody().getUnits();
-                    for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
-                        Unit unit = iterator.next();
-                        unit.apply(new AbstractStmtSwitch<Stmt>() {
-                            @Override
-                            public void caseAssignStmt(AssignStmt stmt) {
-                                super.caseAssignStmt(stmt);
-
-                                // Get the left and right operand, if the right operand is a virtual invoke with name.
-                                InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                                if (invokeExpr.getMethod().getName().equals("getId")) {
-                                    System.out.println(unit.getUseBoxes());
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    private void printMethodUnitsToConsole(String className, String methodName) {
-        // For Testing Purposes Only. E.g. className: com.example.android.lifecycle.ActivityA, methodName: onCreate
-        System.out.println("**** Printing method units: " + className + " " + methodName + " ****");
-        SootClass sc = Scene.v().getSootClass(className);
-        for (SootMethod method : sc.getMethods()) {
-            if (method.getName().contains(methodName)) {
-                if (method.hasActiveBody()) {
-                    for (Unit unit : method.getActiveBody().getUnits()) {
-                        System.out.println(unit.toString());
-                    }
-                }
-            }
-        }
-        System.out.println("**** END ****");
     }
 
     public void generateGraphs() {
@@ -173,31 +110,11 @@ public class DroidGraph {
         return this.controlFlowGraph;
     }
 
-    private Control getControl(SootMethod callback) {
-        if (this.controls == null) this.controls = getUIControls();
-
-        for (Control control : this.controls) {
-            if (control.getClickListener() != null) if (control.getClickListener().equals(callback)) return control;
-        }
-
-        return null;
-    }
-
-    private Control getControl(String resourceName) {
-        if (this.controls == null) this.controls = getUIControls();
-
-        for (Control control : this.controls) {
-            if (control.getControlResource() != null)
-                if (control.getControlResource().getResourceName().equals(resourceName)) return control;
-        }
-
-        return null;
-    }
-
     private Vertex getInterfaceControl(Vertex vertex) {
-        Control control = this.getControl(vertex.getSootMethod());
+        Control control = this.uiControls.getControl(vertex.getSootMethod());
         if (control != null)
-            return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()), Type.control, vertex.getSootMethod());
+            return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()),
+                    Type.control, vertex.getSootMethod());
         else System.err.println("No control for " + vertex.getLabel());
 
         return null;
@@ -215,7 +132,7 @@ public class DroidGraph {
             if (Filter.isValidClass(null, null, sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
-                    Type methodType = DroidGraph.getMethodType(method);
+                    Type methodType = this.getMethodType(method);
                     Vertex vertex = new Vertex(method.hashCode(), getLabel(method), methodType, method);
                     if (!graph.containsVertex(vertex)) notInGraph.add(method);
                 }
@@ -235,16 +152,17 @@ public class DroidGraph {
         return notInGraph;
     }
 
+    // TODO: Confirm Graph Generation is correct?
     private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) {
-        // TODO: Confirm Call Graph Generation is correct?
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         Iterator<MethodOrMethodContext> sourceItr = sootCallGraph.sourceMethods();
         while (sourceItr.hasNext()) {
             SootMethod srcMethod = sourceItr.next().method();
 
-            if (Filter.isValidMethod(null, null, srcMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
-                Type methodType = DroidGraph.getMethodType(srcMethod);
+            if (Filter.isValidMethod(null, null, srcMethod) || srcMethod.getDeclaringClass().getName().equals(
+                    "dummyMainClass")) {
+                Type methodType = this.getMethodType(srcMethod);
                 Vertex srcVertex = new Vertex(srcMethod.hashCode(), getLabel(srcMethod), methodType, srcMethod);
                 graph.addVertex(srcVertex);
 
@@ -253,7 +171,7 @@ public class DroidGraph {
                     SootMethod tgtMethod = edgeItr.next().tgt();
 
                     if (Filter.isValidMethod(null, null, tgtMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
-                        methodType = DroidGraph.getMethodType(tgtMethod);
+                        methodType = this.getMethodType(tgtMethod);
                         Vertex tgtVertex = new Vertex(tgtMethod.hashCode(), getLabel(tgtMethod), methodType, tgtMethod);
                         graph.addVertex(tgtVertex);
 
@@ -268,7 +186,6 @@ public class DroidGraph {
     }
 
     private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph) {
-        // TODO: Confirm Control Flow Graph Generation is correct?
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Graphs.addGraph(graph, callGraph);
         JimpleBasedInterproceduralCFG jimpleCFG = new JimpleBasedInterproceduralCFG();

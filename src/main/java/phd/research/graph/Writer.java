@@ -7,6 +7,10 @@ import org.jgrapht.nio.dot.DOTExporter;
 import org.jgrapht.nio.json.JSONExporter;
 import phd.research.enums.Format;
 import phd.research.jGraph.Vertex;
+import soot.Body;
+import soot.Scene;
+import soot.SootClass;
+import soot.SootMethod;
 
 import java.io.*;
 import java.util.Set;
@@ -50,6 +54,24 @@ public class Writer {
             }
 
             writer.close();
+        }
+    }
+
+    public static void outputMethods(String directory, Format format) throws Exception {
+        for (SootClass sootClass : Scene.v().getClasses()) {
+            if (Filter.isValidClass(null, null, sootClass)) {
+                for (SootMethod method : sootClass.getMethods()) {
+                    if (method.hasActiveBody()) {
+                        Body body = method.getActiveBody();
+                        UnitGraph unitGraph = new UnitGraph(body);
+
+                        String name = sootClass.getName().substring(
+                                sootClass.getName().lastIndexOf(".") + 1) + "_" + method.getName();
+
+                        Writer.writeGraph(format, directory, name, unitGraph.getGraph());
+                    }
+                }
+            }
         }
     }
 

@@ -30,6 +30,23 @@ public class UiControls {
         return false;
     }
 
+    public Control getControl(SootMethod callback) {
+        for (Control control : this.getControls()) {
+            if (control.getClickListener() != null) if (control.getClickListener().equals(callback)) return control;
+        }
+
+        return null;
+    }
+
+    public Control getControl(String resourceName) {
+        for (Control control : this.getControls()) {
+            if (control.getControlResource() != null)
+                if (control.getControlResource().getResourceName().equals(resourceName)) return control;
+        }
+
+        return null;
+    }
+
     private Set<Control> getAllControls() {
         Set<Control> controls = new HashSet<>();
 
