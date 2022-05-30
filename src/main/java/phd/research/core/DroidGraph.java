@@ -31,7 +31,6 @@ public class DroidGraph {
 
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
-    private Set<Control> controls;
 
     public DroidGraph() {
 
@@ -39,10 +38,85 @@ public class DroidGraph {
 
     // TODO: Find somewhere to put the below testing methods for future reference.
 
+    protected static void outputMethods(Format format) throws Exception {
+        for (SootClass sootClass : Scene.v().getClasses()) {
+            if (Filter.isValidClass(null, null, sootClass)) {
+                for (SootMethod method : sootClass.getMethods()) {
+                    if (method.hasActiveBody()) {
+                        Body body = method.getActiveBody();
+                        UnitGraph unitGraph = new UnitGraph(body);
+
+                        String name = sootClass.getName().substring(sootClass.getName().lastIndexOf(".") + 1) + "_" + method.getName();
+
+                        Writer.writeGraph(format, FrameworkMain.getOutputDirectory(), name, unitGraph.getGraph());
+                    }
+                }
+            }
+        }
+    }
+
+    private static String removePackageName(String name) {
+        int index = name.lastIndexOf(".");
+
+        if (name.contains("dummyMainMethod")) index = name.lastIndexOf("_");
+
+        if (index != -1) {
+            name = name.replace(name.substring(0, index + 1), "");
+        }
+
+        return name;
+    }
+
+    // TODO: Find somewhere to put the below method.
+
+    private static String getLabel(SootMethod method) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("<").append(DroidGraph.removePackageName(method.getDeclaringClass().getName())).append(": ").append(DroidGraph.removePackageName(method.getReturnType().toString())).append(" ").append(DroidGraph.removePackageName(method.getName())).append("(");
+
+        List<soot.Type> parameters = method.getParameterTypes();
+        for (int i = 0; i < method.getParameterCount(); i++) {
+            stringBuilder.append(DroidGraph.removePackageName(parameters.get(i).toString()));
+            if (i != (method.getParameterCount() - 1)) stringBuilder.append(",");
+        }
+
+        stringBuilder.append(")>");
+        return stringBuilder.toString();
+    }
+
+
+    // TODO: The below methods should stay in this class but the class needs to be renamed.
+
+    /**
+     * For some reason JGraphT does not have a method to retrieve individual vertices that already exist in the graph.
+     * Instead, this method searched a list of all the vertices contained within the graph for the required
+     * {@link Vertex} object and returns it.
+     *
+     * @param id  the ID of the {@link Vertex} object being searched for.
+     * @param set the set of all vertices to search.
+     * @return The {@link Vertex} object from the vertex set with the given ID.
+     */
+    private static Vertex getVertex(int id, Set<Vertex> set) {
+        for (Vertex vertex : set) {
+            if (vertex.getID() == id) return vertex;
+        }
+
+        return null;
+    }
+
+    private static Type getMethodType(SootMethod method) {
+        if (method.getDeclaringClass().getName().equals("dummyMainClass")) return Type.dummyMethod;
+        else if (Filter.isListenerMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
+            return Type.listener;
+        else if (Filter.isLifecycleMethod(method)) return Type.lifecycle;
+        else if (Filter.isOtherCallbackMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
+            return Type.other;
+        else return Type.method;
+    }
+
     public void getValueFromGetIdMethod() {
         // For Testing Purposes Only.
         SootClass sc = Scene.v().getSootClass("com.example.android.lifecycle.ActivityA$1");
-        for (SootMethod method : sc.getMethods() ) {
+        for (SootMethod method : sc.getMethods()) {
             if (method.getName().contains("onClick")) {
                 if (method.hasActiveBody()) {
                     PatchingChain<Unit> units = method.getActiveBody().getUnits();
@@ -70,7 +144,7 @@ public class DroidGraph {
         // For Testing Purposes Only. E.g. className: com.example.android.lifecycle.ActivityA, methodName: onCreate
         System.out.println("**** Printing method units: " + className + " " + methodName + " ****");
         SootClass sc = Scene.v().getSootClass(className);
-        for (SootMethod method : sc.getMethods() ) {
+        for (SootMethod method : sc.getMethods()) {
             if (method.getName().contains(methodName)) {
                 if (method.hasActiveBody()) {
                     for (Unit unit : method.getActiveBody().getUnits()) {
@@ -82,130 +156,39 @@ public class DroidGraph {
         System.out.println("**** END ****");
     }
 
-    // TODO: Find somewhere to put the below method.
-
-    protected static void outputMethods(Format format) throws Exception {
-        for (SootClass sootClass : Scene.v().getClasses()) {
-            if (Filter.isValidClass(null, null, sootClass)) {
-                for (SootMethod method : sootClass.getMethods()) {
-                    if (method.hasActiveBody()) {
-                        Body body = method.getActiveBody();
-                        UnitGraph unitGraph = new UnitGraph(body);
-
-                        String name = sootClass.getName().substring(sootClass.getName().lastIndexOf(".") + 1)
-                                + "_" + method.getName();
-
-                        Writer.writeGraph(format, FrameworkMain.getOutputDirectory(), name, unitGraph.getGraph());
-                    }
-                }
-            }
-        }
-    }
-
-
-    // TODO: The below methods should stay in this class but the class needs to be renamed.
-
     public void generateGraphs() {
         this.callGraph = generateGraph(Scene.v().getCallGraph());
         this.controlFlowGraph = generateGraph(this.callGraph);
     }
 
     public Graph<Vertex, DefaultEdge> getCallGraph() {
-        if (this.callGraph == null)
-            this.callGraph = generateGraph(Scene.v().getCallGraph());
+        if (this.callGraph == null) this.callGraph = generateGraph(Scene.v().getCallGraph());
 
         return this.callGraph;
     }
 
     public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
-        if (this.controlFlowGraph == null)
-            this.controlFlowGraph = generateGraph(this.getCallGraph());
+        if (this.controlFlowGraph == null) this.controlFlowGraph = generateGraph(this.getCallGraph());
 
         return this.controlFlowGraph;
     }
 
-    private static String removePackageName(String name) {
-        int index = name.lastIndexOf(".");
-
-        if (name.contains("dummyMainMethod"))
-            index = name.lastIndexOf("_");
-
-        if(index != -1) {
-            name = name.replace(name.substring(0, index + 1), "");
-        }
-
-        return name;
-    }
-
-    private static String getLabel(SootMethod method) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("<").append(DroidGraph.removePackageName(method.getDeclaringClass().getName()))
-                .append(": ").append(DroidGraph.removePackageName(method.getReturnType().toString()))
-                .append(" ").append(DroidGraph.removePackageName(method.getName())).append("(");
-
-        List<soot.Type> parameters = method.getParameterTypes();
-        for (int i = 0; i < method.getParameterCount(); i++) {
-            stringBuilder.append(DroidGraph.removePackageName(parameters.get(i).toString()));
-            if(i != (method.getParameterCount() - 1) )
-                stringBuilder.append(",");
-        }
-
-        stringBuilder.append(")>");
-        return stringBuilder.toString();
-    }
-
-    /**
-     * For some reason JGraphT does not have a method to retrieve individual vertices that already exist in the graph.
-     * Instead, this method searched a list of all the vertices contained within the graph for the required
-     * {@link Vertex} object and returns it.
-     *
-     * @param id  the ID of the {@link Vertex} object being searched for.
-     * @param set the set of all vertices to search.
-     * @return The {@link Vertex} object from the vertex set with the given ID.
-     */
-    private static Vertex getVertex(int id, Set<Vertex> set) {
-        for (Vertex vertex : set) {
-            if (vertex.getID() == id)
-                return vertex;
-        }
-
-        return null;
-    }
-
-    private static Type getMethodType(SootMethod method) {
-        if (method.getDeclaringClass().getName().equals("dummyMainClass"))
-            return Type.dummyMethod;
-        else if (Filter.isListenerMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
-            return Type.listener;
-        else if (Filter.isLifecycleMethod(method))
-            return Type.lifecycle;
-        else if (Filter.isOtherCallbackMethod(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), method))
-            return Type.other;
-        else
-            return Type.method;
-    }
-
     private Control getControl(SootMethod callback) {
-        if (this.controls == null)
-            this.controls = getUIControls();
+        if (this.controls == null) this.controls = getUIControls();
 
         for (Control control : this.controls) {
-            if (control.getClickListener() != null)
-                if (control.getClickListener().equals(callback))
-                    return control;
+            if (control.getClickListener() != null) if (control.getClickListener().equals(callback)) return control;
         }
 
         return null;
     }
 
     private Control getControl(String resourceName) {
-        if (this.controls == null)
-            this.controls = getUIControls();
+        if (this.controls == null) this.controls = getUIControls();
 
         for (Control control : this.controls) {
             if (control.getControlResource() != null)
-                if (control.getControlResource().getResourceName().equals(resourceName))
-                    return control;
+                if (control.getControlResource().getResourceName().equals(resourceName)) return control;
         }
 
         return null;
@@ -214,10 +197,8 @@ public class DroidGraph {
     private Vertex getInterfaceControl(Vertex vertex) {
         Control control = this.getControl(vertex.getSootMethod());
         if (control != null)
-            return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()),
-                    Type.control, vertex.getSootMethod());
-        else
-            System.err.println("No control for " + vertex.getLabel());
+            return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()), Type.control, vertex.getSootMethod());
+        else System.err.println("No control for " + vertex.getLabel());
 
         return null;
     }
@@ -228,8 +209,7 @@ public class DroidGraph {
         Chain<SootClass> classes = Scene.v().getClasses();
         Set<SootMethod> notInGraph = new HashSet<>();
 
-        if (graph == null)
-            graph = this.getControlFlowGraph();
+        if (graph == null) graph = this.getControlFlowGraph();
 
         for (SootClass sootClass : classes) {
             if (Filter.isValidClass(null, null, sootClass)) {
@@ -237,8 +217,7 @@ public class DroidGraph {
                 for (SootMethod method : methods) {
                     Type methodType = DroidGraph.getMethodType(method);
                     Vertex vertex = new Vertex(method.hashCode(), getLabel(method), methodType, method);
-                    if (!graph.containsVertex(vertex))
-                        notInGraph.add(method);
+                    if (!graph.containsVertex(vertex)) notInGraph.add(method);
                 }
             }
         }
@@ -264,8 +243,7 @@ public class DroidGraph {
         while (sourceItr.hasNext()) {
             SootMethod srcMethod = sourceItr.next().method();
 
-            if (Filter.isValidMethod(null, null, srcMethod) ||
-                    srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
+            if (Filter.isValidMethod(null, null, srcMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                 Type methodType = DroidGraph.getMethodType(srcMethod);
                 Vertex srcVertex = new Vertex(srcMethod.hashCode(), getLabel(srcMethod), methodType, srcMethod);
                 graph.addVertex(srcVertex);
@@ -274,11 +252,9 @@ public class DroidGraph {
                 while (edgeItr.hasNext()) {
                     SootMethod tgtMethod = edgeItr.next().tgt();
 
-                    if (Filter.isValidMethod(null, null, tgtMethod) ||
-                            srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
+                    if (Filter.isValidMethod(null, null, tgtMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                         methodType = DroidGraph.getMethodType(tgtMethod);
-                        Vertex tgtVertex = new Vertex(tgtMethod.hashCode(), getLabel(tgtMethod), methodType,
-                                tgtMethod);
+                        Vertex tgtVertex = new Vertex(tgtMethod.hashCode(), getLabel(tgtMethod), methodType, tgtMethod);
                         graph.addVertex(tgtVertex);
 
                         graph.addEdge(srcVertex, tgtVertex);
@@ -308,8 +284,7 @@ public class DroidGraph {
                     System.err.println("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
             }
 
-            if (vertex.getType() == Type.listener || vertex.getType() == Type.lifecycle ||
-                    vertex.getType() == Type.method) {
+            if (vertex.getType() == Type.listener || vertex.getType() == Type.lifecycle || vertex.getType() == Type.method) {
                 if (vertex.getSootMethod().hasActiveBody()) {
                     UnitGraph unitGraph = new UnitGraph(vertex.getSootMethod().getActiveBody());
                     Graph<Vertex, DefaultEdge> methodSubGraph = unitGraph.getGraph();
@@ -327,13 +302,11 @@ public class DroidGraph {
                         for (SootMethod calledMethod : calledMethods) {
                             Vertex callVertex = getVertex(callStatement.hashCode(), graph.vertexSet());
                             Vertex calledVertex = getVertex(calledMethod.hashCode(), graph.vertexSet());
-                            if (callVertex != null && calledVertex != null)
-                                graph.addEdge(callVertex, calledVertex);
+                            if (callVertex != null && calledVertex != null) graph.addEdge(callVertex, calledVertex);
                         }
                     }
                 }
-            } else if (vertex.getType() != Type.statement && vertex.getType() != Type.control
-                    && vertex.getType() != Type.dummyMethod)
+            } else if (vertex.getType() != Type.statement && vertex.getType() != Type.control && vertex.getType() != Type.dummyMethod)
                 System.err.println("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
         }
 

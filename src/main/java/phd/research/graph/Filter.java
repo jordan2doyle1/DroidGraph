@@ -76,8 +76,15 @@ public class Filter {
 
     public static boolean isPossibleListenerMethod(File callbackFile, SootMethod method) {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbackFile);
-        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks.getCallbackMethods(), method)
-                && !Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method)) {
+        if (callbacks != null) return Filter.isPossibleListenerMethod(callbacks.getCallbackMethods(), method);
+
+        return false;
+    }
+
+    public static boolean isPossibleListenerMethod(
+            MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
+        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks, method)
+                && !Filter.isOtherCallbackMethod(callbacks, method)) {
             for (Type paramType : method.getParameterTypes()) {
                 if (paramType.toString().equals("android.view.View")) {
                     if ((!method.toString().startsWith("<androidx"))) return true;
