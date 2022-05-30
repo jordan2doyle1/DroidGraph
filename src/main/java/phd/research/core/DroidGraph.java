@@ -227,6 +227,12 @@ public class DroidGraph {
                 System.err.println("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
         }
 
+        for (Control control : uiControls.getControls()) {
+            Vertex interfaceVertex = new Vertex(control.hashCode(),
+                    String.valueOf(control.getControlResource().getResourceID()), Type.control);
+            graph.addVertex(interfaceVertex);
+        }
+
         // checkGraph(graph);
         return graph;
     }
