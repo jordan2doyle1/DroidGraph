@@ -156,7 +156,8 @@ public class FrameworkMain {
         System.out.println("Running FlowDroid...");
         long fdStartTime = System.currentTimeMillis();
 
-        FlowDroidUtils.runFlowDroid();
+        FlowDroidUtils.runFlowDroid(FrameworkMain.getApk(), FrameworkMain.getAndroidPlatform(),
+                FrameworkMain.getOutputDirectory());
 
         long fdEndTime = System.currentTimeMillis();
         logger.info("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");

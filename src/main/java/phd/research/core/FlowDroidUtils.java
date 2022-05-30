@@ -115,22 +115,22 @@ public class FlowDroidUtils {
         return callbacks;
     }
 
-    private static void initializeSoot() {
+    private static void initializeSoot(String apk, String androidPlatform, String outputDirectory) {
         G.reset();  // Clean up any old Soot instance we may have
 
         soot.options.Options.v().set_no_bodies_for_excluded(true);
         soot.options.Options.v().set_allow_phantom_refs(true);
         soot.options.Options.v().set_output_format(soot.options.Options.output_format_none);
         soot.options.Options.v().set_whole_program(true);
-        soot.options.Options.v().set_process_dir(Collections.singletonList(FrameworkMain.getApk()));
-        soot.options.Options.v().set_android_jars(FrameworkMain.getAndroidPlatform());
+        soot.options.Options.v().set_process_dir(Collections.singletonList(apk));
+        soot.options.Options.v().set_android_jars(androidPlatform);
         soot.options.Options.v().set_src_prec(soot.options.Options.src_prec_apk_class_jimple);
         soot.options.Options.v().set_keep_offset(false);
         soot.options.Options.v().set_keep_line_number(false);
         soot.options.Options.v().set_throw_analysis(soot.options.Options.throw_analysis_dalvik);
         soot.options.Options.v().set_process_multiple_dex(true);
         soot.options.Options.v().set_ignore_resolution_errors(true);
-        soot.options.Options.v().set_output_dir(FrameworkMain.getOutputDirectory());
+        soot.options.Options.v().set_output_dir(outputDirectory);
 
         Scene.v().addBasicClass("android.view.View", soot.SootClass.BODIES);
 
@@ -142,8 +142,7 @@ public class FlowDroidUtils {
                 "org.eclipse.*", "soot.*", "android.*", "androidx.*"));
         soot.options.Options.v().set_exclude(excludeList);
 
-        soot.options.Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(FrameworkMain.getAndroidPlatform(),
-                FrameworkMain.getApk()));
+        soot.options.Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(androidPlatform, apk));
         Main.v().autoSetOptions();
 
         Scene.v().loadNecessaryClasses();
@@ -156,21 +155,23 @@ public class FlowDroidUtils {
         patcher.patchLibraries();
     }
 
-    private static InfoflowAndroidConfiguration getFlowDroidConfiguration() {
+    private static InfoflowAndroidConfiguration getFlowDroidConfiguration(String apk, String androidPlatform,
+                                                                          String outputDirectory) {
         InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
         config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
         config.setMergeDexFiles(true);
-        config.getAnalysisFileConfig().setAndroidPlatformDir(FrameworkMain.getAndroidPlatform());
+        config.getAnalysisFileConfig().setAndroidPlatformDir(androidPlatform);
         config.getAnalysisFileConfig().setSourceSinkFile(System.getProperty("user.dir") + "/SourcesAndSinks.txt");
-        config.getAnalysisFileConfig().setTargetAPKFile(FrameworkMain.getApk());
+        config.getAnalysisFileConfig().setTargetAPKFile(apk);
         config.getCallbackConfig().setSerializeCallbacks(true);
-        config.getCallbackConfig().setCallbacksFile(FrameworkMain.getOutputDirectory() + "CollectedCallbacks");
+        config.getCallbackConfig().setCallbacksFile(outputDirectory + "CollectedCallbacks");
         return config;
     }
 
-    public static void runFlowDroid() {
-        FlowDroidUtils.initializeSoot();
-        InfoflowAndroidConfiguration configuration = FlowDroidUtils.getFlowDroidConfiguration();
+    public static void runFlowDroid(String apk, String androidPlatform, String outputDirectory) {
+        FlowDroidUtils.initializeSoot(apk, androidPlatform, outputDirectory);
+        InfoflowAndroidConfiguration configuration = FlowDroidUtils.getFlowDroidConfiguration(apk, androidPlatform,
+                outputDirectory);
         SetupApplication application = new SetupApplication(configuration);
         application.constructCallgraph();
     }
