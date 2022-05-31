@@ -83,6 +83,14 @@ public class DroidGraph {
         return null;
     }
 
+    public static Vertex getVertex(String name, Set<Vertex> set) {
+        for (Vertex vertex : set) {
+            if (vertex.getLabel().equals(name)) return vertex;
+        }
+
+        return null;
+    }
+
     private Type getMethodType(SootMethod method) {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(this.collectedCallbacksFile);
 
@@ -229,7 +237,7 @@ public class DroidGraph {
 
         for (Control control : uiControls.getControls()) {
             Vertex interfaceVertex = new Vertex(control.hashCode(),
-                    String.valueOf(control.getControlResource().getResourceID()), Type.control);
+                    control.getControlResource().getResourceName(), Type.control);
             graph.addVertex(interfaceVertex);
         }
 
