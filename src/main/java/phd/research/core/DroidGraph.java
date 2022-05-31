@@ -75,7 +75,7 @@ public class DroidGraph {
      * @param set the set of all vertices to search.
      * @return The {@link Vertex} object from the vertex set with the given ID.
      */
-    private static Vertex getVertex(int id, Set<Vertex> set) {
+    public static Vertex getVertex(int id, Set<Vertex> set) {
         for (Vertex vertex : set) {
             if (vertex.getID() == id) return vertex;
         }
