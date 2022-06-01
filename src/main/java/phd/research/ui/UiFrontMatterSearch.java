@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-@SuppressWarnings("unused")
 public class UiFrontMatterSearch extends UiSearch {
 
     public UiFrontMatterSearch(String apk) {
@@ -44,11 +43,13 @@ public class UiFrontMatterSearch extends UiSearch {
         }
 
         for (String layoutFile : userControls.keySet()) {
-            ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName(
-                    "layout", getResourceName(layoutFile));
+            ARSCFileParser.AbstractResource layoutResource =
+                    resources.findResourceByName("layout", getResourceName(layoutFile));
 
             for (AndroidLayoutControl control : userControls.get(layoutFile)) {
-                if (control.getID() == -1) continue;
+                if (control.getID() == -1) {
+                    continue;
+                }
 
                 ARSCFileParser.AbstractResource controlResource = super.getResourceById(control.getID());
                 if (controlResource == null) {
@@ -64,9 +65,9 @@ public class UiFrontMatterSearch extends UiSearch {
 
                 SootMethod clickListener = null;
                 try {
-                    if (frontMatter.containsControl(callbackClass.getName(), control.getID()))
+                    if (frontMatter.containsControl(callbackClass.getName(), control.getID())) {
                         clickListener = frontMatter.getClickListener(control.getID());
-                    else {
+                    } else {
                         System.out.println("WARN: FrontMatter output did not contain control ID " + control.getID());
                     }
                 } catch (IOException e) {
@@ -75,8 +76,9 @@ public class UiFrontMatterSearch extends UiSearch {
                 }
 
 
-                if (clickListener == null)
+                if (clickListener == null) {
                     System.err.println("Error: Couldn't find click listener method with ID: " + control.getID());
+                }
 
                 uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
             }

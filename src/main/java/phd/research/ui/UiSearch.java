@@ -30,32 +30,21 @@ public class UiSearch {
     protected static String getResourceName(String name) {
         int index = name.lastIndexOf("/");
 
-        if (index != -1) name = name.replace(name.substring(0, index + 1), "");
+        if (index != -1) {
+            name = name.replace(name.substring(0, index + 1), "");
+        }
 
-        if (name.contains(".xml")) name = name.replace(".xml", "");
+        if (name.contains(".xml")) {
+            name = name.replace(".xml", "");
+        }
 
         return name;
-    }
-
-    //TODO: Remove
-    protected ARSCFileParser.AbstractResource getResourceById(int resourceId) {
-        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
-        if (resType == null) return null;
-
-        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
-        if (foundResources.isEmpty()) return null;
-
-        if (foundResources.size() > 1)
-            System.err.println("Error: Multiple resources with ID " + resourceId + ", returning the first.");
-
-        return foundResources.get(0);
     }
 
     // TODO: Remove
     protected static SootMethod searchForCallbackMethod(String methodName) {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(
-                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks")
-        );
+                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"));
         SootMethod foundMethod = null;
 
         for (SootClass currentClass : callbacks.getCallbackMethods().keySet()) {
@@ -71,6 +60,25 @@ public class UiSearch {
         }
 
         return foundMethod;
+    }
+
+    //TODO: Remove
+    protected ARSCFileParser.AbstractResource getResourceById(int resourceId) {
+        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
+        if (resType == null) {
+            return null;
+        }
+
+        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
+        if (foundResources.isEmpty()) {
+            return null;
+        }
+
+        if (foundResources.size() > 1) {
+            System.err.println("Error: Multiple resources with ID " + resourceId + ", returning the first.");
+        }
+
+        return foundResources.get(0);
     }
 
     private boolean searchForSetContentView(int layoutId, SootMethod method) {
@@ -93,7 +101,9 @@ public class UiSearch {
                 }
             });
 
-            if (searchStatus.isClassFound()) return true;
+            if (searchStatus.isClassFound()) {
+                return true;
+            }
         }
 
         return false;
@@ -107,7 +117,9 @@ public class UiSearch {
             return null;
         }
 
-        if (onCreateMethod == null) return null;
+        if (onCreateMethod == null) {
+            return null;
+        }
 
         try {
             onCreateMethod.retrieveActiveBody();
@@ -144,8 +156,11 @@ public class UiSearch {
 
     private SootClass findLayoutClassRecursively(int layoutId, SootClass entryClass, boolean onCreate) {
         SootClass layoutClass;
-        if (onCreate) layoutClass = findOnCreateSetContentView(layoutId, entryClass);
-        else layoutClass = findAnySetContentView(layoutId, entryClass);
+        if (onCreate) {
+            layoutClass = findOnCreateSetContentView(layoutId, entryClass);
+        } else {
+            layoutClass = findAnySetContentView(layoutId, entryClass);
+        }
 
         if (layoutClass == null && entryClass.hasSuperclass()) {
             layoutClass = findLayoutClassRecursively(layoutId, entryClass.getSuperclassUnsafe(), onCreate);
@@ -158,9 +173,13 @@ public class UiSearch {
         for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
             SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
 
-            if (layoutClass == null) layoutClass = findLayoutClassRecursively(layoutId, entryClass, false);
+            if (layoutClass == null) {
+                layoutClass = findLayoutClassRecursively(layoutId, entryClass, false);
+            }
 
-            if (layoutClass != null) return layoutClass;
+            if (layoutClass != null) {
+                return layoutClass;
+            }
         }
 
         return null;

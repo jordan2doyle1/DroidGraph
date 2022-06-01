@@ -39,7 +39,9 @@ public class FrontMatter {
     }
 
     private static JSONObject readJSONOutput(File outputFile) throws IOException {
-        if (!outputFile.exists()) throw new IOException("Error: Front Matter output file does not exist!");
+        if (!outputFile.exists()) {
+            throw new IOException("Error: Front Matter output file does not exist!");
+        }
 
         String outputContent = new String(Files.readAllBytes(Paths.get(outputFile.toURI())));
         return new JSONObject(outputContent);
@@ -89,7 +91,9 @@ public class FrontMatter {
             }
         }
 
-        if (listenerMethods != null) return Scene.v().getMethod(listenerMethods.getString(0));
+        if (listenerMethods != null) {
+            return Scene.v().getMethod(listenerMethods.getString(0));
+        }
 
         return null;
     }

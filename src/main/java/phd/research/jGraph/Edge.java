@@ -19,9 +19,13 @@ public class Edge {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
+        if (o == this) {
+            return true;
+        }
 
-        if (!(o instanceof Edge)) return false;
+        if (!(o instanceof Edge)) {
+            return false;
+        }
 
         Edge edge = (Edge) o;
 

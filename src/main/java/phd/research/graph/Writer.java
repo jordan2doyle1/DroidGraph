@@ -27,7 +27,8 @@ public class Writer {
         FileUtils.cleanDirectory(new File(directory));
     }
 
-    public static void writeGraph(Format format, String directory, String name, Graph<Vertex, DefaultEdge> graph) throws Exception {
+    public static void writeGraph(Format format, String directory, String name, Graph<Vertex, DefaultEdge> graph)
+            throws Exception {
         String file = getFileName(name);
 
         switch (format) {
@@ -65,8 +66,8 @@ public class Writer {
                         Body body = method.getActiveBody();
                         UnitGraph unitGraph = new UnitGraph(body);
 
-                        String name = sootClass.getName().substring(
-                                sootClass.getName().lastIndexOf(".") + 1) + "_" + method.getName();
+                        String name = sootClass.getName().substring(sootClass.getName().lastIndexOf(".") + 1) + "_" +
+                                method.getName();
 
                         Writer.writeGraph(format, directory, name, unitGraph.getGraph());
                     }
@@ -129,7 +130,9 @@ public class Writer {
         File directory = new File(location);
 
         if (!directory.exists()) {
-            if (!directory.mkdirs()) return null;
+            if (!directory.mkdirs()) {
+                return null;
+            }
         }
 
         return new BufferedWriter(new java.io.FileWriter(location + file));

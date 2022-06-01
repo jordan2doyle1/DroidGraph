@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-@SuppressWarnings("unused")
 public class UiJimpleSearch extends UiSearch {
 
     public UiJimpleSearch(String apk) {
@@ -57,8 +56,7 @@ public class UiJimpleSearch extends UiSearch {
             if (method.getName().equals(methodName)) {
                 if (foundMethod != null) {
                     System.err.println(
-                            "Multiple callbacks with the name " + methodName + " in class " + callbackClass + "."
-                    );
+                            "Multiple callbacks with the name " + methodName + " in class " + callbackClass + ".");
                     return null;
                 }
                 foundMethod = method;
@@ -70,10 +68,12 @@ public class UiJimpleSearch extends UiSearch {
 
     private SootMethod findCallbackMethodAnywhere(int id) {
         for (SootClass sootClass : Scene.v().getClasses()) {
-            if (Filter.isValidClass(null, null, sootClass)
-                    && !Filter.isEntryPointClass(FrameworkMain.getApk(), sootClass)) {
+            if (Filter.isValidClass(null, null, sootClass) &&
+                    !Filter.isEntryPointClass(FrameworkMain.getApk(), sootClass)) {
                 SootMethod callbackMethod = findCallbackMethod(sootClass, id);
-                if (callbackMethod != null) return callbackMethod;
+                if (callbackMethod != null) {
+                    return callbackMethod;
+                }
             }
         }
 
@@ -145,13 +145,15 @@ public class UiJimpleSearch extends UiSearch {
                     });
 
                     if (searchStatus.isViewFound() && searchStatus.isClassFound()) {
-                        if (searchStatus.getFoundClass().getMethodCount() > 2)
+                        if (searchStatus.getFoundClass().getMethodCount() > 2) {
                             System.out.println(
-                                    "Warning: Class contains multiple callback methods. Using the first method."
-                            );
+                                    "Warning: Class contains multiple callback methods. Using the first method.");
+                        }
 
                         for (SootMethod classMethod : searchStatus.getFoundClass().getMethods()) {
-                            if (!classMethod.getName().equals("<init>")) return classMethod;
+                            if (!classMethod.getName().equals("<init>")) {
+                                return classMethod;
+                            }
                         }
                     }
                 }
@@ -166,19 +168,21 @@ public class UiJimpleSearch extends UiSearch {
 
         Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;
-        if (layoutParser != null) userControls = layoutParser.getUserControls();
-        else {
+        if (layoutParser != null) {
+            userControls = layoutParser.getUserControls();
+        } else {
             System.err.println("Error: Problem getting Layout File Parser. Can't get UI Controls!");
             return uiControls;
         }
 
         for (String layoutFile : userControls.keySet()) {
-            ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName(
-                    "layout", getResourceName(layoutFile)
-            );
+            ARSCFileParser.AbstractResource layoutResource =
+                    resources.findResourceByName("layout", getResourceName(layoutFile));
 
             for (AndroidLayoutControl control : userControls.get(layoutFile)) {
-                if (control.getID() == -1) continue;
+                if (control.getID() == -1) {
+                    continue;
+                }
 
                 ARSCFileParser.AbstractResource controlResource = super.getResourceById(control.getID());
                 if (controlResource == null) {
@@ -193,17 +197,19 @@ public class UiJimpleSearch extends UiSearch {
                 }
 
                 SootMethod clickListener;
-                if (control.getClickListener() != null)
+                if (control.getClickListener() != null) {
                     clickListener = searchForCallbackMethod(callbackClass, control.getClickListener());
-                else {
+                } else {
                     if ((clickListener = findCallbackMethod(callbackClass, control.getID())) == null) {
-                        if ((clickListener = findCallbackMethodInEntryClass(control.getID())) == null)
+                        if ((clickListener = findCallbackMethodInEntryClass(control.getID())) == null) {
                             clickListener = findCallbackMethodAnywhere(control.getID());
+                        }
                     }
                 }
 
-                if (clickListener == null)
+                if (clickListener == null) {
                     System.err.println("Error: Couldn't find click listener method with ID: " + control.getID());
+                }
 
                 uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
             }

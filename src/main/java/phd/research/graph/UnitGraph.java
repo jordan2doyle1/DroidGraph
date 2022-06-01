@@ -25,7 +25,9 @@ public class UnitGraph extends BriefUnitGraph {
     }
 
     public Graph<Vertex, DefaultEdge> getGraph() {
-        if (this.graph == null) this.graph = generateGraph();
+        if (this.graph == null) {
+            this.graph = generateGraph();
+        }
 
         return this.graph;
     }
@@ -33,10 +35,14 @@ public class UnitGraph extends BriefUnitGraph {
     public Set<Vertex> getRoots() {
         Set<Vertex> rootVertices = new HashSet<>();
 
-        if (this.graph == null) this.graph = generateGraph();
+        if (this.graph == null) {
+            this.graph = generateGraph();
+        }
 
         for (Vertex vertex : this.graph.vertexSet()) {
-            if (this.graph.inDegreeOf(vertex) == 0) rootVertices.add(vertex);
+            if (this.graph.inDegreeOf(vertex) == 0) {
+                rootVertices.add(vertex);
+            }
         }
 
         return rootVertices;

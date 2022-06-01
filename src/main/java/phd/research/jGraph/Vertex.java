@@ -58,7 +58,6 @@ public class Vertex {
         return this.type;
     }
 
-    @SuppressWarnings("unused")
     public SootClass getSootClass() {
         return this.sootClass;
     }
@@ -119,36 +118,35 @@ public class Vertex {
         return attributes;
     }
 
-    @SuppressWarnings("unused")
     public boolean hasVisited() {
         return this.visited;
     }
 
-    @SuppressWarnings("unused")
     public void visit() {
         this.visited = true;
     }
 
-    @SuppressWarnings("unused")
     public boolean hasLocalVisit() {
         return this.localVisit;
     }
 
-    @SuppressWarnings("unused")
     public void localVisit() {
         this.localVisit = true;
     }
 
-    @SuppressWarnings("unused")
     public void localVisitReset() {
         this.localVisit = false;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
+        if (o == this) {
+            return true;
+        }
 
-        if (!(o instanceof Vertex)) return false;
+        if (!(o instanceof Vertex)) {
+            return false;
+        }
 
         Vertex vertex = (Vertex) o;
         return this.id.equals(vertex.id) && Objects.equals(this.label, vertex.label) && this.type == vertex.type;

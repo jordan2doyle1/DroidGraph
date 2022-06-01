@@ -37,8 +37,9 @@ public class Viewer {
     private Set<SootMethod> possibleCallbackMethods;
 
     public Viewer(File collectedCallbacksFile, UiControls uiControls) {
-        if (!collectedCallbacksFile.exists())
+        if (!collectedCallbacksFile.exists()) {
             System.err.println("Error: Collected Callback File Does Not Exist!: " + collectedCallbacksFile);
+        }
 
         this.collectedCallbacksFile = collectedCallbacksFile;
         this.uiControls = uiControls;
@@ -75,10 +76,13 @@ public class Viewer {
         int numberOfPrints = 10;
         for (Object item : list) {
             if (counter < numberOfPrints) {
-                if (item instanceof String) System.out.println(item);
-                else if (item instanceof SootClass) System.out.println(((SootClass) item).getName());
-                else if (item instanceof Vertex) System.out.println(((Vertex) item).getLabel());
-                else if (item instanceof SootMethod) {
+                if (item instanceof String) {
+                    System.out.println(item);
+                } else if (item instanceof SootClass) {
+                    System.out.println(((SootClass) item).getName());
+                } else if (item instanceof Vertex) {
+                    System.out.println(((Vertex) item).getLabel());
+                } else if (item instanceof SootMethod) {
                     SootMethod method = (SootMethod) item;
                     System.out.println(method.getDeclaringClass().getName() + ":" + method.getName());
                 }
@@ -112,7 +116,9 @@ public class Viewer {
             if (Filter.isValidClass(null, null, sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
-                    if (Filter.isValidMethod(null, null, method)) acceptedMethods.add(method);
+                    if (Filter.isValidMethod(null, null, method)) {
+                        acceptedMethods.add(method);
+                    }
                 }
             }
         }
@@ -129,58 +135,74 @@ public class Viewer {
         Set<SootClass> filteredClasses = new HashSet<>();
 
         for (SootClass sootClass : allClasses) {
-            if (Filter.isValidClass(null, null, sootClass)) filteredClasses.add(sootClass);
+            if (Filter.isValidClass(null, null, sootClass)) {
+                filteredClasses.add(sootClass);
+            }
         }
 
         return filteredClasses;
     }
 
     public Set<SootClass> getAllClasses() {
-        if (this.allClasses == null) this.allClasses = Viewer.retrieveAllClasses();
+        if (this.allClasses == null) {
+            this.allClasses = Viewer.retrieveAllClasses();
+        }
 
         return this.allClasses;
     }
 
     public Set<SootClass> getFilteredClasses() {
-        if (this.filteredClasses == null) this.filteredClasses = Viewer.filterClasses();
+        if (this.filteredClasses == null) {
+            this.filteredClasses = Viewer.filterClasses();
+        }
 
         return this.filteredClasses;
     }
 
     public Set<SootMethod> getAllMethods() {
-        if (this.allMethods == null) this.allMethods = Viewer.retrieveAllMethods();
+        if (this.allMethods == null) {
+            this.allMethods = Viewer.retrieveAllMethods();
+        }
 
         return this.allMethods;
     }
 
     public Set<SootMethod> getFilteredMethods() {
-        if (this.filteredMethods == null) this.filteredMethods = Viewer.filterMethods();
+        if (this.filteredMethods == null) {
+            this.filteredMethods = Viewer.filterMethods();
+        }
 
         return this.filteredMethods;
     }
 
     public Set<SootMethod> getLifecycleMethods() {
-        if (this.lifecycleMethods == null) this.lifecycleMethods = filterLifecycleMethods();
+        if (this.lifecycleMethods == null) {
+            this.lifecycleMethods = filterLifecycleMethods();
+        }
 
         return this.lifecycleMethods;
     }
 
     public Set<SootMethod> getListenerMethods() {
-        if (this.listenerMethods == null) this.listenerMethods = filterListenerMethods(this.collectedCallbacksFile);
+        if (this.listenerMethods == null) {
+            this.listenerMethods = filterListenerMethods(this.collectedCallbacksFile);
+        }
 
         return this.listenerMethods;
     }
 
     public Set<SootMethod> getOtherCallbackMethods() {
-        if (this.otherCallbackMethods == null)
+        if (this.otherCallbackMethods == null) {
             this.otherCallbackMethods = filterOtherCallbackMethods(this.collectedCallbacksFile);
+        }
 
         return this.otherCallbackMethods;
     }
 
     public Set<SootMethod> getPossibleCallbacksMethods() {
-        if (this.possibleCallbackMethods == null)
+        if (this.possibleCallbackMethods == null) {
             this.possibleCallbackMethods = filterPossibleCallbackMethods(this.collectedCallbacksFile);
+        }
 
         return this.possibleCallbackMethods;
     }
@@ -220,12 +242,18 @@ public class Viewer {
     public void printList(boolean filtered, Parts part) {
         switch (part) {
             case methods:
-                if (filtered) Viewer.printList(this.getFilteredMethods());
-                else Viewer.printList(this.getAllMethods());
+                if (filtered) {
+                    Viewer.printList(this.getFilteredMethods());
+                } else {
+                    Viewer.printList(this.getAllMethods());
+                }
                 break;
             case classes:
-                if (filtered) Viewer.printList(this.getFilteredClasses());
-                else Viewer.printList(this.getAllClasses());
+                if (filtered) {
+                    Viewer.printList(this.getFilteredClasses());
+                } else {
+                    Viewer.printList(this.getAllClasses());
+                }
                 break;
         }
     }
@@ -238,12 +266,12 @@ public class Viewer {
 
         System.out.println("\tEntry Points: " + FlowDroidUtils.getEntryPointClasses(apk).size());
         System.out.println("\tLaunch Activities: " + FlowDroidUtils.getLaunchActivities(apk).size());
-        System.out.println("\tClasses: " + this.getFilteredClasses().size()
-                + " (Total: " + this.getAllClasses().size() + ")");
+        System.out.println(
+                "\tClasses: " + this.getFilteredClasses().size() + " (Total: " + this.getAllClasses().size() + ")");
         System.out.println();
 
-        System.out.println("\tMethods: " + this.getFilteredMethods().size()
-                + " (Total: " + this.getAllMethods().size() + ")");
+        System.out.println(
+                "\tMethods: " + this.getFilteredMethods().size() + " (Total: " + this.getAllMethods().size() + ")");
         System.out.println("\tLifecycle Methods: " + this.getLifecycleMethods().size());
         System.out.println("\tListener Methods: " + this.getListenerMethods().size());
         System.out.println("\tOther Callbacks: " + this.getOtherCallbackMethods().size());
@@ -260,21 +288,25 @@ public class Viewer {
         String stringFormat = "\t%-15s\t%-35s\t%-15s\t%-15s\n";
 
         System.out.println("----------------------------- Control Callback Map -----------------------------");
-        if (this.uiControls.getControls().isEmpty()) System.out.println("Control Callback Map is Empty!");
-        else {
+        if (this.uiControls.getControls().isEmpty()) {
+            System.out.println("Control Callback Map is Empty!");
+        } else {
             System.out.printf((stringFormat), "WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD");
             System.out.println(separator);
 
             for (Control control : this.uiControls.getControls()) {
                 SootMethod listener = control.getClickListener();
 
-                if (listener != null)
+                if (listener != null) {
                     System.out.printf((stringFormat), control.getControlResource().getResourceID(),
-                            control.getControlResource().getResourceName(),
-                            listener.getDeclaringClass().getShortName(), listener.getName());
-                else
+                            control.getControlResource().getResourceName(), listener.getDeclaringClass().getShortName(),
+                            listener.getName()
+                                     );
+                } else {
                     System.out.printf((stringFormat), control.getControlResource().getResourceID(),
-                            control.getControlResource().getResourceName(), null, null);
+                            control.getControlResource().getResourceName(), null, null
+                                     );
+                }
             }
         }
         System.out.println(separator);
@@ -283,10 +315,14 @@ public class Viewer {
     private Set<SootMethod> filterLifecycleMethods() {
         Set<SootMethod> lifecycleMethods = new HashSet<>();
 
-        if (this.filteredMethods == null) this.filteredMethods = Viewer.filterMethods();
+        if (this.filteredMethods == null) {
+            this.filteredMethods = Viewer.filterMethods();
+        }
 
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isLifecycleMethod(method)) lifecycleMethods.add(method);
+            if (Filter.isLifecycleMethod(method)) {
+                lifecycleMethods.add(method);
+            }
         }
 
         this.lifecycleMethods = lifecycleMethods;
@@ -296,10 +332,14 @@ public class Viewer {
     private Set<SootMethod> filterListenerMethods(File callbacksFile) {
         Set<SootMethod> listenerMethods = new HashSet<>();
 
-        if (this.filteredMethods == null) this.filteredMethods = Viewer.filterMethods();
+        if (this.filteredMethods == null) {
+            this.filteredMethods = Viewer.filterMethods();
+        }
 
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isListenerMethod(callbacksFile, method)) listenerMethods.add(method);
+            if (Filter.isListenerMethod(callbacksFile, method)) {
+                listenerMethods.add(method);
+            }
         }
 
         this.listenerMethods = listenerMethods;
@@ -309,10 +349,14 @@ public class Viewer {
     private Set<SootMethod> filterOtherCallbackMethods(File callbacksFile) {
         Set<SootMethod> callbackMethods = new HashSet<>();
 
-        if (this.filteredMethods == null) this.filteredMethods = Viewer.filterMethods();
+        if (this.filteredMethods == null) {
+            this.filteredMethods = Viewer.filterMethods();
+        }
 
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isOtherCallbackMethod(callbacksFile, method)) callbackMethods.add(method);
+            if (Filter.isOtherCallbackMethod(callbacksFile, method)) {
+                callbackMethods.add(method);
+            }
         }
 
         this.otherCallbackMethods = callbackMethods;
@@ -322,10 +366,14 @@ public class Viewer {
     private Set<SootMethod> filterPossibleCallbackMethods(File callbacksFile) {
         Set<SootMethod> callbackMethods = new HashSet<>();
 
-        if (this.filteredMethods == null) this.filteredMethods = Viewer.filterMethods();
+        if (this.filteredMethods == null) {
+            this.filteredMethods = Viewer.filterMethods();
+        }
 
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isPossibleListenerMethod(callbacksFile, method)) callbackMethods.add(method);
+            if (Filter.isPossibleListenerMethod(callbacksFile, method)) {
+                callbackMethods.add(method);
+            }
         }
 
         this.possibleCallbackMethods = callbackMethods;

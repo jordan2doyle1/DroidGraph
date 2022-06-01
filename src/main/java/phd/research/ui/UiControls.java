@@ -28,119 +28,28 @@ public class UiControls {
     private Set<Control> controls;
 
     public UiControls(File collectedCallbacksFile, String apk) {
-        if (!collectedCallbacksFile.exists())
+        if (!collectedCallbacksFile.exists()) {
             System.err.println("Error: Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
+        }
 
         this.collectedCallbacksFile = collectedCallbacksFile;
         this.apk = apk;
     }
 
-    public Set<Control> getControls() {
-        if (this.controls == null) this.controls = getAllControls();
-
-        return this.controls;
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean hasControl(SootMethod listener) {
-        for (Control control : this.getControls()) {
-            SootMethod controlClickListener = control.getClickListener();
-            if (controlClickListener != null && controlClickListener.equals(listener)) return true;
-        }
-
-        return false;
-    }
-
-    public Control getControl(SootMethod callback) {
-        for (Control control : this.getControls()) {
-            if (control.getClickListener() != null) if (control.getClickListener().equals(callback)) return control;
-        }
-
-        return null;
-    }
-
-    public Control getControl(String resourceName) {
-        for (Control control : this.getControls()) {
-            if (control.getControlResource() != null)
-                if (control.getControlResource().getResourceName().equals(resourceName)) return control;
-        }
-
-        return null;
-    }
-
-    public Control getControl(int resourceId) {
-        for (Control control : this.getControls()) {
-            if (control.getControlResource() != null)
-                if (control.getControlResource().getResourceID() == resourceId) return control;
-        }
-
-        return null;
-    }
-
-    private Set<Control> getAllControls() {
-        ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
-        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
-
-        Set<Control> uiControls = new HashSet<>();
-        MultiMap<String, AndroidLayoutControl> userControls;
-        if (layoutParser != null) userControls = layoutParser.getUserControls();
-        else {
-            System.err.println("Error: Problem getting Layout File Parser. Can't get UI Controls!");
-            return uiControls;
-        }
-
-        for (String layoutFile : userControls.keySet()) {
-            ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName(
-                    "layout", getResourceName(layoutFile)
-            );
-
-            for (AndroidLayoutControl control : userControls.get(layoutFile)) {
-                if (control.getID() == -1) continue;
-
-                ARSCFileParser.AbstractResource controlResource = this.getResourceById(resources, control.getID());
-                if (controlResource == null) {
-                    System.err.println("Error: No resource found with ID " + control.getID() + ".");
-                    continue;
-                }
-
-                SootMethod clickListener = null;
-                if (control.getClickListener() != null)
-                    clickListener = UiControls.searchForCallbackMethod(
-                            this.collectedCallbacksFile, control.getClickListener()
-                    );
-
-                if (clickListener == null)
-                    System.err.println("Error: No click listener method with ID: " + control.getID());
-
-                uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
-            }
-        }
-
-        return uiControls;
-    }
-
     protected static String getResourceName(String name) {
         int index = name.lastIndexOf("/");
 
-        if (index != -1) name = name.replace(name.substring(0, index + 1), "");
+        if (index != -1) {
+            name = name.replace(name.substring(0, index + 1), "");
+        }
 
-        if (name.contains(".xml")) name = name.replace(".xml", "");
+        if (name.contains(".xml")) {
+            name = name.replace(".xml", "");
+        }
 
         return name;
     }
 
-    protected ARSCFileParser.AbstractResource getResourceById(ARSCFileParser resources, int resourceId) {
-        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
-        if (resType == null) return null;
-
-        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
-        if (foundResources.isEmpty()) return null;
-
-        if (foundResources.size() > 1)
-            System.err.println("Error: Multiple resources with ID " + resourceId + ", returning the first.");
-
-        return foundResources.get(0);
-    }
     protected static SootMethod searchForCallbackMethod(File callbacksFile, String methodName) {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbacksFile);
         SootMethod foundMethod = null;
@@ -160,9 +69,129 @@ public class UiControls {
         return foundMethod;
     }
 
+    public Set<Control> getControls() {
+        if (this.controls == null) {
+            this.controls = getAllControls();
+        }
+
+        return this.controls;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public boolean hasControl(SootMethod listener) {
+        for (Control control : this.getControls()) {
+            SootMethod controlClickListener = control.getClickListener();
+            if (controlClickListener != null && controlClickListener.equals(listener)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public Control getControl(SootMethod callback) {
+        for (Control control : this.getControls()) {
+            if (control.getClickListener() != null) {
+                if (control.getClickListener().equals(callback)) {
+                    return control;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public Control getControl(String resourceName) {
+        for (Control control : this.getControls()) {
+            if (control.getControlResource() != null) {
+                if (control.getControlResource().getResourceName().equals(resourceName)) {
+                    return control;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public Control getControl(int resourceId) {
+        for (Control control : this.getControls()) {
+            if (control.getControlResource() != null) {
+                if (control.getControlResource().getResourceID() == resourceId) {
+                    return control;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Set<Control> getAllControls() {
+        ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
+        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
+
+        Set<Control> uiControls = new HashSet<>();
+        MultiMap<String, AndroidLayoutControl> userControls;
+        if (layoutParser != null) {
+            userControls = layoutParser.getUserControls();
+        } else {
+            System.err.println("Error: Problem getting Layout File Parser. Can't get UI Controls!");
+            return uiControls;
+        }
+
+        for (String layoutFile : userControls.keySet()) {
+            ARSCFileParser.AbstractResource layoutResource =
+                    resources.findResourceByName("layout", getResourceName(layoutFile));
+
+            for (AndroidLayoutControl control : userControls.get(layoutFile)) {
+                if (control.getID() == -1) {
+                    continue;
+                }
+
+                ARSCFileParser.AbstractResource controlResource = this.getResourceById(resources, control.getID());
+                if (controlResource == null) {
+                    System.err.println("Error: No resource found with ID " + control.getID() + ".");
+                    continue;
+                }
+
+                SootMethod clickListener = null;
+                if (control.getClickListener() != null) {
+                    clickListener =
+                            UiControls.searchForCallbackMethod(this.collectedCallbacksFile, control.getClickListener());
+                }
+
+                if (clickListener == null) {
+                    System.err.println("Error: No click listener method with ID: " + control.getID());
+                }
+
+                uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
+            }
+        }
+
+        return uiControls;
+    }
+
+    protected ARSCFileParser.AbstractResource getResourceById(ARSCFileParser resources, int resourceId) {
+        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
+        if (resType == null) {
+            return null;
+        }
+
+        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
+        if (foundResources.isEmpty()) {
+            return null;
+        }
+
+        if (foundResources.size() > 1) {
+            System.err.println("Error: Multiple resources with ID " + resourceId + ", returning the first.");
+        }
+
+        return foundResources.get(0);
+    }
+
     private void addControlListeners(File collectedUiCallbackLinks) {
-        if (!collectedUiCallbackLinks.exists())
+        if (!collectedUiCallbackLinks.exists()) {
             System.err.println("Error: Link File Does Not Exist!: " + collectedUiCallbackLinks);
+        }
 
         String line;
         try {
@@ -172,8 +201,9 @@ public class UiControls {
                 Control control = getControl(controlListenerPair[0]);
                 if (control != null) {
                     SootMethod listener = Scene.v().getMethod(controlListenerPair[1]);
-                    if (listener != null)
+                    if (listener != null) {
                         control.setClickListener(listener);
+                    }
                 }
             }
         } catch (IOException e) {

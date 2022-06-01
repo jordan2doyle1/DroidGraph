@@ -3,7 +3,6 @@ package phd.research.helper;
 /**
  * @author Jordan Doyle
  */
-@SuppressWarnings("unused")
 public class Pair<L, R> {
 
     final L left;
@@ -29,10 +28,13 @@ public class Pair<L, R> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
+        if (this == obj) {
+            return true;
+        }
 
-        if (obj instanceof Pair<?, ?>)
+        if (obj instanceof Pair<?, ?>) {
             return ((Pair<?, ?>) obj).left.equals(this.left) && ((Pair<?, ?>) obj).right.equals(this.right);
+        }
 
         return false;
     }

@@ -46,8 +46,9 @@ public class FlowDroidUtils {
                     // WARNING: Excluding valid launch activities if the developer doesn't provide the name attribute.
                     String activityName = activity.getAttribute("name").getValue().toString();
                     SootClass launchActivity = Scene.v().getSootClass(activityName);
-                    if (launchActivity != null)
+                    if (launchActivity != null) {
                         launchActivities.add(launchActivity);
+                    }
                 }
             }
         }
@@ -58,8 +59,9 @@ public class FlowDroidUtils {
     public static String getBasePackageName(String apk) {
         ProcessManifest manifest = getManifest(apk);
 
-        if (manifest != null)
+        if (manifest != null) {
             return manifest.getPackageName();
+        }
 
         return null;
     }
@@ -71,7 +73,9 @@ public class FlowDroidUtils {
         if (manifest != null) {
             for (String entryPoint : manifest.getEntryPointClasses()) {
                 SootClass entryPointClass = Scene.v().getSootClass(entryPoint);
-                if (entryPointClass != null) entryPoints.add(entryPointClass);
+                if (entryPointClass != null) {
+                    entryPoints.add(entryPointClass);
+                }
             }
         }
 
@@ -138,8 +142,10 @@ public class FlowDroidUtils {
         // (SA) Exclude classes of android.* will cause layout class cannot be loaded for layout file based callback
         // analysis. Added back the exclusion, because removing it breaks calls to Android SDK stubs.
         // (JD) Remove the android.* and androidx.* within FlowDroid and see what happens.
-        List<String> excludeList = new LinkedList<>(Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*",
-                "org.eclipse.*", "soot.*", "android.*", "androidx.*"));
+        List<String> excludeList = new LinkedList<>(
+                Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*", "org" + ".eclipse.*", "soot.*", "android.*",
+                        "androidx.*"
+                             ));
         soot.options.Options.v().set_exclude(excludeList);
 
         soot.options.Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(androidPlatform, apk));
@@ -156,7 +162,7 @@ public class FlowDroidUtils {
     }
 
     private static InfoflowAndroidConfiguration getFlowDroidConfiguration(String apk, String androidPlatform,
-                                                                          String outputDirectory) {
+            String outputDirectory) {
         InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
         config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
         config.setMergeDexFiles(true);
@@ -170,8 +176,8 @@ public class FlowDroidUtils {
 
     public static void runFlowDroid(String apk, String androidPlatform, String outputDirectory) {
         FlowDroidUtils.initializeSoot(apk, androidPlatform, outputDirectory);
-        InfoflowAndroidConfiguration configuration = FlowDroidUtils.getFlowDroidConfiguration(apk, androidPlatform,
-                outputDirectory);
+        InfoflowAndroidConfiguration configuration =
+                FlowDroidUtils.getFlowDroidConfiguration(apk, androidPlatform, outputDirectory);
         SetupApplication application = new SetupApplication(configuration);
         application.constructCallgraph();
     }

@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-@SuppressWarnings("unused")
 public class UiInstrumentSearch extends UiSearch {
 
     public UiInstrumentSearch(String apk) {
@@ -43,8 +42,9 @@ public class UiInstrumentSearch extends UiSearch {
                     super.caseInvokeStmt(stmt);
 
                     InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                    if (invokeExpr.getMethod().getName().equals("println"))
+                    if (invokeExpr.getMethod().getName().equals("println")) {
                         arguments[0] = invokeExpr.getArg(0).toString();
+                    }
                 }
             });
         }
@@ -57,21 +57,26 @@ public class UiInstrumentSearch extends UiSearch {
             String[] id = argument.split(":");
             textID = "id/" + id[0];
             numberID = id[1];
-        } else if (!argument.equals("")) numberID = argument;
+        } else if (!argument.equals("")) {
+            numberID = argument;
+        }
 
         if (numberID == null) {
-            System.err.println("Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "."
-                    + callback.getName() + "\", no value found in the method. ");
+            System.err.println(
+                    "Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "." +
+                            callback.getName() + "\", no value found in the method. ");
             return null;
         }
 
         try {
             interfaceID = new Pair<>(textID, Integer.parseInt(numberID));
-            System.out.println("Found control ID " + argument + " in \"" + callback.getDeclaringClass().getShortName()
-                    + "." + callback.getName() + "\".");
+            System.out.println(
+                    "Found control ID " + argument + " in \"" + callback.getDeclaringClass().getShortName() + "." +
+                            callback.getName() + "\".");
         } catch (NumberFormatException e) {
-            System.out.println("Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName()
-                    + "." + callback.getName() + "\", could not parse integer: " + numberID + ".");
+            System.out.println(
+                    "Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "." +
+                            callback.getName() + "\", could not parse integer: " + numberID + ".");
         }
 
         return interfaceID;
@@ -81,8 +86,7 @@ public class UiInstrumentSearch extends UiSearch {
     public Set<Control> getControlListenerMethods() {
         Set<SootMethod> callbackMethods = new HashSet<>();
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(
-                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks")
-        );
+                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"));
         for (SootClass sootClass : callbacks.getCallbackMethods().keySet()) {
             for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(sootClass)) {
                 callbackMethods.add(callbackDefinition.getTargetMethod());
@@ -96,19 +100,21 @@ public class UiInstrumentSearch extends UiSearch {
             for (Pair<String, AndroidLayoutControl> userControl : lfp.getUserControls()) {
                 AndroidLayoutControl control = userControl.getO2();
                 if (control.getClickListener() != null) {
-                    SootMethod clickListener = super.searchForCallbackMethod(control.getClickListener());
+                    SootMethod clickListener = searchForCallbackMethod(control.getClickListener());
                     if (clickListener != null) {
                         controls.add(new Control(control.hashCode(), null, null, clickListener));
                         callbackMethods.remove(clickListener);
-                        System.out.println(control.getID() + " linked to \""
-                                + clickListener.getDeclaringClass().getShortName() + "." + clickListener.getName()
-                                + "\".");
-                    } else
+                        System.out.println(
+                                control.getID() + " linked to \"" + clickListener.getDeclaringClass().getShortName() +
+                                        "." + clickListener.getName() + "\".");
+                    } else {
                         System.err.println(
-                                "Problem linking controls with listeners: Two callback methods have the same name."
-                        );
+                                "Problem linking controls with listeners: Two callback methods have the same name.");
+                    }
                 } else {
-                    if (control.getID() != -1) nullControls.add(userControl);
+                    if (control.getID() != -1) {
+                        nullControls.add(userControl);
+                    }
                 }
             }
         }
@@ -127,8 +133,8 @@ public class UiInstrumentSearch extends UiSearch {
                         controls.add(new Control(control.hashCode(), null, null, listener));
                         controlIterator.remove();
                         iterator.remove();
-                        System.out.println(control.getID() + ":" + interfaceID.getO1() + " linked to \""
-                                + listener.getDeclaringClass().getShortName() + "." + listener.getName() + "\".");
+                        System.out.println(control.getID() + ":" + interfaceID.getO1() + " linked to \"" +
+                                listener.getDeclaringClass().getShortName() + "." + listener.getName() + "\".");
                         break;
                     }
                 }
@@ -137,8 +143,8 @@ public class UiInstrumentSearch extends UiSearch {
 
         if (callbackMethods.size() > 0) {
             for (SootMethod sootMethod : callbackMethods) {
-                System.err.println("No control linked to \"" + sootMethod.getDeclaringClass().getShortName() + "."
-                        + sootMethod.getName() + "\".");
+                System.err.println("No control linked to \"" + sootMethod.getDeclaringClass().getShortName() + "." +
+                        sootMethod.getName() + "\".");
             }
         }
 

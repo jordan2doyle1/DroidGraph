@@ -31,8 +31,9 @@ public class DroidGraph {
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
 
     public DroidGraph(File collectedCallbacksFile, UiControls controls) {
-        if (!collectedCallbacksFile.exists())
+        if (!collectedCallbacksFile.exists()) {
             System.err.println();
+        }
 
         this.collectedCallbacksFile = collectedCallbacksFile;
         this.uiControls = controls;
@@ -41,7 +42,9 @@ public class DroidGraph {
     private static String removePackageName(String name) {
         int index = name.lastIndexOf(".");
 
-        if (name.contains("dummyMainMethod")) index = name.lastIndexOf("_");
+        if (name.contains("dummyMainMethod")) {
+            index = name.lastIndexOf("_");
+        }
 
         if (index != -1) {
             name = name.replace(name.substring(0, index + 1), "");
@@ -59,7 +62,9 @@ public class DroidGraph {
         List<soot.Type> parameters = method.getParameterTypes();
         for (int i = 0; i < method.getParameterCount(); i++) {
             stringBuilder.append(DroidGraph.removePackageName(parameters.get(i).toString()));
-            if (i != (method.getParameterCount() - 1)) stringBuilder.append(",");
+            if (i != (method.getParameterCount() - 1)) {
+                stringBuilder.append(",");
+            }
         }
 
         stringBuilder.append(")>");
@@ -73,11 +78,14 @@ public class DroidGraph {
      *
      * @param id  the ID of the {@link Vertex} object being searched for.
      * @param set the set of all vertices to search.
+     *
      * @return The {@link Vertex} object from the vertex set with the given ID.
      */
     public static Vertex getVertex(int id, Set<Vertex> set) {
         for (Vertex vertex : set) {
-            if (vertex.getID() == id) return vertex;
+            if (vertex.getID() == id) {
+                return vertex;
+            }
         }
 
         return null;
@@ -85,7 +93,9 @@ public class DroidGraph {
 
     public static Vertex getVertex(String name, Set<Vertex> set) {
         for (Vertex vertex : set) {
-            if (vertex.getLabel().equals(name)) return vertex;
+            if (vertex.getLabel().equals(name)) {
+                return vertex;
+            }
         }
 
         return null;
@@ -94,11 +104,17 @@ public class DroidGraph {
     private Type getMethodType(SootMethod method) {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(this.collectedCallbacksFile);
 
-        if (method.getDeclaringClass().getName().equals("dummyMainClass")) return Type.dummyMethod;
-        else if (Filter.isListenerMethod(callbacks.getCallbackMethods(), method)) return Type.listener;
-        else if (Filter.isLifecycleMethod(method)) return Type.lifecycle;
-        else if (Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method)) return Type.other;
-        else return Type.method;
+        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
+            return Type.dummyMethod;
+        } else if (Filter.isListenerMethod(callbacks.getCallbackMethods(), method)) {
+            return Type.listener;
+        } else if (Filter.isLifecycleMethod(method)) {
+            return Type.lifecycle;
+        } else if (Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method)) {
+            return Type.other;
+        } else {
+            return Type.method;
+        }
     }
 
     public void generateGraphs() {
@@ -107,23 +123,30 @@ public class DroidGraph {
     }
 
     public Graph<Vertex, DefaultEdge> getCallGraph() {
-        if (this.callGraph == null) this.callGraph = generateGraph(Scene.v().getCallGraph());
+        if (this.callGraph == null) {
+            this.callGraph = generateGraph(Scene.v().getCallGraph());
+        }
 
         return this.callGraph;
     }
 
     public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
-        if (this.controlFlowGraph == null) this.controlFlowGraph = generateGraph(this.getCallGraph());
+        if (this.controlFlowGraph == null) {
+            this.controlFlowGraph = generateGraph(this.getCallGraph());
+        }
 
         return this.controlFlowGraph;
     }
 
     private Vertex getInterfaceControl(Vertex vertex) {
         Control control = this.uiControls.getControl(vertex.getSootMethod());
-        if (control != null)
+        if (control != null) {
             return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()),
-                    Type.control, vertex.getSootMethod());
-        else System.err.println("No control for " + vertex.getLabel());
+                    Type.control, vertex.getSootMethod()
+            );
+        } else {
+            System.err.println("No control for " + vertex.getLabel());
+        }
 
         return null;
     }
@@ -134,7 +157,9 @@ public class DroidGraph {
         Chain<SootClass> classes = Scene.v().getClasses();
         Set<SootMethod> notInGraph = new HashSet<>();
 
-        if (graph == null) graph = this.getControlFlowGraph();
+        if (graph == null) {
+            graph = this.getControlFlowGraph();
+        }
 
         for (SootClass sootClass : classes) {
             if (Filter.isValidClass(null, null, sootClass)) {
@@ -142,7 +167,9 @@ public class DroidGraph {
                 for (SootMethod method : methods) {
                     Type methodType = this.getMethodType(method);
                     Vertex vertex = new Vertex(method.hashCode(), getLabel(method), methodType, method);
-                    if (!graph.containsVertex(vertex)) notInGraph.add(method);
+                    if (!graph.containsVertex(vertex)) {
+                        notInGraph.add(method);
+                    }
                 }
             }
         }
@@ -168,8 +195,8 @@ public class DroidGraph {
         while (sourceItr.hasNext()) {
             SootMethod srcMethod = sourceItr.next().method();
 
-            if (Filter.isValidMethod(null, null, srcMethod) || srcMethod.getDeclaringClass().getName().equals(
-                    "dummyMainClass")) {
+            if (Filter.isValidMethod(null, null, srcMethod) ||
+                    srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                 Type methodType = this.getMethodType(srcMethod);
                 Vertex srcVertex = new Vertex(srcMethod.hashCode(), getLabel(srcMethod), methodType, srcMethod);
                 graph.addVertex(srcVertex);
@@ -178,7 +205,8 @@ public class DroidGraph {
                 while (edgeItr.hasNext()) {
                     SootMethod tgtMethod = edgeItr.next().tgt();
 
-                    if (Filter.isValidMethod(null, null, tgtMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
+                    if (Filter.isValidMethod(null, null, tgtMethod) ||
+                            srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                         methodType = this.getMethodType(tgtMethod);
                         Vertex tgtVertex = new Vertex(tgtMethod.hashCode(), getLabel(tgtMethod), methodType, tgtMethod);
                         graph.addVertex(tgtVertex);
@@ -205,11 +233,13 @@ public class DroidGraph {
                 if (interfaceVertex != null) {
                     graph.addVertex(interfaceVertex);
                     graph.addEdge(interfaceVertex, vertex);
-                } else
+                } else {
                     System.err.println("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
+                }
             }
 
-            if (vertex.getType() == Type.listener || vertex.getType() == Type.lifecycle || vertex.getType() == Type.method) {
+            if (vertex.getType() == Type.listener || vertex.getType() == Type.lifecycle ||
+                    vertex.getType() == Type.method) {
                 if (vertex.getSootMethod().hasActiveBody()) {
                     UnitGraph unitGraph = new UnitGraph(vertex.getSootMethod().getActiveBody());
                     Graph<Vertex, DefaultEdge> methodSubGraph = unitGraph.getGraph();
@@ -227,17 +257,21 @@ public class DroidGraph {
                         for (SootMethod calledMethod : calledMethods) {
                             Vertex callVertex = getVertex(callStatement.hashCode(), graph.vertexSet());
                             Vertex calledVertex = getVertex(calledMethod.hashCode(), graph.vertexSet());
-                            if (callVertex != null && calledVertex != null) graph.addEdge(callVertex, calledVertex);
+                            if (callVertex != null && calledVertex != null) {
+                                graph.addEdge(callVertex, calledVertex);
+                            }
                         }
                     }
                 }
-            } else if (vertex.getType() != Type.statement && vertex.getType() != Type.control && vertex.getType() != Type.dummyMethod)
+            } else if (vertex.getType() != Type.statement && vertex.getType() != Type.control &&
+                    vertex.getType() != Type.dummyMethod) {
                 System.err.println("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
+            }
         }
 
         for (Control control : uiControls.getControls()) {
-            Vertex interfaceVertex = new Vertex(control.hashCode(),
-                    control.getControlResource().getResourceName(), Type.control);
+            Vertex interfaceVertex =
+                    new Vertex(control.hashCode(), control.getControlResource().getResourceName(), Type.control);
             graph.addVertex(interfaceVertex);
         }
 

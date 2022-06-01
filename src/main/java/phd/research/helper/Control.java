@@ -16,7 +16,7 @@ public class Control {
     private SootMethod clickListener;
 
     public Control(int hashcode, ARSCFileParser.AbstractResource control, ARSCFileParser.AbstractResource layout,
-                   SootMethod clickListener) {
+            SootMethod clickListener) {
         this.hashcode = hashcode;
         this.control = control;
         this.layout = layout;
@@ -41,13 +41,17 @@ public class Control {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
+        if (o == this) {
+            return true;
+        }
 
-        if (!(o instanceof Control)) return false;
+        if (!(o instanceof Control)) {
+            return false;
+        }
 
         Control control = (Control) o;
-        return this.hashcode == control.hashcode && Objects.equals(this.clickListener, control.clickListener)
-                && this.control.equals(control.control) && this.layout.equals(control.layout);
+        return this.hashcode == control.hashcode && Objects.equals(this.clickListener, control.clickListener) &&
+                this.control.equals(control.control) && this.layout.equals(control.layout);
     }
 
     @Override
