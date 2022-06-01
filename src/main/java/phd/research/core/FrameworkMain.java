@@ -40,29 +40,24 @@ public class FrameworkMain {
 
         Options options = new Options();
         options.addOption(Option.builder("ap").longOpt("android-platform")
-                .desc("Android SDK platform directory.").required().hasArg().numberOfArgs(1)
-                .argName("DIRECTORY").build());
-        options.addOption(Option.builder("a").longOpt("apk")
-                .desc("APK file to analyse.").required().hasArg().numberOfArgs(1).argName("FILE").build());
-        options.addOption(Option.builder("co").longOpt("console-output")
-                .desc("Print output to console.").build());
-        options.addOption(Option.builder("ug").longOpt("unit-graph")
-                .desc("Output Unit Graphs.").build());
+                .desc("Android SDK platform directory.").hasArg().numberOfArgs(1).argName("DIRECTORY").build());
+        options.addOption(Option.builder("a").longOpt("apk").desc("APK file to analyse.")
+                .required().hasArg().numberOfArgs(1).argName("FILE").build());
+        options.addOption(Option.builder("co").longOpt("console-output").desc("Print output to console.").build());
+        options.addOption(Option.builder("ug").longOpt("unit-graph").desc("Output Unit Graphs.").build());
         options.addOption(Option.builder("cg").longOpt("call-graph").desc("Output Call Graph.").build());
         options.addOption(Option.builder("cfg").longOpt("control-flow-graph")
                 .desc("Output Control Flow Graph.").build());
-        options.addOption(Option.builder("od").longOpt("output-directory")
-                .desc("Directory for output files.").hasArg().numberOfArgs(1).argName("DIRECTORY").build());
-        options.addOption(Option.builder("of").longOpt("output-format")
-                .hasArg().desc("Graph output format ('DOT', 'JSON', 'ALL').").numberOfArgs(1)
-                .argName("FORMAT").build());
+        options.addOption(Option.builder("od").longOpt("output-directory").desc("Directory for output files.")
+                .hasArg().numberOfArgs(1).argName("DIRECTORY").build());
+        options.addOption(Option.builder("of").longOpt("output-format").hasArg().desc("Graph output format ('DOT', " +
+                "'JSON', 'ALL').").numberOfArgs(1).argName("FORMAT").build());
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
-        options.addOption(Option.builder("sp").longOpt("source-project")
-                .desc("Name of source project.").hasArg().numberOfArgs(1).argName("NAME").build());
-        options.addOption(Option.builder("cf").longOpt("content-files").desc("Output content files.")
-                .build());
-        options.addOption(Option.builder("fof").longOpt("fm-output-file")
-                .desc("FrontMatter analysis output file.").hasArg().numberOfArgs(1).argName("FILE").build());
+        options.addOption(Option.builder("sp").longOpt("source-project").desc("Name of source project.")
+                .hasArg().numberOfArgs(1).argName("NAME").build());
+        options.addOption(Option.builder("cf").longOpt("content-files").desc("Output content files.").build());
+        options.addOption(Option.builder("fof").longOpt("fm-output-file").desc("FrontMatter analysis output file.")
+                .hasArg().numberOfArgs(1).argName("FILE").build());
 
         CommandLine cmd = null;
         try {
@@ -83,7 +78,8 @@ public class FrameworkMain {
         }
 
         if (cmd != null) {
-            androidPlatform = cmd.getOptionValue("ap");
+            androidPlatform = (cmd.hasOption("ap") ? cmd.getOptionValue("ap") : System.getenv("ANDROID_HOME") +
+                    "/platforms/");
             if (!directoryExists(androidPlatform)) {
                 logger.error("Error: Android platform directory does not exist (" + androidPlatform + ").");
                 System.err.println("Error: Android platform directory does not exist (" + androidPlatform + ").");
@@ -95,8 +91,8 @@ public class FrameworkMain {
             apk = cmd.getOptionValue("a");
             if (!fileExists(apk)) {
                 if (cmd.hasOption("sp")) {
-                    String sourceApk = "/Users/jordandoyle/Android_Projects/" + sourceProject
-                            + "/app/build/outputs/apk/debug/app-debug.apk";
+                    String sourceApk = "/Users/jordandoyle/Android_Projects/" + sourceProject + "/app/build/outputs" +
+                            "/apk/debug/app-debug.apk";
                     if (fileExists(sourceApk)) apk = sourceApk;
                     else {
                         logger.error("Error: Source project (" + sourceProject + ") does not exist .");
@@ -116,8 +112,8 @@ public class FrameworkMain {
             outputControlFlowGraph = cmd.hasOption("cfg");
             outputContent = cmd.hasOption("cf");
 
-            outputDirectory = (cmd.hasOption("od") ? cmd.getOptionValue("od")
-                    : System.getProperty("user.dir") + "/output/");
+            outputDirectory = (cmd.hasOption("od") ? cmd.getOptionValue("od") : System.getProperty("user.dir") +
+                    "/output/");
             if (!directoryExists(outputDirectory)) {
                 outputDirectory = System.getProperty("user.dir") + "/output/";
                 if (createDirectory(outputDirectory)) {
@@ -167,12 +163,10 @@ public class FrameworkMain {
         System.out.println("Running graph generation...");
         long dgStartTime = System.currentTimeMillis();
 
-        UiControls uiControls = new UiControls(
-                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"),
-                FrameworkMain.getApk()
-        );
-        DroidGraph droidGraph = new DroidGraph(
-                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), uiControls);
+        UiControls uiControls = new UiControls(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"),
+                FrameworkMain.getApk());
+        DroidGraph droidGraph = new DroidGraph(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"),
+                uiControls);
         droidGraph.generateGraphs();
 
         long dgEndTime = System.currentTimeMillis();
@@ -201,7 +195,8 @@ public class FrameworkMain {
             }
 
             if (outputControlFlowGraph) {
-                String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App-CFG");
+                String outputName = (cmd != null && cmd.hasOption("sp") ? cmd.getOptionValue("sp") + "-CFG" : "App" +
+                        "-CFG");
                 try {
                     Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getControlFlowGraph());
                 } catch (Exception e) {
@@ -210,9 +205,7 @@ public class FrameworkMain {
             }
 
             if (outputContent) {
-                viewer = new Viewer(
-                        new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), uiControls
-                );
+                viewer = new Viewer(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), uiControls);
                 try {
                     viewer.writeContentsToFile(FrameworkMain.getOutputDirectory());
                 } catch (IOException e) {
@@ -227,9 +220,7 @@ public class FrameworkMain {
 
         if (consoleOutput) {
             if (viewer == null)
-                viewer = new Viewer(
-                        new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), uiControls
-                );
+                viewer = new Viewer(new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"), uiControls);
 
             viewer.printAppDetails(FrameworkMain.getApk());
             viewer.printUnassignedCallbacks();
