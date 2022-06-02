@@ -95,6 +95,16 @@ public class DroidGraph {
         return null;
     }
 
+    /**
+     * For some reason JGraphT does not have a method to retrieve individual vertices that already exist in the graph.
+     * Instead, this method searched a list of all the vertices contained within the graph for the required
+     * {@link Vertex} object and returns it.
+     *
+     * @param name the label of the {@link Vertex} object being searched for.
+     * @param set  the set of all vertices to search.
+     *
+     * @return The {@link Vertex} object from the vertex set with the given name.
+     */
     public static Vertex getVertex(String name, Set<Vertex> set) {
         for (Vertex vertex : set) {
             if (vertex.getLabel().equals(name)) {
@@ -103,6 +113,43 @@ public class DroidGraph {
         }
 
         return null;
+    }
+
+    public static void resetLocalVisits(Graph<Vertex, DefaultEdge> graph) {
+        for (Vertex vertex : graph.vertexSet()) {
+            vertex.localVisitReset();
+        }
+    }
+
+    public static Map<String, Float> calculateGraphCoverage(Graph<Vertex, DefaultEdge> graph) {
+        Map<String, Float> coverageMap = new HashMap<>();
+
+        float interfaceCoverage, interfaceTotal, methodCoverage, methodTotal;
+        interfaceCoverage = interfaceTotal = methodCoverage = methodTotal = 0;
+
+        for (Vertex vertex : graph.vertexSet()) {
+            switch (vertex.getType()) {
+                case control:
+                    interfaceTotal += 1;
+                    if (vertex.hasVisited()) {
+                        interfaceCoverage += 1;
+                    }
+                    break;
+                case method:
+                case listener:
+                case lifecycle:
+                    methodTotal += 1;
+                    if (vertex.hasVisited()) {
+                        methodCoverage += 1;
+                    }
+                    break;
+            }
+        }
+
+        coverageMap.put("Interface", (interfaceCoverage / interfaceTotal) * 100);
+        coverageMap.put("Method", (methodCoverage / methodTotal) * 100);
+
+        return coverageMap;
     }
 
     private Type getMethodType(SootMethod method) {
@@ -119,11 +166,6 @@ public class DroidGraph {
         } else {
             return Type.method;
         }
-    }
-
-    public void generateGraphs() {
-        this.callGraph = generateGraph(Scene.v().getCallGraph());
-        this.controlFlowGraph = generateGraph(this.callGraph);
     }
 
     public Graph<Vertex, DefaultEdge> getCallGraph() {
@@ -144,6 +186,19 @@ public class DroidGraph {
 
     public void setControlFlowGraph(Graph<Vertex, DefaultEdge> graph) {
         this.controlFlowGraph = graph;
+    }
+
+    public void generateGraphs() {
+        this.callGraph = generateGraph(Scene.v().getCallGraph());
+        this.controlFlowGraph = generateGraph(this.callGraph);
+    }
+
+    public void resetCFGLocalVisits() {
+        DroidGraph.resetLocalVisits(this.getControlFlowGraph());
+    }
+
+    public Map<String, Float> calculateCFGCoverage() {
+        return calculateGraphCoverage(this.getControlFlowGraph());
     }
 
     private Vertex getInterfaceControl(Vertex vertex) {
