@@ -3,7 +3,6 @@ package phd.research.ui;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
-import phd.research.core.FrameworkMain;
 import phd.research.graph.Filter;
 import phd.research.helper.Control;
 import phd.research.helper.Status;
@@ -69,10 +68,10 @@ public class UiJimpleSearch extends UiSearch {
         return foundMethod;
     }
 
-    private SootMethod findCallbackMethodAnywhere(int id) {
+    private SootMethod findCallbackMethodAnywhere(String apk, int id) {
         for (SootClass sootClass : Scene.v().getClasses()) {
             if (Filter.isValidClass(null, null, sootClass) &&
-                    !Filter.isEntryPointClass(FrameworkMain.getApk(), sootClass)) {
+                    !Filter.isEntryPointClass(apk, sootClass)) {
                 SootMethod callbackMethod = findCallbackMethod(sootClass, id);
                 if (callbackMethod != null) {
                     return callbackMethod;
@@ -179,14 +178,15 @@ public class UiJimpleSearch extends UiSearch {
 
         for (String layoutFile : userControls.keySet()) {
             ARSCFileParser.AbstractResource layoutResource =
-                    resources.findResourceByName("layout", getResourceName(layoutFile));
+                    super.resources.findResourceByName("layout", UiControls.getResourceName(layoutFile));
 
             for (AndroidLayoutControl control : userControls.get(layoutFile)) {
                 if (control.getID() == -1) {
                     continue;
                 }
 
-                ARSCFileParser.AbstractResource controlResource = super.getResourceById(control.getID());
+                ARSCFileParser.AbstractResource controlResource = UiControls.getResourceById(super.resources,
+                        control.getID());
                 if (controlResource == null) {
                     logger.error("No resource found with ID " + control.getID() + ".");
                     continue;
@@ -204,7 +204,7 @@ public class UiJimpleSearch extends UiSearch {
                 } else {
                     if ((clickListener = findCallbackMethod(callbackClass, control.getID())) == null) {
                         if ((clickListener = findCallbackMethodInEntryClass(control.getID())) == null) {
-                            clickListener = findCallbackMethodAnywhere(control.getID());
+                            clickListener = findCallbackMethodAnywhere(super.apk, control.getID());
                         }
                     }
                 }

@@ -4,7 +4,6 @@ import heros.solver.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
-import phd.research.core.FrameworkMain;
 import phd.research.helper.Control;
 import soot.PatchingChain;
 import soot.SootClass;
@@ -84,10 +83,9 @@ public class UiInstrumentSearch extends UiSearch {
     }
 
 
-    public Set<Control> getControlListenerMethods() {
+    public Set<Control> getControlListenerMethods(File collectedCallbacksFile) {
         Set<SootMethod> callbackMethods = new HashSet<>();
-        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(
-                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"));
+        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(collectedCallbacksFile);
         for (SootClass sootClass : callbacks.getCallbackMethods().keySet()) {
             for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(sootClass)) {
                 callbackMethods.add(callbackDefinition.getTargetMethod());
@@ -101,7 +99,8 @@ public class UiInstrumentSearch extends UiSearch {
             for (Pair<String, AndroidLayoutControl> userControl : lfp.getUserControls()) {
                 AndroidLayoutControl control = userControl.getO2();
                 if (control.getClickListener() != null) {
-                    SootMethod clickListener = searchForCallbackMethod(control.getClickListener());
+                    SootMethod clickListener = UiControls.searchForCallbackMethod(collectedCallbacksFile,
+                            control.getClickListener());
                     if (clickListener != null) {
                         controls.add(new Control(control.hashCode(), null, null, clickListener));
                         callbackMethods.remove(clickListener);

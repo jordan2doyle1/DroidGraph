@@ -151,7 +151,8 @@ public class UiControls {
                     continue;
                 }
 
-                ARSCFileParser.AbstractResource controlResource = this.getResourceById(resources, control.getID());
+                ARSCFileParser.AbstractResource controlResource = UiControls.getResourceById(resources,
+                        control.getID());
                 if (controlResource == null) {
                     logger.error("No resource found with ID " + control.getID() + ".");
                     continue;
@@ -174,7 +175,7 @@ public class UiControls {
         return uiControls;
     }
 
-    protected ARSCFileParser.AbstractResource getResourceById(ARSCFileParser resources, int resourceId) {
+    protected static ARSCFileParser.AbstractResource getResourceById(ARSCFileParser resources, int resourceId) {
         ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
         if (resType == null) {
             return null;

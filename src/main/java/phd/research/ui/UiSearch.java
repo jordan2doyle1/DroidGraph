@@ -1,26 +1,17 @@
 package phd.research.ui;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
-import phd.research.core.FrameworkMain;
 import phd.research.helper.Status;
 import soot.*;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.InvokeExpr;
 import soot.jimple.InvokeStmt;
 import soot.jimple.Stmt;
-import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
-import java.io.File;
 import java.util.Iterator;
-import java.util.List;
 
 public class UiSearch {
-
-    private static final Logger logger = LoggerFactory.getLogger(UiSearch.class);
 
     protected String apk;
     protected ARSCFileParser resources;
@@ -28,61 +19,6 @@ public class UiSearch {
     public UiSearch(String apk) {
         this.apk = apk;
         this.resources = FlowDroidUtils.getResources(this.apk);
-    }
-
-    //TODO: Remove
-    protected static String getResourceName(String name) {
-        int index = name.lastIndexOf("/");
-
-        if (index != -1) {
-            name = name.replace(name.substring(0, index + 1), "");
-        }
-
-        if (name.contains(".xml")) {
-            name = name.replace(".xml", "");
-        }
-
-        return name;
-    }
-
-    // TODO: Remove
-    protected static SootMethod searchForCallbackMethod(String methodName) {
-        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(
-                new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks"));
-        SootMethod foundMethod = null;
-
-        for (SootClass currentClass : callbacks.getCallbackMethods().keySet()) {
-            for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(currentClass)) {
-                if (callbackDefinition.getTargetMethod().getName().equals(methodName)) {
-                    if (foundMethod != null) {
-                        logger.error("Multiple callbacks with the name " + methodName + ".");
-                        return null;
-                    }
-                    foundMethod = callbackDefinition.getTargetMethod();
-                }
-            }
-        }
-
-        return foundMethod;
-    }
-
-    //TODO: Remove
-    protected ARSCFileParser.AbstractResource getResourceById(int resourceId) {
-        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
-        if (resType == null) {
-            return null;
-        }
-
-        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
-        if (foundResources.isEmpty()) {
-            return null;
-        }
-
-        if (foundResources.size() > 1) {
-            logger.error("Multiple resources with ID " + resourceId + ", returning the first.");
-        }
-
-        return foundResources.get(0);
     }
 
     private boolean searchForSetContentView(int layoutId, SootMethod method) {

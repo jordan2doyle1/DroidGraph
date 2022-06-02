@@ -3,7 +3,6 @@ package phd.research.ui;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
-import phd.research.core.FrameworkMain;
 import phd.research.frontmatter.FrontMatter;
 import phd.research.helper.Control;
 import soot.SootClass;
@@ -26,7 +25,7 @@ public class UiFrontMatterSearch extends UiSearch {
         super(apk);
     }
 
-    public Set<Control> getControlListenerMethods() {
+    public Set<Control> getControlListenerMethods(File frontMatterOutputFile) {
         LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(super.apk);
 
         Set<Control> uiControls = new HashSet<>();
@@ -40,7 +39,7 @@ public class UiFrontMatterSearch extends UiSearch {
 
         FrontMatter frontMatter;
         try {
-            frontMatter = new FrontMatter(new File(FrameworkMain.getFrontMatterOutputFile()));
+            frontMatter = new FrontMatter(frontMatterOutputFile);
         } catch (IOException e) {
             logger.error("Problem reading Front Matter output file!" + e);
             return uiControls;
@@ -48,14 +47,15 @@ public class UiFrontMatterSearch extends UiSearch {
 
         for (String layoutFile : userControls.keySet()) {
             ARSCFileParser.AbstractResource layoutResource =
-                    resources.findResourceByName("layout", getResourceName(layoutFile));
+                    super.resources.findResourceByName("layout", UiControls.getResourceName(layoutFile));
 
             for (AndroidLayoutControl control : userControls.get(layoutFile)) {
                 if (control.getID() == -1) {
                     continue;
                 }
 
-                ARSCFileParser.AbstractResource controlResource = super.getResourceById(control.getID());
+                ARSCFileParser.AbstractResource controlResource = UiControls.getResourceById(super.resources,
+                        control.getID());
                 if (controlResource == null) {
                     logger.error("No resource found with ID " + control.getID() + ".");
                     continue;
