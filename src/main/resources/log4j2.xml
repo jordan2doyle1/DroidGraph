@@ -11,21 +11,37 @@
             <PatternLayout>
                 <Pattern>%d{HH:mm:ss dd-MM-yyyy} [%t][%level] (%F:%L) - %m%n</Pattern>
             </PatternLayout>
-            <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+            <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
         </File>
 
         <File name="error-appender" fileName="${error-file}" append="false">
             <PatternLayout>
                 <Pattern>%d{HH:mm:ss dd-MM-yyyy} [%t][%level] (%F:%L) - %m%n</Pattern>
             </PatternLayout>
-            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
         </File>
+
+        <Console name="console-info-appender" target="SYSTEM_OUT" follow="true">
+            <PatternLayout>
+                <Pattern>[%level] (%F:%L) - %m%n</Pattern>
+            </PatternLayout>
+            <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
+        </Console>
+
+        <Console name="console-error-appender" target="SYSTEM_ERR" follow="true">
+            <PatternLayout>
+                <Pattern>[%level] (%F:%L) - %m%n</Pattern>
+            </PatternLayout>
+            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
     </Appenders>
 
     <Loggers>
         <Root level="debug">
             <Appender-Ref ref="error-appender"/>
             <Appender-Ref ref="info-appender"/>
+            <Appender-Ref ref="console-info-appender" level="info"/>
+            <Appender-Ref ref="console-error-appender" level="warn"/>
         </Root>
     </Loggers>
 
