@@ -36,7 +36,6 @@ public class FrameworkMain {
         LocalDateTime startDate = LocalDateTime.now();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yy-HH:mm:ss");
         logger.info("Start time: " + dateFormatter.format(startDate));
-        System.out.println("Start time: " + dateFormatter.format(startDate));
 
         Options options = new Options();
         options.addOption(Option.builder("a").longOpt("apk").required().hasArg().numberOfArgs(1).argName("FILE")
@@ -81,8 +80,7 @@ public class FrameworkMain {
             androidPlatform =
                     (cmd.hasOption("p") ? cmd.getOptionValue("p") : System.getenv("ANDROID_HOME") + "/platforms/");
             if (!directoryExists(androidPlatform)) {
-                logger.error("Error: Android platform directory does not exist (" + androidPlatform + ").");
-                System.err.println("Error: Android platform directory does not exist (" + androidPlatform + ").");
+                logger.error("Android platform directory does not exist (" + androidPlatform + ").");
                 System.exit(10);
             }
 
@@ -96,13 +94,11 @@ public class FrameworkMain {
                     if (fileExists(sourceApk)) {
                         apk = sourceApk;
                     } else {
-                        logger.error("Error: Source project (" + sourceProject + ") does not exist .");
-                        System.err.println("Error: Source project (" + sourceProject + ") does not exist .");
+                        logger.error("Source project (" + sourceProject + ") does not exist .");
                         System.exit(20);
                     }
                 } else {
-                    logger.error("Error: APK file does not exist (" + apk + ").");
-                    System.err.println("Error: APK file does not exist (" + apk + ").");
+                    logger.error("APK file does not exist (" + apk + ").");
                     System.exit(30);
                 }
             }
@@ -119,25 +115,21 @@ public class FrameworkMain {
                 outputDirectory = System.getProperty("user.dir") + "/output/";
                 if (createDirectory(outputDirectory)) {
                     if (cmd.hasOption("o")) {
-                        logger.warn("Warning: Output directory doesn't exist, using default directory instead.");
-                        System.err.println("Warning: Output directory doesn't exist, using default directory instead.");
+                        logger.warn("Output directory doesn't exist, using default directory instead.");
                     }
                 } else {
-                    logger.error("Error: Output directory does not exist.");
-                    System.err.println("Error: Output directory does not exist.");
+                    logger.error("Output directory does not exist.");
                 }
             }
             String outputFormat = (cmd.hasOption("f") ? cmd.getOptionValue("f") : "JSON");
             if (!isRecognisedFormat(outputFormat)) {
-                logger.error("Warning: Unrecognised output format, using default format instead.");
-                System.err.println("Warning: Unrecognised output format, using default format instead.");
+                logger.warn("Unrecognised output format, using default format instead.");
             }
 
             if (cmd.hasOption("fm")) {
                 fmOutputFile = cmd.getOptionValue("a");
                 if (!fileExists(fmOutputFile)) {
-                    logger.error("Error: FrontMatter output file does not exist (" + fmOutputFile + ").");
-                    System.err.println("Error: FrontMatter output file does not exist (" + fmOutputFile + ").");
+                    logger.error("FrontMatter output file does not exist (" + fmOutputFile + ").");
                     System.exit(30);
                 }
             }
@@ -146,11 +138,10 @@ public class FrameworkMain {
         try {
             Writer.cleanDirectory(outputDirectory);
         } catch (IOException e) {
-            logger.error("Error cleaning output directory: " + e.getMessage());
+            logger.error("Problem cleaning output directory: " + e.getMessage());
         }
 
         logger.info("Running FlowDroid...");
-        System.out.println("Running FlowDroid...");
         long fdStartTime = System.currentTimeMillis();
 
         FlowDroidUtils.runFlowDroid(FrameworkMain.getApk(), FrameworkMain.getAndroidPlatform(),
@@ -159,10 +150,8 @@ public class FrameworkMain {
 
         long fdEndTime = System.currentTimeMillis();
         logger.info("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
-        System.out.println("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
 
         logger.info("Running graph generation...");
-        System.out.println("Running graph generation...");
         long dgStartTime = System.currentTimeMillis();
 
         File callbackFile = new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks");
@@ -172,19 +161,17 @@ public class FrameworkMain {
 
         long dgEndTime = System.currentTimeMillis();
         logger.info("Graph generation took " + (dgEndTime - dgStartTime) / 1000 + " second(s).");
-        System.out.println("Graph generation took " + (dgEndTime - dgStartTime) / 1000 + " second(s).");
 
         Viewer viewer = null;
         if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph || outputContent) {
             long startTime = System.currentTimeMillis();
             logger.info("Starting file output...");
-            System.out.println("Starting file output...");
 
             if (outputUnitGraphs) {
                 try {
                     Writer.outputMethods(FrameworkMain.getOutputDirectory(), outputFormat);
                 } catch (Exception e) {
-                    logger.error("Error writing methods to output file: " + e.getMessage());
+                    logger.error("Problem writing methods to output file: " + e.getMessage());
                 }
             }
 
@@ -193,7 +180,7 @@ public class FrameworkMain {
                 try {
                     Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getCallGraph());
                 } catch (Exception e) {
-                    logger.error("Error writing call graph to output file: " + e.getMessage());
+                    logger.error("Problem writing call graph to output file: " + e.getMessage());
                 }
             }
 
@@ -203,7 +190,7 @@ public class FrameworkMain {
                 try {
                     Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getControlFlowGraph());
                 } catch (Exception e) {
-                    logger.error("Error writing CFG to output file: " + e.getMessage());
+                    logger.error("Problem writing CFG to output file: " + e.getMessage());
                 }
             }
 
@@ -212,13 +199,12 @@ public class FrameworkMain {
                 try {
                     viewer.writeContentsToFile(FrameworkMain.getOutputDirectory());
                 } catch (IOException e) {
-                    logger.error("Error writing content to output file: " + e.getMessage());
+                    logger.error("Problem writing content to output file: " + e.getMessage());
                 }
             }
 
             long endTime = System.currentTimeMillis();
             logger.info("File output took " + (endTime - startTime) / 60 + " second(s).");
-            System.out.println("File output took " + (endTime - startTime) / 60 + " second(s).");
         }
 
         if (consoleOutput) {
@@ -235,10 +221,8 @@ public class FrameworkMain {
 
         LocalDateTime endDate = LocalDateTime.now();
         logger.info("End time: " + dateFormatter.format(endDate));
-        System.out.println("End time: " + dateFormatter.format(endDate));
         Duration duration = Duration.between(startDate, endDate);
         logger.info("Execution time: " + duration.getSeconds() + " second(s).");
-        System.out.println("Execution time: " + duration.getSeconds() + " second(s).");
     }
 
     public static String getOutputDirectory() {
@@ -266,8 +250,7 @@ public class FrameworkMain {
         try {
             cmd = parser.parse(options, args, true);
         } catch (ParseException e) {
-            logger.error("Error Parsing Command Line Arguments: " + e.getMessage());
-            System.err.println("Error Parsing Command Line Arguments: " + e.getMessage());
+            logger.error("Problem Parsing Command Line Arguments: " + e.getMessage());
         }
 
         if (cmd != null) {

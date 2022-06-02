@@ -1,6 +1,8 @@
 package phd.research.ui;
 
 import heros.solver.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
 import phd.research.core.FrameworkMain;
 import phd.research.helper.Control;
@@ -23,6 +25,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class UiInstrumentSearch extends UiSearch {
+
+    private static final Logger logger = LoggerFactory.getLogger(UiInstrumentSearch.class);
 
     public UiInstrumentSearch(String apk) {
         super(apk);
@@ -62,21 +66,18 @@ public class UiInstrumentSearch extends UiSearch {
         }
 
         if (numberID == null) {
-            System.err.println(
-                    "Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "." +
-                            callback.getName() + "\", no value found in the method. ");
+            logger.error("Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "." +
+                    callback.getName() + "\", no value found in the method. ");
             return null;
         }
 
         try {
             interfaceID = new Pair<>(textID, Integer.parseInt(numberID));
-            System.out.println(
-                    "Found control ID " + argument + " in \"" + callback.getDeclaringClass().getShortName() + "." +
-                            callback.getName() + "\".");
+            logger.info("Found control ID " + argument + " in \"" + callback.getDeclaringClass().getShortName() + "." +
+                    callback.getName() + "\".");
         } catch (NumberFormatException e) {
-            System.out.println(
-                    "Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "." +
-                            callback.getName() + "\", could not parse integer: " + numberID + ".");
+            logger.error("Failed to get Interface ID from \"" + callback.getDeclaringClass().getShortName() + "." +
+                    callback.getName() + "\", could not parse integer: " + numberID + ".");
         }
 
         return interfaceID;
@@ -104,11 +105,11 @@ public class UiInstrumentSearch extends UiSearch {
                     if (clickListener != null) {
                         controls.add(new Control(control.hashCode(), null, null, clickListener));
                         callbackMethods.remove(clickListener);
-                        System.out.println(
+                        logger.info(
                                 control.getID() + " linked to \"" + clickListener.getDeclaringClass().getShortName() +
                                         "." + clickListener.getName() + "\".");
                     } else {
-                        System.err.println(
+                        logger.error(
                                 "Problem linking controls with listeners: Two callback methods have the same name.");
                     }
                 } else {
@@ -133,7 +134,7 @@ public class UiInstrumentSearch extends UiSearch {
                         controls.add(new Control(control.hashCode(), null, null, listener));
                         controlIterator.remove();
                         iterator.remove();
-                        System.out.println(control.getID() + ":" + interfaceID.getO1() + " linked to \"" +
+                        logger.info(control.getID() + ":" + interfaceID.getO1() + " linked to \"" +
                                 listener.getDeclaringClass().getShortName() + "." + listener.getName() + "\".");
                         break;
                     }
@@ -143,7 +144,7 @@ public class UiInstrumentSearch extends UiSearch {
 
         if (callbackMethods.size() > 0) {
             for (SootMethod sootMethod : callbackMethods) {
-                System.err.println("No control linked to \"" + sootMethod.getDeclaringClass().getShortName() + "." +
+                logger.error("No control linked to \"" + sootMethod.getDeclaringClass().getShortName() + "." +
                         sootMethod.getName() + "\".");
             }
         }
@@ -151,7 +152,7 @@ public class UiInstrumentSearch extends UiSearch {
         if (nullControls.size() > 0) {
             for (Pair<String, AndroidLayoutControl> nullControl : nullControls) {
                 AndroidLayoutControl control = nullControl.getO2();
-                System.err.println("No listener linked to " + control.getID() + ".");
+                logger.error("No listener linked to " + control.getID() + ".");
             }
         }
 

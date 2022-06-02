@@ -1,5 +1,7 @@
 package phd.research.ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
 import phd.research.core.FrameworkMain;
 import phd.research.graph.Filter;
@@ -17,6 +19,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class UiJimpleSearch extends UiSearch {
+
+    private static final Logger logger = LoggerFactory.getLogger(UiJimpleSearch.class);
 
     public UiJimpleSearch(String apk) {
         super(apk);
@@ -39,7 +43,7 @@ public class UiJimpleSearch extends UiSearch {
                                 // Get the left and right operand, if the right operand is a virtual invoke with name.
                                 InvokeExpr invokeExpr = stmt.getInvokeExpr();
                                 if (invokeExpr.getMethod().getName().equals("getId")) {
-                                    System.out.println(unit.getUseBoxes());
+                                    logger.info(String.valueOf(unit.getUseBoxes()));
                                 }
                             }
                         });
@@ -55,8 +59,7 @@ public class UiJimpleSearch extends UiSearch {
         for (SootMethod method : callbackClass.getMethods()) {
             if (method.getName().equals(methodName)) {
                 if (foundMethod != null) {
-                    System.err.println(
-                            "Multiple callbacks with the name " + methodName + " in class " + callbackClass + ".");
+                    logger.error("Multiple callbacks with the name " + methodName + " in class " + callbackClass + ".");
                     return null;
                 }
                 foundMethod = method;
@@ -120,7 +123,7 @@ public class UiJimpleSearch extends UiSearch {
                                     try {
                                         intArg = Integer.parseInt(invokeExpr.getArg(0).toString());
                                     } catch (NumberFormatException ignored) {
-                                        System.err.println("Error: findViewByID() has unknown argument! Stmt: " + stmt);
+                                        logger.error("findViewByID() has unknown argument! Stmt: " + stmt);
                                     }
 
                                     if (intArg != -1 && intArg == id) {
@@ -146,8 +149,7 @@ public class UiJimpleSearch extends UiSearch {
 
                     if (searchStatus.isViewFound() && searchStatus.isClassFound()) {
                         if (searchStatus.getFoundClass().getMethodCount() > 2) {
-                            System.out.println(
-                                    "Warning: Class contains multiple callback methods. Using the first method.");
+                            logger.warn("Warning: Class contains multiple callback methods. Using the first method.");
                         }
 
                         for (SootMethod classMethod : searchStatus.getFoundClass().getMethods()) {
@@ -171,7 +173,7 @@ public class UiJimpleSearch extends UiSearch {
         if (layoutParser != null) {
             userControls = layoutParser.getUserControls();
         } else {
-            System.err.println("Error: Problem getting Layout File Parser. Can't get UI Controls!");
+            logger.error("Problem getting Layout File Parser. Can't get UI Controls!");
             return uiControls;
         }
 
@@ -186,13 +188,13 @@ public class UiJimpleSearch extends UiSearch {
 
                 ARSCFileParser.AbstractResource controlResource = super.getResourceById(control.getID());
                 if (controlResource == null) {
-                    System.err.println("Error: No resource found with ID " + control.getID() + ".");
+                    logger.error("No resource found with ID " + control.getID() + ".");
                     continue;
                 }
 
                 SootClass callbackClass = super.findLayoutClass(layoutResource.getResourceID());
                 if (callbackClass == null) {
-                    System.err.println("Error: No class found for layout resource: " + layoutResource.getResourceID());
+                    logger.error("No class found for layout resource: " + layoutResource.getResourceID());
                     continue;
                 }
 
@@ -208,7 +210,7 @@ public class UiJimpleSearch extends UiSearch {
                 }
 
                 if (clickListener == null) {
-                    System.err.println("Error: Couldn't find click listener method with ID: " + control.getID());
+                    logger.error("Error: Couldn't find click listener method with ID: " + control.getID());
                 }
 
                 uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));

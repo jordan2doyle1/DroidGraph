@@ -1,5 +1,7 @@
 package phd.research.ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
 import phd.research.core.FrameworkMain;
 import phd.research.frontmatter.FrontMatter;
@@ -18,6 +20,8 @@ import java.util.Set;
 
 public class UiFrontMatterSearch extends UiSearch {
 
+    private static final Logger logger = LoggerFactory.getLogger(UiFrontMatterSearch.class);
+
     public UiFrontMatterSearch(String apk) {
         super(apk);
     }
@@ -30,7 +34,7 @@ public class UiFrontMatterSearch extends UiSearch {
         if (layoutParser != null) {
             userControls = layoutParser.getUserControls();
         } else {
-            System.err.println("Error: Problem getting Layout File Parser. Can't get UI Controls!");
+            logger.error("Problem getting Layout File Parser. Can't get UI Controls!");
             return uiControls;
         }
 
@@ -38,7 +42,7 @@ public class UiFrontMatterSearch extends UiSearch {
         try {
             frontMatter = new FrontMatter(new File(FrameworkMain.getFrontMatterOutputFile()));
         } catch (IOException e) {
-            System.err.println("Error: Problem reading Front Matter output file!" + e);
+            logger.error("Problem reading Front Matter output file!" + e);
             return uiControls;
         }
 
@@ -53,13 +57,13 @@ public class UiFrontMatterSearch extends UiSearch {
 
                 ARSCFileParser.AbstractResource controlResource = super.getResourceById(control.getID());
                 if (controlResource == null) {
-                    System.err.println("Error: No resource found with ID " + control.getID() + ".");
+                    logger.error("No resource found with ID " + control.getID() + ".");
                     continue;
                 }
 
                 SootClass callbackClass = super.findLayoutClass(layoutResource.getResourceID());
                 if (callbackClass == null) {
-                    System.err.println("Error: No class found for layout resource: " + layoutResource.getResourceID());
+                    logger.error("No class found for layout resource: " + layoutResource.getResourceID());
                     continue;
                 }
 
@@ -68,16 +72,16 @@ public class UiFrontMatterSearch extends UiSearch {
                     if (frontMatter.containsControl(callbackClass.getName(), control.getID())) {
                         clickListener = frontMatter.getClickListener(control.getID());
                     } else {
-                        System.out.println("WARN: FrontMatter output did not contain control ID " + control.getID());
+                        logger.warn("FrontMatter output did not contain control ID " + control.getID());
                     }
                 } catch (IOException e) {
-                    System.err.println("Error: Problem searching FrontMatter output." + e.getMessage());
+                    logger.error("Problem searching FrontMatter output." + e.getMessage());
                     return uiControls;
                 }
 
 
                 if (clickListener == null) {
-                    System.err.println("Error: Couldn't find click listener method with ID: " + control.getID());
+                    logger.error("Couldn't find click listener method with ID: " + control.getID());
                 }
 
                 uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));

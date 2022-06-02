@@ -1,5 +1,7 @@
 package phd.research.ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
 import phd.research.core.FrameworkMain;
 import phd.research.helper.Status;
@@ -17,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class UiSearch {
+
+    private static final Logger logger = LoggerFactory.getLogger(UiSearch.class);
 
     protected String apk;
     protected ARSCFileParser resources;
@@ -51,7 +55,7 @@ public class UiSearch {
             for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(currentClass)) {
                 if (callbackDefinition.getTargetMethod().getName().equals(methodName)) {
                     if (foundMethod != null) {
-                        System.err.println("Multiple callbacks with the name " + methodName + ".");
+                        logger.error("Multiple callbacks with the name " + methodName + ".");
                         return null;
                     }
                     foundMethod = callbackDefinition.getTargetMethod();
@@ -75,7 +79,7 @@ public class UiSearch {
         }
 
         if (foundResources.size() > 1) {
-            System.err.println("Error: Multiple resources with ID " + resourceId + ", returning the first.");
+            logger.error("Multiple resources with ID " + resourceId + ", returning the first.");
         }
 
         return foundResources.get(0);

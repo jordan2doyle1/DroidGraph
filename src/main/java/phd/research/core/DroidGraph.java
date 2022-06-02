@@ -4,6 +4,8 @@ import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.enums.Type;
 import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
@@ -25,6 +27,8 @@ import java.util.*;
  */
 public class DroidGraph {
 
+    private static final Logger logger = LoggerFactory.getLogger(DroidGraph.class);
+
     private final File collectedCallbacksFile;
     private final UiControls uiControls;
     private Graph<Vertex, DefaultEdge> callGraph;
@@ -32,7 +36,7 @@ public class DroidGraph {
 
     public DroidGraph(File collectedCallbacksFile, UiControls controls) {
         if (!collectedCallbacksFile.exists()) {
-            System.err.println();
+            logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
         }
 
         this.collectedCallbacksFile = collectedCallbacksFile;
@@ -149,7 +153,7 @@ public class DroidGraph {
                     Type.control, vertex.getSootMethod()
             );
         } else {
-            System.err.println("No control for " + vertex.getLabel());
+            logger.error("No control for " + vertex.getLabel());
         }
 
         return null;
@@ -179,12 +183,12 @@ public class DroidGraph {
         }
 
         if (notInGraph.isEmpty()) {
-            System.out.println("All methods in the graph.");
+            logger.info("All methods in the graph.");
         } else {
-            System.err.println(notInGraph.size() + " methods are not in the graph. ");
+            logger.error(notInGraph.size() + " methods are not in the graph. ");
 
             for (SootMethod method : notInGraph) {
-                System.out.println(method.toString());
+                logger.info(method.toString());
             }
         }
 
@@ -238,7 +242,7 @@ public class DroidGraph {
                     graph.addVertex(interfaceVertex);
                     graph.addEdge(interfaceVertex, vertex);
                 } else {
-                    System.err.println("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
+                    logger.error("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
                 }
             }
 
@@ -269,7 +273,7 @@ public class DroidGraph {
                 }
             } else if (vertex.getType() != Type.statement && vertex.getType() != Type.control &&
                     vertex.getType() != Type.dummyMethod) {
-                System.err.println("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
+                logger.error("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
             }
         }
 

@@ -1,5 +1,7 @@
 package phd.research.ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
 import phd.research.helper.Control;
 import soot.Scene;
@@ -22,6 +24,8 @@ import java.util.Set;
 
 public class UiControls {
 
+    private static final Logger logger = LoggerFactory.getLogger(UiControls.class);
+
     private final File collectedCallbacksFile;
     private final String apk;
 
@@ -29,7 +33,7 @@ public class UiControls {
 
     public UiControls(File collectedCallbacksFile, String apk) {
         if (!collectedCallbacksFile.exists()) {
-            System.err.println("Error: Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
+            logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
         }
 
         this.collectedCallbacksFile = collectedCallbacksFile;
@@ -58,7 +62,7 @@ public class UiControls {
             for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(currentClass)) {
                 if (callbackDefinition.getTargetMethod().getName().equals(methodName)) {
                     if (foundMethod != null) {
-                        System.err.println("Multiple callbacks with the name " + methodName + ".");
+                        logger.error("Multiple callbacks with the name " + methodName + ".");
                         return null;
                     }
                     foundMethod = callbackDefinition.getTargetMethod();
@@ -134,7 +138,7 @@ public class UiControls {
         if (layoutParser != null) {
             userControls = layoutParser.getUserControls();
         } else {
-            System.err.println("Error: Problem getting Layout File Parser. Can't get UI Controls!");
+            logger.error("Problem getting Layout File Parser. Can't get UI Controls!");
             return uiControls;
         }
 
@@ -149,7 +153,7 @@ public class UiControls {
 
                 ARSCFileParser.AbstractResource controlResource = this.getResourceById(resources, control.getID());
                 if (controlResource == null) {
-                    System.err.println("Error: No resource found with ID " + control.getID() + ".");
+                    logger.error("No resource found with ID " + control.getID() + ".");
                     continue;
                 }
 
@@ -160,7 +164,7 @@ public class UiControls {
                 }
 
                 if (clickListener == null) {
-                    System.err.println("Error: No click listener method with ID: " + control.getID());
+                    logger.error("No click listener method with ID: " + control.getID());
                 }
 
                 uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
@@ -182,7 +186,7 @@ public class UiControls {
         }
 
         if (foundResources.size() > 1) {
-            System.err.println("Error: Multiple resources with ID " + resourceId + ", returning the first.");
+            logger.warn("Multiple resources with ID " + resourceId + ", returning the first.");
         }
 
         return foundResources.get(0);
@@ -190,7 +194,7 @@ public class UiControls {
 
     private void addControlListeners(File collectedUiCallbackLinks) {
         if (!collectedUiCallbackLinks.exists()) {
-            System.err.println("Error: Link File Does Not Exist!: " + collectedUiCallbackLinks);
+            logger.error("Link File Does Not Exist!: " + collectedUiCallbackLinks);
         }
 
         String line;

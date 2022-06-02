@@ -1,5 +1,7 @@
 package phd.research.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import soot.*;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -19,6 +21,8 @@ import java.util.*;
 
 public class FlowDroidUtils {
 
+    private static final Logger logger = LoggerFactory.getLogger(FlowDroidUtils.class);
+
     public FlowDroidUtils() {
 
     }
@@ -29,7 +33,7 @@ public class FlowDroidUtils {
         try {
             manifest = new ProcessManifest(apk);
         } catch (IOException | XmlPullParserException e) {
-            System.err.println("Failure processing manifest: " + e.getMessage());
+            logger.error("Failure processing manifest: " + e.getMessage());
             return null;
         }
 
@@ -88,7 +92,7 @@ public class FlowDroidUtils {
         try {
             resources.parse(apk);
         } catch (IOException e) {
-            System.err.println("Error getting resources: " + e.getMessage());
+            logger.error("Problem getting resources: " + e.getMessage());
         }
 
         return resources;
@@ -113,7 +117,7 @@ public class FlowDroidUtils {
         try {
             callbacks = CollectedCallbacksSerializer.deserialize(callbackFile);
         } catch (FileNotFoundException e) {
-            System.err.println("Error: Collected Callbacks File Not Found:" + e.getMessage());
+            logger.error("Collected Callbacks File Not Found:" + e.getMessage());
         }
 
         return callbacks;

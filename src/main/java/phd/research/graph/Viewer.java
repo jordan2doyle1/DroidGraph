@@ -2,6 +2,8 @@ package phd.research.graph;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.core.FlowDroidUtils;
 import phd.research.enums.Parts;
 import phd.research.helper.Control;
@@ -24,6 +26,8 @@ import java.util.Set;
  */
 public class Viewer {
 
+    private static final Logger logger = LoggerFactory.getLogger(Viewer.class);
+
     private final File collectedCallbacksFile;
     private final UiControls uiControls;
 
@@ -38,7 +42,7 @@ public class Viewer {
 
     public Viewer(File collectedCallbacksFile, UiControls uiControls) {
         if (!collectedCallbacksFile.exists()) {
-            System.err.println("Error: Collected Callback File Does Not Exist!: " + collectedCallbacksFile);
+            logger.error("Collected Callback File Does Not Exist!: " + collectedCallbacksFile);
         }
 
         this.collectedCallbacksFile = collectedCallbacksFile;
