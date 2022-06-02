@@ -138,6 +138,10 @@ public class DroidGraph {
         return this.controlFlowGraph;
     }
 
+    public void setControlFlowGraph(Graph<Vertex, DefaultEdge> graph) {
+        this.controlFlowGraph = graph;
+    }
+
     private Vertex getInterfaceControl(Vertex vertex) {
         Control control = this.uiControls.getControl(vertex.getSootMethod());
         if (control != null) {
