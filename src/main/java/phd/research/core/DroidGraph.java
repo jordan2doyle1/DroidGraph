@@ -201,6 +201,22 @@ public class DroidGraph {
         return calculateGraphCoverage(this.getControlFlowGraph());
     }
 
+    public boolean visitMethod(String methodName) {
+        logger.debug("Looking for method: " + methodName);
+        for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
+            SootMethod method = vertex.getSootMethod();
+            if (method != null) {
+                logger.debug(" " + method.getSignature());
+                if (method.getSignature().equals("methodName")) {
+                    vertex.visit();
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private Vertex getInterfaceControl(Vertex vertex) {
         Control control = this.uiControls.getControl(vertex.getSootMethod());
         if (control != null) {
