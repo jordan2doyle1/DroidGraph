@@ -206,8 +206,8 @@ public class DroidGraph {
         for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
             SootMethod method = vertex.getSootMethod();
             if (method != null) {
-                logger.debug(" " + method.getSignature());
-                if (method.getSignature().equals("methodName")) {
+                logger.debug("Found method: " + method.getSignature());
+                if (method.getSignature().equals(methodName)) {
                     vertex.visit();
                     return true;
                 }
