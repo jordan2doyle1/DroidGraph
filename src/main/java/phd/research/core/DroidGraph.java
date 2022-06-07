@@ -85,9 +85,9 @@ public class DroidGraph {
      *
      * @return The {@link Vertex} object from the vertex set with the given ID.
      */
-    public static Vertex getVertex(int id, Set<Vertex> set) {
+    public static Vertex getVertex(SootClass activity, int id, Set<Vertex> set) {
         for (Vertex vertex : set) {
-            if (vertex.getID() == id) {
+            if (vertex.getID() == id && vertex.getSootClass().equals(activity)) {
                 return vertex;
             }
         }
@@ -105,9 +105,9 @@ public class DroidGraph {
      *
      * @return The {@link Vertex} object from the vertex set with the given name.
      */
-    public static Vertex getVertex(String name, Set<Vertex> set) {
+    public static Vertex getVertex(SootClass activity, String name, Set<Vertex> set) {
         for (Vertex vertex : set) {
-            if (vertex.getLabel().equals(name)) {
+            if (vertex.getLabel().equals(name) && vertex.getSootClass().equals(activity)) {
                 return vertex;
             }
         }
@@ -334,8 +334,11 @@ public class DroidGraph {
                     for (Unit callStatement : callStatements) {
                         Collection<SootMethod> calledMethods = jimpleCFG.getCalleesOfCallAt(callStatement);
                         for (SootMethod calledMethod : calledMethods) {
-                            Vertex callVertex = getVertex(callStatement.hashCode(), graph.vertexSet());
-                            Vertex calledVertex = getVertex(calledMethod.hashCode(), graph.vertexSet());
+                            // TODO: Make sure class passed into getVertex() method is correct.
+                            Vertex callVertex = getVertex(vertex.getSootMethod().getDeclaringClass(),
+                                    callStatement.hashCode(), graph.vertexSet());
+                            Vertex calledVertex = getVertex(calledMethod.getDeclaringClass(), calledMethod.hashCode(),
+                                    graph.vertexSet());
                             if (callVertex != null && calledVertex != null) {
                                 graph.addEdge(callVertex, calledVertex);
                             }
