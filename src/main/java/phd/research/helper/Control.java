@@ -28,6 +28,10 @@ public class Control {
         return this.control;
     }
 
+    public SootClass getControlActivity() {
+        return this.activity;
+    }
+
     public SootMethod getClickListener() {
         return this.clickListener;
     }
