@@ -34,6 +34,6 @@ public class Edge {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.src, this.tgt);
+        return Objects.hash(this.id) + this.src.hashCode() + this.tgt.hashCode();
     }
 }
