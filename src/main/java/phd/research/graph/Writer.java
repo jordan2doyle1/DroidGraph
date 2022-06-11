@@ -81,7 +81,7 @@ public class Writer {
         BufferedWriter writer = openFile(outputLocation, file + ".dot");
 
         if (writer != null) {
-            DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(v -> String.valueOf(v.getID()));
+            DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(v -> String.valueOf(v.hashCode()));
             exporter.setVertexAttributeProvider(Vertex::getAttributes);
             exporter.exportGraph(graph, writer);
 
@@ -97,7 +97,7 @@ public class Writer {
         BufferedWriter writer = openFile(outputLocation, file + ".json");
 
         if (writer != null) {
-            JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(v -> String.valueOf(v.getID()));
+            JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(v -> String.valueOf(v.hashCode()));
             exporter.setVertexAttributeProvider(Vertex::getAttributes);
             exporter.exportGraph(graph, writer);
 

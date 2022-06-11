@@ -3,7 +3,7 @@ package phd.research.graph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
-import phd.research.enums.Type;
+import phd.research.jGraph.UnitVertex;
 import phd.research.jGraph.Vertex;
 import soot.Body;
 import soot.Unit;
@@ -52,12 +52,12 @@ public class UnitGraph extends BriefUnitGraph {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         for (Unit unit : super.unitChain) {
-            Vertex vertex = new Vertex(unit.hashCode(), unit.toString(), Type.statement);
+            UnitVertex vertex = new UnitVertex(unit);
             graph.addVertex(vertex);
 
             List<Unit> successors = super.getSuccsOf(unit);
             for (Unit nextUnit : successors) {
-                Vertex nextVertex = new Vertex(nextUnit.hashCode(), nextUnit.toString(), Type.statement);
+                UnitVertex nextVertex = new UnitVertex(nextUnit);
                 graph.addVertex(nextVertex);
                 graph.addEdge(vertex, nextVertex);
             }
