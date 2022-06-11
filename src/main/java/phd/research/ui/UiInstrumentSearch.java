@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+@SuppressWarnings("unused")
+@Deprecated
 public class UiInstrumentSearch extends UiSearch {
 
     private static final Logger logger = LoggerFactory.getLogger(UiInstrumentSearch.class);
@@ -102,7 +104,9 @@ public class UiInstrumentSearch extends UiSearch {
                     SootMethod clickListener = UiControls.searchForCallbackMethod(collectedCallbacksFile,
                             control.getClickListener());
                     if (clickListener != null) {
-                        controls.add(new Control(control.hashCode(), null, null, clickListener));
+                        // Below null values will cause NullPointerException. Control class has changed and no longer
+                        // works with this outdated code. Commented out to remove warnings.
+                        // controls.add(new Control(null, null, null, clickListener));
                         callbackMethods.remove(clickListener);
                         logger.info(
                                 control.getID() + " linked to \"" + clickListener.getDeclaringClass().getShortName() +
@@ -130,7 +134,9 @@ public class UiInstrumentSearch extends UiSearch {
                     AndroidLayoutControl control = controlIterator.next().getO2();
 
                     if (control.getID() == interfaceID.getO2()) {
-                        controls.add(new Control(control.hashCode(), null, null, listener));
+                        // Below null values will cause NullPointerException. Control class has changed and no longer
+                        // works with this outdated code. Commented out to remove warnings.
+                        // controls.add(new Control(null, null, null, listener));
                         controlIterator.remove();
                         iterator.remove();
                         logger.info(control.getID() + ":" + interfaceID.getO1() + " linked to \"" +

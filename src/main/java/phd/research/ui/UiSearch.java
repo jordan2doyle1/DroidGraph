@@ -11,6 +11,7 @@ import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import java.util.Iterator;
 
+@Deprecated
 public class UiSearch {
 
     protected String apk;

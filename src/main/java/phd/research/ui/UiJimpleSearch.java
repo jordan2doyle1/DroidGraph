@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+@SuppressWarnings("unused")
+@Deprecated
 public class UiJimpleSearch extends UiSearch {
 
     private static final Logger logger = LoggerFactory.getLogger(UiJimpleSearch.class);
@@ -213,7 +215,7 @@ public class UiJimpleSearch extends UiSearch {
                     logger.error("Error: Couldn't find click listener method with ID: " + control.getID());
                 }
 
-                uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
+                uiControls.add(new Control(controlResource, layoutResource, callbackClass, clickListener));
             }
         }
 

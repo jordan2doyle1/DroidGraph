@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+@SuppressWarnings("unused")
+@Deprecated
 public class UiFrontMatterSearch extends UiSearch {
 
     private static final Logger logger = LoggerFactory.getLogger(UiFrontMatterSearch.class);
@@ -84,7 +86,7 @@ public class UiFrontMatterSearch extends UiSearch {
                     logger.error("Couldn't find click listener method with ID: " + control.getID());
                 }
 
-                uiControls.add(new Control(control.hashCode(), controlResource, layoutResource, clickListener));
+                uiControls.add(new Control(controlResource, layoutResource, callbackClass, clickListener));
             }
         }
 
