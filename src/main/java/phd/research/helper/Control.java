@@ -1,5 +1,6 @@
 package phd.research.helper;
 
+import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
@@ -10,25 +11,21 @@ import java.util.Objects;
  */
 public class Control {
 
-    private final int hashcode;
     private final ARSCFileParser.AbstractResource control;
     private final ARSCFileParser.AbstractResource layout;
+    private final SootClass activity;
     private SootMethod clickListener;
 
-    public Control(int hashcode, ARSCFileParser.AbstractResource control, ARSCFileParser.AbstractResource layout,
+    public Control(ARSCFileParser.AbstractResource control, ARSCFileParser.AbstractResource layout, SootClass activity,
             SootMethod clickListener) {
-        this.hashcode = hashcode;
-        this.control = control;
-        this.layout = layout;
+        this.control = Objects.requireNonNull(control);
+        this.layout = Objects.requireNonNull(layout);
+        this.activity = Objects.requireNonNull(activity);
         this.clickListener = clickListener;
     }
 
     public ARSCFileParser.AbstractResource getControlResource() {
         return this.control;
-    }
-
-    public ARSCFileParser.AbstractResource getLayoutResource() {
-        return this.layout;
     }
 
     public SootMethod getClickListener() {
@@ -50,12 +47,13 @@ public class Control {
         }
 
         Control control = (Control) o;
-        return this.hashcode == control.hashcode && Objects.equals(this.clickListener, control.clickListener) &&
-                this.control.equals(control.control) && this.layout.equals(control.layout);
+        return this.control.equals(control.control) && this.layout.equals(control.layout) &&
+                this.activity.equals(control.activity) && Objects.equals(this.clickListener, control.clickListener);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.hashcode, this.control, this.layout, this.clickListener);
+        return this.control.hashCode() + this.layout.hashCode() + this.activity.hashCode() +
+                this.clickListener.hashCode();
     }
 }
