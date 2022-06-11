@@ -30,7 +30,6 @@ public class FrameworkMain {
     private static boolean outputContent;
     private static String outputDirectory;
     private static Format outputFormat;
-    private static String fmOutputFile;
 
     public static void main(String[] args) {
         LocalDateTime startDate = LocalDateTime.now();
@@ -127,7 +126,7 @@ public class FrameworkMain {
             }
 
             if (cmd.hasOption("fm")) {
-                fmOutputFile = cmd.getOptionValue("a");
+                String fmOutputFile = cmd.getOptionValue("a");
                 if (!fileExists(fmOutputFile)) {
                     logger.error("FrontMatter output file does not exist (" + fmOutputFile + ").");
                     System.exit(30);
