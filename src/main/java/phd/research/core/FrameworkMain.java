@@ -229,10 +229,6 @@ public class FrameworkMain {
         return outputDirectory;
     }
 
-    public static String getFrontMatterOutputFile() {
-        return fmOutputFile;
-    }
-
     public static String getApk() {
         return apk;
     }
