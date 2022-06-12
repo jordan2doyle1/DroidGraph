@@ -43,42 +43,22 @@ public class DroidGraph {
         this.uiControls = controls;
     }
 
-    private static String removePackageName(String name) {
-        int index = name.lastIndexOf(".");
-
-        if (name.contains("dummyMainMethod")) {
-            index = name.lastIndexOf("_");
-        }
-
-        if (index != -1) {
-            name = name.replace(name.substring(0, index + 1), "");
-        }
-
-        return name;
-    }
-
-    private static String getLabel(SootMethod method) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("<").append(DroidGraph.removePackageName(method.getDeclaringClass().getName()))
-                .append(": ").append(DroidGraph.removePackageName(method.getReturnType().toString())).append(" ")
-                .append(DroidGraph.removePackageName(method.getName())).append("(");
-
-        List<soot.Type> parameters = method.getParameterTypes();
-        for (int i = 0; i < method.getParameterCount(); i++) {
-            stringBuilder.append(DroidGraph.removePackageName(parameters.get(i).toString()));
-            if (i != (method.getParameterCount() - 1)) {
-                stringBuilder.append(",");
+    public static Vertex getUnitVertex(Unit unit, Set<Vertex> set) {
+        for (Vertex vertex : set) {
+            if (vertex.getType() == Type.unit) {
+                if (((UnitVertex) vertex).getUnit().equals(unit)) {
+                    return vertex;
+                }
             }
         }
 
-        stringBuilder.append(")>");
-        return stringBuilder.toString();
+        return null;
     }
 
-    public static Vertex getVertex(SootClass activity, String label, Set<Vertex> set) {
+    public static Vertex getMethodVertex(Type type, SootMethod method, Set<Vertex> set) {
         for (Vertex vertex : set) {
-            if (vertex.getSootClass() != null) {
-                if (vertex.getLabel().equals(label) && vertex.getSootClass().equals(activity)) {
+            if (vertex.getType() == type) {
+                if (((MethodVertex) vertex).getMethod().equals(method)) {
                     return vertex;
                 }
             }
@@ -192,18 +172,16 @@ public class DroidGraph {
         return false;
     }
 
-//    private Vertex getInterfaceControl(Vertex vertex) {
-//        Control control = this.uiControls.getControl(vertex.getMethod());
-//        if (control != null) {
-//            return new Vertex(control.hashCode(), String.valueOf(control.getControlResource().getResourceID()),
-//                    Type.control, vertex.getMethod()
-//            );
-//        } else {
-//            logger.error("No control for " + vertex.getLabel());
-//        }
-//
-//        return null;
-//    }
+    private ControlVertex getInterfaceControl(ListenerVertex vertex) {
+        Control control = this.uiControls.getListenerControl(vertex.getMethod());
+        if (control != null) {
+            return new ControlVertex(control);
+        } else {
+            logger.error("No control for " + vertex.getLabel());
+        }
+
+        return null;
+    }
 
     private Set<SootMethod> checkGraph(Graph<Vertex, DefaultEdge> graph) {
         // TODO: Verify graph is complete and correct (all methods present?, all vertices have input edges?, etc.)
@@ -322,7 +300,7 @@ public class DroidGraph {
         Set<Vertex> vertexSet = new HashSet<>(graph.vertexSet());
         for (Vertex vertex : vertexSet) {
             if (vertex.getType() == Type.listener) {
-                Vertex interfaceVertex = getInterfaceControl(vertex);
+                ControlVertex interfaceVertex = getInterfaceControl((ListenerVertex) vertex);
                 if (interfaceVertex != null) {
                     graph.addVertex(interfaceVertex);
                     graph.addEdge(interfaceVertex, vertex);
@@ -349,11 +327,9 @@ public class DroidGraph {
                     for (Unit callStatement : callStatements) {
                         Collection<SootMethod> calledMethods = jimpleCFG.getCalleesOfCallAt(callStatement);
                         for (SootMethod calledMethod : calledMethods) {
-                            // TODO: Make sure class passed into getVertex() method is correct.
-                            Vertex callVertex = getVertex(vertex.getSootMethod().getDeclaringClass(),
-                                    callStatement.hashCode(), graph.vertexSet());
-                            Vertex calledVertex = getVertex(calledMethod.getDeclaringClass(), calledMethod.hashCode(),
-                                    graph.vertexSet());
+                            Type methodType = getMethodType(calledMethod);
+                            Vertex callVertex = getUnitVertex(callStatement, graph.vertexSet());
+                            Vertex calledVertex = getMethodVertex(methodType, calledMethod, graph.vertexSet());
                             if (callVertex != null && calledVertex != null) {
                                 graph.addEdge(callVertex, calledVertex);
                             }

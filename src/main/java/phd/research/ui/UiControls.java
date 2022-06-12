@@ -115,6 +115,21 @@ public class UiControls {
         return false;
     }
 
+    public Control getListenerControl(SootMethod listener) {
+        Control foundControl = null;
+        for (Control control : this.getControls()) {
+            if (control.getClickListener().equals(listener)) {
+                if (foundControl != null) {
+                    logger.error("Found multiple controls with the same listener: " + listener.getSignature());
+                    return null;
+                }
+                foundControl = control;
+            }
+        }
+
+        return foundControl;
+    }
+
     public Control getControl(SootClass activity, String resourceName) {
         for (Control control : this.getControls()) {
             if (control.getControlResource() != null && control.getControlActivity() != null) {

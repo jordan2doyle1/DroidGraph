@@ -20,6 +20,10 @@ public class UnitVertex extends Vertex {
         this.label = this.unit.toString();
     }
 
+    public Unit getUnit() {
+        return this.unit;
+    }
+
     public Color getColor() {
         return Color.yellow;
     }
