@@ -1,67 +1,64 @@
 package phd.research.helper;
 
+import javax.annotation.Nonnull;
+import java.util.Objects;
+
 /**
  * @author Jordan Doyle
  */
-@SuppressWarnings("unused")
-public class Tuple<L, M, R> implements Cloneable {
 
-    L left;
-    M middle;
-    R right;
+public class Tuple<L, M, R> {
+
+    @Nonnull
+    private final L left;
+    @Nonnull
+    private final M middle;
+    @Nonnull
+    private final R right;
 
     public Tuple(L left, M middle, R right) {
-        this.left = left;
-        this.middle = middle;
-        this.right = right;
+        this.left = Objects.requireNonNull(left);
+        this.middle = Objects.requireNonNull(middle);
+        this.right = Objects.requireNonNull(right);
     }
 
+    @Nonnull
     public L getLeft() {
         return this.left;
     }
 
-    public void setLeft(L left) {
-        this.left = left;
-    }
-
+    @Nonnull
     public M getMiddle() {
         return this.middle;
     }
 
-    public void setMiddle(M middle) {
-        this.middle = middle;
-    }
-
+    @Nonnull
     public R getRight() {
         return this.right;
     }
 
-    public void setRight(R right) {
-        this.right = right;
-    }
-
     @Override
     public String toString() {
-        return String.format("(%s, %s, %s)", this.left, this.middle, this.right);
+        return String.format("%s: (%s, %s, %s)", getClass().getSimpleName(), this.left, this.middle, this.right);
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
 
         if (obj instanceof Tuple<?, ?, ?>) {
-            return ((Tuple<?, ?, ?>) obj).left.equals(this.left) && ((Tuple<?, ?, ?>) obj).middle.equals(this.middle) &&
-                    ((Tuple<?, ?, ?>) obj).right.equals(this.right);
+            return Objects.equals(((Tuple<?, ?, ?>) obj).left, this.left) &&
+                    Objects.equals(((Tuple<?, ?, ?>) obj).middle, this.middle) &&
+                    Objects.equals(((Tuple<?, ?, ?>) obj).right, this.right);
         }
 
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Tuple<L, M, R> clone() throws CloneNotSupportedException {
-        return (Tuple<L, M, R>) super.clone();
+    public final int hashCode() {
+        return this.left.hashCode() + this.middle.hashCode() + this.right.hashCode();
     }
 }

@@ -4,6 +4,7 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
@@ -11,8 +12,11 @@ import java.util.Objects;
  */
 public class Control {
 
+    @Nonnull
     private final ARSCFileParser.AbstractResource control;
+    @Nonnull
     private final ARSCFileParser.AbstractResource layout;
+    @Nonnull
     private final SootClass activity;
     private SootMethod clickListener;
 
@@ -28,6 +32,10 @@ public class Control {
         return this.control;
     }
 
+    public ARSCFileParser.AbstractResource getLayoutResource() {
+        return this.layout;
+    }
+
     public SootClass getControlActivity() {
         return this.activity;
     }
@@ -41,7 +49,13 @@ public class Control {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public String toString() {
+        return String.format("%s: (%s, %s, %s, %s)", getClass().getSimpleName(), this.control.getResourceName(),
+                this.layout.getResourceName(), this.activity.getName(), this.clickListener.getName());
+    }
+
+    @Override
+    public final boolean equals(Object o) {
         if (o == this) {
             return true;
         }
@@ -51,13 +65,12 @@ public class Control {
         }
 
         Control control = (Control) o;
-        return this.control.equals(control.control) && this.layout.equals(control.layout) &&
-                this.activity.equals(control.activity) && Objects.equals(this.clickListener, control.clickListener);
+        return Objects.equals(this.control, control.control) && Objects.equals(this.layout, control.layout) &&
+                Objects.equals(this.activity, control.activity);
     }
 
     @Override
-    public int hashCode() {
-        return this.control.hashCode() + this.layout.hashCode() + this.activity.hashCode() +
-                this.clickListener.hashCode();
+    public final int hashCode() {
+        return this.control.hashCode() + this.layout.hashCode() + this.activity.hashCode();
     }
 }
