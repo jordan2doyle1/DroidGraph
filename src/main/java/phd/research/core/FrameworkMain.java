@@ -255,7 +255,6 @@ public class FrameworkMain {
         return false;
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private static boolean directoryExists(String directoryName) {
         File directory = new File(directoryName);
         return directory.isDirectory();

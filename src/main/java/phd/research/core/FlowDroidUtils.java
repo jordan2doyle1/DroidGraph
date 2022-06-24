@@ -13,6 +13,7 @@ import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.cfg.LibraryClassPatcher;
+import soot.options.Options;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -123,22 +124,22 @@ public class FlowDroidUtils {
         return callbacks;
     }
 
-    private static void initializeSoot(String apk, String androidPlatform, String outputDirectory) {
+    static void initializeSoot(String apk, String androidPlatform, String outputDirectory) {
         G.reset();  // Clean up any old Soot instance we may have
 
-        soot.options.Options.v().set_no_bodies_for_excluded(true);
-        soot.options.Options.v().set_allow_phantom_refs(true);
-        soot.options.Options.v().set_output_format(soot.options.Options.output_format_none);
-        soot.options.Options.v().set_whole_program(true);
-        soot.options.Options.v().set_process_dir(Collections.singletonList(apk));
-        soot.options.Options.v().set_android_jars(androidPlatform);
-        soot.options.Options.v().set_src_prec(soot.options.Options.src_prec_apk_class_jimple);
-        soot.options.Options.v().set_keep_offset(false);
-        soot.options.Options.v().set_keep_line_number(false);
-        soot.options.Options.v().set_throw_analysis(soot.options.Options.throw_analysis_dalvik);
-        soot.options.Options.v().set_process_multiple_dex(true);
-        soot.options.Options.v().set_ignore_resolution_errors(true);
-        soot.options.Options.v().set_output_dir(outputDirectory);
+        Options.v().set_no_bodies_for_excluded(true);
+        Options.v().set_allow_phantom_refs(true);
+        Options.v().set_output_format(soot.options.Options.output_format_none);
+        Options.v().set_whole_program(true);
+        Options.v().set_process_dir(Collections.singletonList(apk));
+        Options.v().set_android_jars(androidPlatform);
+        Options.v().set_src_prec(soot.options.Options.src_prec_apk_class_jimple);
+        Options.v().set_keep_offset(false);
+        Options.v().set_keep_line_number(false);
+        Options.v().set_throw_analysis(soot.options.Options.throw_analysis_dalvik);
+        Options.v().set_process_multiple_dex(true);
+        Options.v().set_ignore_resolution_errors(true);
+        Options.v().set_output_dir(outputDirectory);
 
         Scene.v().addBasicClass("android.view.View", soot.SootClass.BODIES);
 
@@ -148,11 +149,10 @@ public class FlowDroidUtils {
         // (JD) Remove the android.* and androidx.* within FlowDroid and see what happens.
         List<String> excludeList = new LinkedList<>(
                 Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*", "org" + ".eclipse.*", "soot.*", "android.*",
-                        "androidx.*"
-                             ));
-        soot.options.Options.v().set_exclude(excludeList);
+                        "androidx.*"));
+        Options.v().set_exclude(excludeList);
 
-        soot.options.Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(androidPlatform, apk));
+        Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(androidPlatform, apk));
         Main.v().autoSetOptions();
 
         Scene.v().loadNecessaryClasses();
@@ -165,7 +165,7 @@ public class FlowDroidUtils {
         patcher.patchLibraries();
     }
 
-    private static InfoflowAndroidConfiguration getFlowDroidConfiguration(String apk, String androidPlatform,
+    static InfoflowAndroidConfiguration getFlowDroidConfiguration(String apk, String androidPlatform,
             String outputDirectory) {
         InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
         config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
