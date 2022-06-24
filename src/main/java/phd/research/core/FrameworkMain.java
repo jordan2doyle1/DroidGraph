@@ -24,6 +24,7 @@ public class FrameworkMain {
     private static String androidPlatform;
     private static String apk;
     private static boolean consoleOutput;
+    private static boolean generateGraph;
     private static boolean outputUnitGraphs;
     private static boolean outputCallGraph;
     private static boolean outputControlFlowGraph;
@@ -39,7 +40,9 @@ public class FrameworkMain {
         Options options = new Options();
         options.addOption(Option.builder("a").longOpt("apk").required().hasArg().numberOfArgs(1).argName("FILE")
                 .desc("APK file to analyse.").build());
-        options.addOption(Option.builder("fm").longOpt("fm-output").hasArg().numberOfArgs(1).argName("FILE")
+        options.addOption(Option.builder("s").longOpt("source-project").hasArg().numberOfArgs(1).argName("NAME")
+                .desc("Name of source project.").build());
+        options.addOption(Option.builder("m").longOpt("fm-output").hasArg().numberOfArgs(1).argName("FILE")
                 .desc("FrontMatter analysis output file.").build());
         options.addOption(Option.builder("p").longOpt("android-platform").hasArg().numberOfArgs(1).argName("DIRECTORY")
                 .desc("Android SDK platform directory.").build());
@@ -47,14 +50,14 @@ public class FrameworkMain {
                 .desc("Directory for output files.").build());
         options.addOption(Option.builder("f").longOpt("output-format").hasArg().numberOfArgs(1).argName("FORMAT")
                 .desc("Graph output format ('DOT','JSON','ALL').").build());
-        options.addOption(Option.builder("s").longOpt("source-project").hasArg().numberOfArgs(1).argName("NAME")
-                .desc("Name of source project.").build());
-        options.addOption(Option.builder("co").longOpt("console-output").desc("Print output to console.").build());
+        options.addOption(Option.builder("t").longOpt("terminal-output").desc("Print output to terminal.").build());
+        options.addOption(Option.builder("c").longOpt("content-files").desc("Output content files.").build());
+        options.addOption(
+                Option.builder("g").longOpt("generate-graph").desc("Generate call and control-flow graph.").build());
         options.addOption(Option.builder("ug").longOpt("unit-graph").desc("Output Unit Graphs.").build());
         options.addOption(Option.builder("cg").longOpt("call-graph").desc("Output Call Graph.").build());
         options.addOption(
                 Option.builder("cfg").longOpt("control-flow-graph").desc("Output Control Flow Graph.").build());
-        options.addOption(Option.builder("cf").longOpt("content-files").desc("Output content files.").build());
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
 
         CommandLine cmd = null;
@@ -78,19 +81,19 @@ public class FrameworkMain {
         if (cmd != null) {
             androidPlatform =
                     (cmd.hasOption("p") ? cmd.getOptionValue("p") : System.getenv("ANDROID_HOME") + "/platforms/");
-            if (!directoryExists(androidPlatform)) {
+            if (!new File(androidPlatform).isDirectory()) {
                 logger.error("Android platform directory does not exist (" + androidPlatform + ").");
                 System.exit(10);
             }
 
-            String sourceProject = (cmd.hasOption("s") ? cmd.getOptionValue("s") : null);
+            String sourceProject = cmd.getOptionValue("s");
 
             apk = cmd.getOptionValue("a");
-            if (!fileExists(apk)) {
+            if (!new File(apk).exists()) {
                 if (cmd.hasOption("s")) {
                     String sourceApk = "/Users/jordandoyle/Android_Projects/" + sourceProject + "/app/build/outputs" +
                             "/apk/debug/app-debug.apk";
-                    if (fileExists(sourceApk)) {
+                    if (new File(sourceApk).exists()) {
                         apk = sourceApk;
                     } else {
                         logger.error("Source project (" + sourceProject + ") does not exist .");
@@ -102,17 +105,18 @@ public class FrameworkMain {
                 }
             }
 
-            consoleOutput = cmd.hasOption("co");
+            generateGraph = cmd.hasOption("g");
+            consoleOutput = cmd.hasOption("t");
+            outputContent = cmd.hasOption("c");
             outputUnitGraphs = cmd.hasOption("ug");
             outputCallGraph = cmd.hasOption("cg");
             outputControlFlowGraph = cmd.hasOption("cfg");
-            outputContent = cmd.hasOption("cf");
 
             outputDirectory =
                     (cmd.hasOption("o") ? cmd.getOptionValue("o") : System.getProperty("user.dir") + "/output/");
-            if (!directoryExists(outputDirectory)) {
+            if (!new File(outputDirectory).isDirectory()) {
                 outputDirectory = System.getProperty("user.dir") + "/output/";
-                if (createDirectory(outputDirectory)) {
+                if (new File(outputDirectory).mkdir()) {
                     if (cmd.hasOption("o")) {
                         logger.warn("Output directory doesn't exist, using default directory instead.");
                     }
@@ -125,9 +129,9 @@ public class FrameworkMain {
                 logger.warn("Unrecognised output format, using default format instead.");
             }
 
-            if (cmd.hasOption("fm")) {
+            if (cmd.hasOption("m")) {
                 String fmOutputFile = cmd.getOptionValue("a");
-                if (!fileExists(fmOutputFile)) {
+                if (!new File(fmOutputFile).exists()) {
                     logger.error("FrontMatter output file does not exist (" + fmOutputFile + ").");
                     System.exit(30);
                 }
@@ -143,63 +147,31 @@ public class FrameworkMain {
         logger.info("Running FlowDroid...");
         long fdStartTime = System.currentTimeMillis();
 
-        FlowDroidUtils.runFlowDroid(FrameworkMain.getApk(), FrameworkMain.getAndroidPlatform(),
-                FrameworkMain.getOutputDirectory()
-                                   );
+        FlowDroidUtils.runFlowDroid(apk, androidPlatform, outputDirectory);
 
         long fdEndTime = System.currentTimeMillis();
         logger.info("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
 
-        logger.info("Running graph generation...");
-        long dgStartTime = System.currentTimeMillis();
-
-        File callbackFile = new File(FrameworkMain.getOutputDirectory() + "CollectedCallbacks");
-        UiControls uiControls = new UiControls(callbackFile, FrameworkMain.getApk());
-        DroidGraph droidGraph = new DroidGraph(callbackFile, uiControls);
-        droidGraph.generateGraphs();
-
-        long dgEndTime = System.currentTimeMillis();
-        logger.info("Graph generation took " + (dgEndTime - dgStartTime) / 1000 + " second(s).");
-
+        File callbackFile = new File(outputDirectory + "CollectedCallbacks");
         Viewer viewer = null;
-        if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph || outputContent) {
+
+        logger.info("Processing UI Controls...");
+        long uiStartTime = System.currentTimeMillis();
+
+        UiControls uiControls = new UiControls(callbackFile, apk);
+
+        long uiEndTime = System.currentTimeMillis();
+        logger.info("UI control processing took " + (uiEndTime - uiStartTime) / 1000 + " second(s).");
+
+        if (outputContent) {
             long startTime = System.currentTimeMillis();
             logger.info("Starting file output...");
 
-            if (outputUnitGraphs) {
-                try {
-                    Writer.outputMethods(FrameworkMain.getOutputDirectory(), outputFormat);
-                } catch (Exception e) {
-                    logger.error("Problem writing methods to output file: " + e.getMessage());
-                }
-            }
-
-            if (outputCallGraph) {
-                String outputName = (cmd != null && cmd.hasOption("s") ? cmd.getOptionValue("s") + "-CG" : "App-CG");
-                try {
-                    Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getCallGraph());
-                } catch (Exception e) {
-                    logger.error("Problem writing call graph to output file: " + e.getMessage());
-                }
-            }
-
-            if (outputControlFlowGraph) {
-                String outputName =
-                        (cmd != null && cmd.hasOption("s") ? cmd.getOptionValue("s") + "-CFG" : "App" + "-CFG");
-                try {
-                    Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getControlFlowGraph());
-                } catch (Exception e) {
-                    logger.error("Problem writing CFG to output file: " + e.getMessage());
-                }
-            }
-
-            if (outputContent) {
-                viewer = new Viewer(callbackFile, uiControls);
-                try {
-                    viewer.writeContentsToFile(FrameworkMain.getOutputDirectory());
-                } catch (IOException e) {
-                    logger.error("Problem writing content to output file: " + e.getMessage());
-                }
+            viewer = new Viewer(callbackFile, uiControls);
+            try {
+                viewer.writeContentsToFile(outputDirectory);
+            } catch (IOException e) {
+                logger.error("Problem writing content to output file: " + e.getMessage());
             }
 
             long endTime = System.currentTimeMillis();
@@ -211,29 +183,67 @@ public class FrameworkMain {
                 viewer = new Viewer(callbackFile, uiControls);
             }
 
-            viewer.printAppDetails(FrameworkMain.getApk());
-            viewer.printUnassignedCallbacks();
+            viewer.printAppDetails(apk);
             viewer.printCallbackTable();
-            Viewer.printCallGraphDetails(droidGraph.getCallGraph());
-            Viewer.printCFGDetails(droidGraph.getControlFlowGraph());
+            viewer.printUnassignedCallbacks();
+        }
+
+        if (generateGraph) {
+            logger.info("Running graph generation...");
+            long dgStartTime = System.currentTimeMillis();
+
+            DroidGraph droidGraph = new DroidGraph(callbackFile, uiControls);
+            droidGraph.generateGraphs();
+
+            long dgEndTime = System.currentTimeMillis();
+            logger.info("Graph generation took " + (dgEndTime - dgStartTime) / 1000 + " second(s).");
+
+            if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph) {
+                long startTime = System.currentTimeMillis();
+                logger.info("Starting graph output...");
+
+                if (outputUnitGraphs) {
+                    try {
+                        Writer.outputMethods(outputDirectory, outputFormat);
+                    } catch (Exception e) {
+                        logger.error("Problem writing methods to output file: " + e.getMessage());
+                    }
+                }
+
+                if (outputCallGraph) {
+                    String outputName =
+                            (cmd != null && cmd.hasOption("s") ? cmd.getOptionValue("s") + "-CG" : "App-CG");
+                    try {
+                        Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getCallGraph());
+                    } catch (Exception e) {
+                        logger.error("Problem writing call graph to output file: " + e.getMessage());
+                    }
+                }
+
+                if (outputControlFlowGraph) {
+                    String outputName =
+                            (cmd != null && cmd.hasOption("s") ? cmd.getOptionValue("s") + "-CFG" : "App" + "-CFG");
+                    try {
+                        Writer.writeGraph(outputFormat, outputDirectory, outputName, droidGraph.getControlFlowGraph());
+                    } catch (Exception e) {
+                        logger.error("Problem writing CFG to output file: " + e.getMessage());
+                    }
+                }
+
+                long endTime = System.currentTimeMillis();
+                logger.info("Graph output took " + (endTime - startTime) / 60 + " second(s).");
+            }
+
+            if (consoleOutput) {
+                Viewer.printCallGraphDetails(droidGraph.getCallGraph());
+                Viewer.printCFGDetails(droidGraph.getControlFlowGraph());
+            }
         }
 
         LocalDateTime endDate = LocalDateTime.now();
         logger.info("End time: " + dateFormatter.format(endDate));
         Duration duration = Duration.between(startDate, endDate);
         logger.info("Execution time: " + duration.getSeconds() + " second(s).");
-    }
-
-    public static String getOutputDirectory() {
-        return outputDirectory;
-    }
-
-    public static String getApk() {
-        return apk;
-    }
-
-    public static String getAndroidPlatform() {
-        return androidPlatform;
     }
 
     private static boolean checkForHelp(String[] args) {
@@ -253,21 +263,6 @@ public class FrameworkMain {
         }
 
         return false;
-    }
-
-    private static boolean directoryExists(String directoryName) {
-        File directory = new File(directoryName);
-        return directory.isDirectory();
-    }
-
-    private static boolean createDirectory(String directoryName) {
-        File directory = new File(directoryName);
-        return directory.mkdir();
-    }
-
-    private static boolean fileExists(String fileName) {
-        File file = new File(fileName);
-        return file.exists();
     }
 
     private static boolean isRecognisedFormat(String format) {
