@@ -1,6 +1,7 @@
 package phd.research.graph;
 
 import phd.research.core.FlowDroidUtils;
+import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Type;
@@ -140,7 +141,7 @@ public class Filter {
 
     public static boolean isValidClass(Set<String> packageBlacklist, Set<String> classBlacklist, SootClass sootClass) {
         if (SystemClassHandler.v().isClassInSystemPackage(sootClass) || sootClass.isJavaLibraryClass() ||
-                sootClass.isLibraryClass() || sootClass.isPhantomClass()) {
+                sootClass.isLibraryClass() || sootClass.isPhantomClass() || Scene.v().isExcluded(sootClass)) {
             return false;
         }
 
