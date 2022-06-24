@@ -51,7 +51,8 @@ public class Control {
     @Override
     public String toString() {
         return String.format("%s: (%s, %s, %s, %s)", getClass().getSimpleName(), this.control.getResourceName(),
-                this.layout.getResourceName(), this.activity.getName(), this.clickListener.getName());
+                this.layout.getResourceName(), this.activity.getName(), (this.clickListener != null ?
+                        this.clickListener.getName() : null));
     }
 
     @Override

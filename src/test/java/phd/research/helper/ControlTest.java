@@ -75,6 +75,10 @@ public class ControlTest {
         Control c = new Control(control, layout, activity, method);
         assertEquals("toString Failed: Wrong Output", "Control: (btn_click_A, activity_A.xml, .ActivityA, onClick)",
                 c.toString());
+
+        c = new Control(control, layout, activity, null);
+        assertEquals("toString Failed: Wrong Output", "Control: (btn_click_A, activity_A.xml, .ActivityA, null)",
+                c.toString());
     }
 
     @Test

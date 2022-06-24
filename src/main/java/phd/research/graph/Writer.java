@@ -13,6 +13,7 @@ import soot.SootClass;
 import soot.SootMethod;
 
 import java.io.*;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -46,6 +47,19 @@ public class Writer {
     }
 
     public static void writeContent(String directory, String name, Set<?> list) throws IOException {
+        String outputLocation = directory + "CONTENT/";
+        BufferedWriter writer = openFile(outputLocation, getFileName(name) + ".txt");
+
+        if (writer != null) {
+            for (Object item : list) {
+                writer.write(item.toString() + "\n");
+            }
+
+            writer.close();
+        }
+    }
+
+    public static void writeContent(String directory, String name, List<?> list) throws IOException {
         String outputLocation = directory + "CONTENT/";
         BufferedWriter writer = openFile(outputLocation, getFileName(name) + ".txt");
 

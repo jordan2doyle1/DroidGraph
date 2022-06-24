@@ -218,6 +218,7 @@ public class Viewer {
         Writer.writeContent(outputDirectory, "listener", this.getListenerMethods());
         Writer.writeContent(outputDirectory, "other", this.getOtherCallbackMethods());
         Writer.writeContent(outputDirectory, "possible", this.getPossibleCallbacksMethods());
+        Writer.writeContent(outputDirectory, "controls", this.uiControls.getControls());
     }
 
     public void printUnassignedCallbacks() {
