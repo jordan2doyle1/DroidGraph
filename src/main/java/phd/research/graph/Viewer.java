@@ -264,28 +264,16 @@ public class Viewer {
     }
 
     public void printAppDetails(String apk) {
-        System.out.println("------------------------------- Analysis Details -------------------------------");
-
-        System.out.println("\tBase Package Name: " + FlowDroidUtils.getBasePackageName(apk));
-        System.out.println();
-
-        System.out.println("\tEntry Points: " + FlowDroidUtils.getEntryPointClasses(apk).size());
-        System.out.println("\tLaunch Activities: " + FlowDroidUtils.getLaunchActivities(apk).size());
-        System.out.println(
-                "\tClasses: " + this.getFilteredClasses().size() + " (Total: " + this.getAllClasses().size() + ")");
-        System.out.println();
-
-        System.out.println(
-                "\tMethods: " + this.getFilteredMethods().size() + " (Total: " + this.getAllMethods().size() + ")");
-        System.out.println("\tLifecycle Methods: " + this.getLifecycleMethods().size());
-        System.out.println("\tListener Methods: " + this.getListenerMethods().size());
-        System.out.println("\tOther Callbacks: " + this.getOtherCallbackMethods().size());
-        System.out.println("\tPossible Callbacks: " + this.getPossibleCallbacksMethods().size());
-        System.out.println();
-
-        System.out.println("\tControls: " + this.uiControls.getControls().size());
-
-        System.out.println("--------------------------------------------------------------------------------");
+        logger.info("Base package name: " + FlowDroidUtils.getBasePackageName(apk));
+        logger.info("Number of entry point classes: " + FlowDroidUtils.getEntryPointClasses(apk).size());
+        logger.info("Number of launch activities: " + FlowDroidUtils.getLaunchActivities(apk).size());
+        logger.info("Number of classes: " + this.getFilteredClasses().size() + " (Total: " + this.getAllClasses().size() + ")");
+        logger.info("Number of methods: " + this.getFilteredMethods().size() + " (Total: " + this.getAllMethods().size() + ")");
+        logger.info("Number of lifecycle methods: " + this.getLifecycleMethods().size());
+        logger.info("Number of listener methods: " + this.getListenerMethods().size());
+        logger.info("Number of other callbacks: " + this.getOtherCallbackMethods().size());
+        logger.info("Number of possible callbacks: " + this.getPossibleCallbacksMethods().size());
+        logger.info("Number of UI controls: " + this.uiControls.getControls().size());
     }
 
     public void printCallbackTable() {
