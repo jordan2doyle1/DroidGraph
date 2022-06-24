@@ -21,10 +21,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class UiControls {
 
@@ -33,7 +30,7 @@ public class UiControls {
     private final File collectedCallbacksFile;
     private final String apk;
 
-    private Set<Control> controls;
+    private List<Control> controls;
 
     public UiControls(File collectedCallbacksFile, String apk) {
         if (!collectedCallbacksFile.exists()) {
@@ -95,7 +92,7 @@ public class UiControls {
         return foundResources.get(0);
     }
 
-    public Set<Control> getControls() {
+    public List<Control> getControls() {
         if (this.controls == null) {
             this.controls = getAllControls();
         }
@@ -118,12 +115,14 @@ public class UiControls {
     public Control getListenerControl(SootMethod listener) {
         Control foundControl = null;
         for (Control control : this.getControls()) {
-            if (control.getClickListener().equals(listener)) {
-                if (foundControl != null) {
-                    logger.error("Found multiple controls with the same listener: " + listener.getSignature());
-                    return null;
+            if (control.getClickListener() != null) {
+                if (control.getClickListener().equals(listener)) {
+                    if (foundControl != null) {
+                        logger.error("Found multiple controls with the same listener: " + listener.getSignature());
+                        return null;
+                    }
+                    foundControl = control;
                 }
-                foundControl = control;
             }
         }
 
@@ -156,11 +155,11 @@ public class UiControls {
         return null;
     }
 
-    private Set<Control> getAllControls() {
+    private List<Control> getAllControls() {
         ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
         LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
 
-        Set<Control> uiControls = new HashSet<>();
+        List<Control> uiControls = new ArrayList<>();
         MultiMap<String, AndroidLayoutControl> userControls;
         if (layoutParser != null) {
             userControls = layoutParser.getUserControls();
@@ -173,6 +172,13 @@ public class UiControls {
             ARSCFileParser.AbstractResource layoutResource =
                     resources.findResourceByName("layout", getResourceName(layoutFile));
 
+            SootClass callbackClass = this.findLayoutClass(layoutResource.getResourceID());
+            if (callbackClass == null) {
+                logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " + layoutResource.getResourceName());
+                continue;
+            }
+
+            logger.info("Linked " + callbackClass + " with " + layoutResource.getResourceName());
             for (AndroidLayoutControl control : userControls.get(layoutFile)) {
                 if (control.getID() == -1) {
                     continue;
@@ -181,13 +187,7 @@ public class UiControls {
                 ARSCFileParser.AbstractResource controlResource =
                         UiControls.getResourceById(resources, control.getID());
                 if (controlResource == null) {
-                    logger.error("No resource found with ID " + control.getID() + ".");
-                    continue;
-                }
-
-                SootClass callbackClass = this.findLayoutClass(layoutResource.getResourceID());
-                if (callbackClass == null) {
-                    logger.error("No class found for layout resource: " + layoutResource.getResourceID());
+                    logger.error("No resource found with ID " + control.getID() + ": " + control);
                     continue;
                 }
 
