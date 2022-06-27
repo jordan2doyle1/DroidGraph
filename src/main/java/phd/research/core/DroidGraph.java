@@ -67,6 +67,32 @@ public class DroidGraph {
         return null;
     }
 
+    public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> set) {
+        for (Vertex vertex : set) {
+            if (vertex.getType() == Type.control) {
+                Control currentControl = ((ControlVertex) vertex).getControl();
+                if (currentControl.getControlActivity().equals(activity) && currentControl.getControlResource().getResourceID() == controlId) {
+                    return vertex;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static Vertex getControlVertex(SootClass activity, String controlName, Set<Vertex> set) {
+        for (Vertex vertex : set) {
+            if (vertex.getType() == Type.control) {
+                Control currentControl = ((ControlVertex) vertex).getControl();
+                if (currentControl.getControlActivity().equals(activity) && currentControl.getControlResource().getResourceName().equals(controlName)) {
+                    return vertex;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public static void resetLocalVisits(Graph<Vertex, DefaultEdge> graph) {
         for (Vertex vertex : graph.vertexSet()) {
             vertex.localVisitReset();

@@ -21,6 +21,10 @@ public class ControlVertex extends Vertex {
                 this.control.getControlResource().getResourceID() + ")";
     }
 
+    public Control getControl() {
+        return this.control;
+    }
+
     public Color getColor() {
         return Color.red;
     }
