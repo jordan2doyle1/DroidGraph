@@ -6,3 +6,4 @@ target/
 console_output.txt
 sootOutput/
 FrontMatterOutput.json
+.java-version
