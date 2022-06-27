@@ -83,6 +83,8 @@ android.net.nsd.NsdManager$DiscoveryListener
 android.net.nsd.NsdManager$RegistrationListener
 android.net.nsd.NsdManager$ResolveListener
 android.net.sip.SipRegistrationListener
+android.net.sip.SipAudioCall$Listener
+android.net.sip.SipSession$Listener
 android.net.wifi.p2p.WifiP2pManager$ActionListener
 android.net.wifi.p2p.WifiP2pManager$ChannelListener
 android.net.wifi.p2p.WifiP2pManager$ConnectionInfoListener
@@ -128,7 +130,7 @@ android.view.View$OnHoverListener
 android.view.View$OnKeyListener
 android.view.View$OnLayoutChangeListener
 android.view.View$OnLongClickListener
-android.view.View$OnSystemUiVisibilityChangeListener�
+android.view.View$OnSystemUiVisibilityChangeListener´
 android.view.View$OnTouchListener
 android.view.ViewGroup$OnHierarchyChangeListener
 android.view.ViewStub$OnInflateListener
@@ -178,4 +180,6 @@ android.widget.SlidingDrawer$OnDrawerScrollListener
 android.widget.TabHost$OnTabChangeListener
 android.widget.TextView$OnEditorActionListener
 android.widget.TimePicker$OnTimeChangedListener
-android.widget.ZoomButtonsController$OnZoomListener 
+android.widget.ZoomButtonsController$OnZoomListener
+com.android.volley.Response$Listener
+com.android.volley.Response$ErrorListener
