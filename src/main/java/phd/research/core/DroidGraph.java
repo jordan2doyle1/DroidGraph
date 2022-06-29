@@ -21,6 +21,7 @@ import soot.util.Chain;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Jordan Doyle
@@ -41,6 +42,15 @@ public class DroidGraph {
 
         this.collectedCallbacksFile = collectedCallbacksFile;
         this.uiControls = controls;
+    }
+
+    public DroidGraph(File collectedCallbacksFile, String apk) {
+        if (!collectedCallbacksFile.exists()) {
+            logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
+        }
+
+        this.collectedCallbacksFile = collectedCallbacksFile;
+        this.uiControls = new UiControls(this.collectedCallbacksFile, apk);
     }
 
     public static Vertex getUnitVertex(Unit unit, Set<Vertex> set) {
@@ -67,11 +77,36 @@ public class DroidGraph {
         return null;
     }
 
+    public static Collection<Vertex> getControlsNotVisited(Collection<Vertex> vertices) {
+        return vertices.stream().filter(v -> v instanceof ControlVertex && !v.hasVisited()).collect(Collectors.toSet());
+    }
+
+    public Collection<Vertex> getCFGControlsNotVisited() {
+        return DroidGraph.getControlsNotVisited(this.getControlFlowGraph().vertexSet());
+    }
+
+    public Collection<Vertex> getCFGMethodsNotVisited() {
+        return DroidGraph.getMethodsNotVisited(this.getControlFlowGraph().vertexSet());
+    }
+
+    public static Collection<Vertex> getMethodsNotVisited(Collection<Vertex> vertices) {
+        return vertices.stream().filter(v -> v instanceof MethodVertex && !v.hasVisited()).collect(Collectors.toSet());
+    }
+
+    public static Collection<Vertex> getControlVertices(SootClass activity, Collection<Integer> controlIds,
+            Collection<Vertex> vertices) {
+        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex)v)
+                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
+                        controlIds.contains(v.getControl().getControlResource().getResourceID()))
+                .collect(Collectors.toList());
+    }
+
     public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> set) {
         for (Vertex vertex : set) {
             if (vertex.getType() == Type.control) {
                 Control currentControl = ((ControlVertex) vertex).getControl();
-                if (currentControl.getControlActivity().equals(activity) && currentControl.getControlResource().getResourceID() == controlId) {
+                if (currentControl.getControlActivity().equals(activity) &&
+                        currentControl.getControlResource().getResourceID() == controlId) {
                     return vertex;
                 }
             }
@@ -84,7 +119,8 @@ public class DroidGraph {
         for (Vertex vertex : set) {
             if (vertex.getType() == Type.control) {
                 Control currentControl = ((ControlVertex) vertex).getControl();
-                if (currentControl.getControlActivity().equals(activity) && currentControl.getControlResource().getResourceName().equals(controlName)) {
+                if (currentControl.getControlActivity().equals(activity) &&
+                        currentControl.getControlResource().getResourceName().equals(controlName)) {
                     return vertex;
                 }
             }
@@ -257,7 +293,7 @@ public class DroidGraph {
                     srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                 Type methodType = this.getMethodType(srcMethod);
                 Vertex srcVertex = null;
-                switch(methodType) {
+                switch (methodType) {
                     case method:
                         srcVertex = new MethodVertex(srcMethod);
                         break;
@@ -286,7 +322,7 @@ public class DroidGraph {
                                 srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                             methodType = this.getMethodType(tgtMethod);
                             Vertex tgtVertex = null;
-                            switch(methodType) {
+                            switch (methodType) {
                                 case method:
                                     tgtVertex = new MethodVertex(tgtMethod);
                                     break;

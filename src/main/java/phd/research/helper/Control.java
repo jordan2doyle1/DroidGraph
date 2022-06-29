@@ -51,8 +51,9 @@ public class Control {
     @Override
     public String toString() {
         return String.format("%s: (%s, %s, %s, %s)", getClass().getSimpleName(), this.control.getResourceName(),
-                this.layout.getResourceName(), this.activity.getName(), (this.clickListener != null ?
-                        this.clickListener.getName() : null));
+                this.layout.getResourceName(), this.activity.getName(),
+                (this.clickListener != null ? this.clickListener.getName() : null)
+                            );
     }
 
     @Override
@@ -66,8 +67,9 @@ public class Control {
         }
 
         Control control = (Control) o;
-        return Objects.equals(this.control, control.control) && Objects.equals(this.layout, control.layout) &&
-                Objects.equals(this.activity, control.activity);
+        return Objects.equals(this.control.getResourceName(), control.control.getResourceName()) &&
+                Objects.equals(this.control.getResourceID(), control.control.getResourceID()) &&
+                Objects.equals(this.layout, control.layout) && Objects.equals(this.activity, control.activity);
     }
 
     @Override

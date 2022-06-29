@@ -30,7 +30,7 @@ public class UiControls {
     private final File collectedCallbacksFile;
     private final String apk;
 
-    private List<Control> controls;
+    private Set<Control> controls;
 
     public UiControls(File collectedCallbacksFile, String apk) {
         if (!collectedCallbacksFile.exists()) {
@@ -92,7 +92,7 @@ public class UiControls {
         return foundResources.get(0);
     }
 
-    public List<Control> getControls() {
+    public Set<Control> getControls() {
         if (this.controls == null) {
             this.controls = getAllControls();
         }
@@ -155,11 +155,11 @@ public class UiControls {
         return null;
     }
 
-    private List<Control> getAllControls() {
+    private Set<Control> getAllControls() {
         ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
         LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
 
-        List<Control> uiControls = new ArrayList<>();
+        Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;
         if (layoutParser != null) {
             userControls = layoutParser.getUserControls();
@@ -201,7 +201,8 @@ public class UiControls {
                     logger.error("No click listener method with ID: " + control.getID());
                 }
 
-                uiControls.add(new Control(controlResource, layoutResource, callbackClass, clickListener));
+                Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
+                uiControls.add(newControl);
             }
         }
 
