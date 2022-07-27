@@ -263,7 +263,7 @@ public class Viewer {
         }
     }
 
-    public void printAppDetails(String apk) {
+    public void printAppDetails(File apk) {
         logger.info("Base package name: " + FlowDroidUtils.getBasePackageName(apk));
         logger.info("Number of entry point classes: " + FlowDroidUtils.getEntryPointClasses(apk).size());
         logger.info("Number of launch activities: " + FlowDroidUtils.getLaunchActivities(apk).size());

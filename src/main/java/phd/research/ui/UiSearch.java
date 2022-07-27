@@ -9,6 +9,7 @@ import soot.jimple.InvokeStmt;
 import soot.jimple.Stmt;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
+import java.io.File;
 import java.util.Iterator;
 
 @Deprecated
@@ -19,7 +20,7 @@ public class UiSearch {
 
     public UiSearch(String apk) {
         this.apk = apk;
-        this.resources = FlowDroidUtils.getResources(this.apk);
+        this.resources = FlowDroidUtils.getResources(new File(this.apk));
     }
 
     private boolean searchForSetContentView(int layoutId, SootMethod method) {
@@ -111,7 +112,7 @@ public class UiSearch {
     }
 
     protected SootClass findLayoutClass(int layoutId) {
-        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
+        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(new File(apk))) {
             SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
 
             if (layoutClass == null) {

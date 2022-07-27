@@ -6,6 +6,8 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import phd.research.Pair;
+import phd.research.enums.Structure;
 import phd.research.enums.Type;
 import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
@@ -35,6 +37,10 @@ public class DroidGraph {
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
 
+    private Set<SootMethod> methods;
+    private Set<Control> controls;
+
+
     public DroidGraph(File collectedCallbacksFile, UiControls controls) {
         if (!collectedCallbacksFile.exists()) {
             logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
@@ -44,14 +50,16 @@ public class DroidGraph {
         this.uiControls = controls;
     }
 
-    public DroidGraph(File collectedCallbacksFile, String apk) {
+    @API
+    public DroidGraph(File collectedCallbacksFile, File apk) {
         if (!collectedCallbacksFile.exists()) {
             logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
         }
 
         this.collectedCallbacksFile = collectedCallbacksFile;
-        this.uiControls = new UiControls(this.collectedCallbacksFile, apk);
+        this.uiControls = new UiControls(this.collectedCallbacksFile, apk.getAbsolutePath());
     }
+
 
     public static Vertex getUnitVertex(Unit unit, Set<Vertex> set) {
         for (Vertex vertex : set) {
@@ -90,7 +98,7 @@ public class DroidGraph {
     }
 
     public static Collection<Vertex> getMethodsNotVisited(Collection<Vertex> vertices) {
-        return vertices.stream().filter(v -> v instanceof MethodVertex && !v.hasVisited()).collect(Collectors.toSet());
+        return vertices.stream().filter(v -> v instanceof MethodVertex && v.getType() != Type.dummyMethod && !v.hasVisited()).collect(Collectors.toSet());
     }
 
     public static Collection<Vertex> getControlVertices(SootClass activity, Collection<Integer> controlIds,
@@ -135,9 +143,14 @@ public class DroidGraph {
         }
     }
 
-    public static Map<String, Float> calculateGraphCoverage(Graph<Vertex, DefaultEdge> graph) {
-        Map<String, Float> coverageMap = new HashMap<>();
+    public static void resetVisits(Graph<Vertex, DefaultEdge> graph) {
+        for (Vertex vertex : graph.vertexSet()) {
+            vertex.visitReset();
+            vertex.localVisitReset();
+        }
+    }
 
+    public static Pair<Float, Float> calculateListCoverage(Graph<Vertex, DefaultEdge> graph) {
         float interfaceCoverage, interfaceTotal, methodCoverage, methodTotal;
         interfaceCoverage = interfaceTotal = methodCoverage = methodTotal = 0;
 
@@ -160,10 +173,33 @@ public class DroidGraph {
             }
         }
 
-        coverageMap.put("Interface", (interfaceCoverage / interfaceTotal) * 100);
-        coverageMap.put("Method", (methodCoverage / methodTotal) * 100);
+        return new Pair<>((interfaceCoverage / interfaceTotal) * 100, (methodCoverage / methodTotal) * 100);
+    }
 
-        return coverageMap;
+    public static Pair<Float, Float> calculateGraphCoverage(Graph<Vertex, DefaultEdge> graph) {
+        float interfaceCoverage, interfaceTotal, methodCoverage, methodTotal;
+        interfaceCoverage = interfaceTotal = methodCoverage = methodTotal = 0;
+
+        for (Vertex vertex : graph.vertexSet()) {
+            switch (vertex.getType()) {
+                case control:
+                    interfaceTotal += 1;
+                    if (vertex.hasVisited()) {
+                        interfaceCoverage += 1;
+                    }
+                    break;
+                case method:
+                case listener:
+                case lifecycle:
+                    methodTotal += 1;
+                    if (vertex.hasVisited()) {
+                        methodCoverage += 1;
+                    }
+                    break;
+            }
+        }
+
+        return new Pair<>((interfaceCoverage / interfaceTotal) * 100, (methodCoverage / methodTotal) * 100);
     }
 
     private Type getMethodType(SootMethod method) {
@@ -211,19 +247,30 @@ public class DroidGraph {
         DroidGraph.resetLocalVisits(this.getControlFlowGraph());
     }
 
-    public Map<String, Float> calculateCFGCoverage() {
+    public void resetCFGVisits() {
+        DroidGraph.resetVisits(this.getControlFlowGraph());
+    }
+
+    public Pair<Float, Float> calculateCFGCoverage(Structure structure) {
+        switch (structure) {
+            case L:
+                return calculateListCoverage(this.getControlFlowGraph());
+            case CFG:
+                return calculateGraphCoverage(this.getControlFlowGraph());
+        }
+
         return calculateGraphCoverage(this.getControlFlowGraph());
     }
 
-    public boolean visitMethod(String methodSignature) {
-        logger.debug("Looking for method: " + methodSignature);
+    public boolean visitMethod(SootMethod method) {
+        logger.debug("Looking for method: " + method.getSignature());
         for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
             if (vertex.getType() == Type.method || vertex.getType() == Type.lifecycle ||
                     vertex.getType() == Type.listener || vertex.getType() == Type.dummyMethod) {
-                SootMethod method = ((MethodVertex) vertex).getMethod();
-                if (method != null) {
-                    logger.debug("Found method: " + method.getSignature());
-                    if (method.getSignature().equals(methodSignature)) {
+                SootMethod currentMethod = ((MethodVertex) vertex).getMethod();
+                if (currentMethod != null) {
+                    logger.debug("Found method: " + currentMethod.getSignature());
+                    if (currentMethod.equals(method)) {
                         vertex.visit();
                         return true;
                     }
@@ -304,7 +351,7 @@ public class DroidGraph {
                         srcVertex = new ListenerVertex(srcMethod);
                         break;
                     case dummyMethod:
-                        srcVertex = new dummyVertex(srcMethod);
+                        srcVertex = new DummyVertex(srcMethod);
                         break;
                     default:
                         logger.error("Found unknown method type.");
@@ -333,7 +380,7 @@ public class DroidGraph {
                                     tgtVertex = new ListenerVertex(tgtMethod);
                                     break;
                                 case dummyMethod:
-                                    tgtVertex = new dummyVertex(tgtMethod);
+                                    tgtVertex = new DummyVertex(tgtMethod);
                                     break;
                                 default:
                                     logger.error("Found unknown method type.");
@@ -410,6 +457,17 @@ public class DroidGraph {
         }
 
         // checkGraph(graph);
+
+        for (Vertex v : graph.vertexSet()) {
+            if (v.getType() == Type.method || v.getType() == Type.lifecycle || v.getType() == Type.listener || v.getType() == Type.dummyMethod) {
+                SootMethod m = ((MethodVertex) v).getMethod();
+                if (m.getDeclaringClass().getName().contains("FragmentB")) {
+                    System.out.println(m.getSignature());
+                }
+            }
+        }
+        System.exit(0);
+
         return graph;
     }
 }

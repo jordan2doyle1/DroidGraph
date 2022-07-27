@@ -49,6 +49,10 @@ public class Vertex {
         this.visited = true;
     }
 
+    public void visitReset() {
+        this.visited = false;
+    }
+
     public boolean hasLocalVisit() {
         return this.localVisit;
     }

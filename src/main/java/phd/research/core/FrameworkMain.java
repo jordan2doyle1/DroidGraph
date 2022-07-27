@@ -147,7 +147,7 @@ public class FrameworkMain {
         logger.info("Running FlowDroid...");
         long fdStartTime = System.currentTimeMillis();
 
-        FlowDroidUtils.runFlowDroid(apk, androidPlatform, outputDirectory);
+        FlowDroidUtils.runFlowDroid(new File(apk), new File(androidPlatform), new File(outputDirectory));
 
         long fdEndTime = System.currentTimeMillis();
         logger.info("FlowDroid took " + (fdEndTime - fdStartTime) / 1000 + " second(s).");
@@ -183,7 +183,7 @@ public class FrameworkMain {
                 viewer = new Viewer(callbackFile, uiControls);
             }
 
-            viewer.printAppDetails(apk);
+            viewer.printAppDetails(new File(apk));
             viewer.printCallbackTable();
             viewer.printUnassignedCallbacks();
         }

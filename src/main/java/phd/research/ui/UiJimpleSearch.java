@@ -13,6 +13,7 @@ import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
 import soot.util.MultiMap;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -85,7 +86,7 @@ public class UiJimpleSearch extends UiSearch {
     }
 
     private SootMethod findCallbackMethodInEntryClass(int id) {
-        for (SootClass sootClass : FlowDroidUtils.getEntryPointClasses(apk)) {
+        for (SootClass sootClass : FlowDroidUtils.getEntryPointClasses(new File(apk))) {
             SootMethod callbackMethod = findCallbackMethod(sootClass, id);
             if (callbackMethod != null) {
                 return callbackMethod;
@@ -167,7 +168,7 @@ public class UiJimpleSearch extends UiSearch {
     }
 
     public Set<Control> getControlListenerMethods() {
-        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(super.apk);
+        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(new File(super.apk));
 
         Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;

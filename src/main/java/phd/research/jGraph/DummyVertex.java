@@ -5,9 +5,9 @@ import phd.research.enums.Shape;
 import phd.research.enums.Type;
 import soot.SootMethod;
 
-public class dummyVertex extends MethodVertex {
+public class DummyVertex extends MethodVertex {
 
-    public dummyVertex(SootMethod method) {
+    public DummyVertex(SootMethod method) {
         super(Type.dummyMethod, method);
     }
 

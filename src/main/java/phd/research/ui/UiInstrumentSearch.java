@@ -96,7 +96,7 @@ public class UiInstrumentSearch extends UiSearch {
 
         Set<Control> controls = new HashSet<>();
         Set<Pair<String, AndroidLayoutControl>> nullControls = new HashSet<>();
-        LayoutFileParser lfp = FlowDroidUtils.getLayoutFileParser(super.apk);
+        LayoutFileParser lfp = FlowDroidUtils.getLayoutFileParser(new File(super.apk));
         if (lfp != null) {
             for (Pair<String, AndroidLayoutControl> userControl : lfp.getUserControls()) {
                 AndroidLayoutControl control = userControl.getO2();

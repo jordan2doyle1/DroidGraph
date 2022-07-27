@@ -28,7 +28,7 @@ public class UiFrontMatterSearch extends UiSearch {
     }
 
     public Set<Control> getControlListenerMethods(File frontMatterOutputFile) {
-        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(super.apk);
+        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(new File(super.apk));
 
         Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;

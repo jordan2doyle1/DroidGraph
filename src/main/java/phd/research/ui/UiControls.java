@@ -156,8 +156,8 @@ public class UiControls {
     }
 
     private Set<Control> getAllControls() {
-        ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
-        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
+        ARSCFileParser resources = FlowDroidUtils.getResources(new File(this.apk));
+        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(new File(this.apk));
 
         Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;
@@ -298,7 +298,7 @@ public class UiControls {
     }
 
     protected SootClass findLayoutClass(int layoutId) {
-        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
+        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(new File(apk))) {
             SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
 
             if (layoutClass == null) {

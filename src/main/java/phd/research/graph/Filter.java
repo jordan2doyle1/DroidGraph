@@ -24,7 +24,7 @@ public class Filter {
     }
 
     public static boolean isEntryPointClass(String apk, SootClass sootClass) {
-        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
+        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(new File(apk))) {
             if (entryClass.equals(sootClass)) {
                 return true;
             }
