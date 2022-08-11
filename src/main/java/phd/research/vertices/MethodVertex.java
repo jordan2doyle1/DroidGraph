@@ -1,5 +1,6 @@
-package phd.research.jGraph;
+package phd.research.vertices;
 
+import org.jetbrains.annotations.NotNull;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
@@ -10,54 +11,33 @@ import soot.SootMethod;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+/**
+ * @author Jordan Doyle
+ */
 
 public class MethodVertex extends Vertex {
+
+    @NotNull
     private final SootMethod method;
 
     public MethodVertex(SootMethod method) {
-        super(Type.method);
-        this.method = method;
-        this.label = getLabel(this.method);
+        this(Type.method, method);
     }
 
     public MethodVertex(Type type, SootMethod method) {
         super(type);
-        this.method = method;
-        this.label = getLabel(this.method);
+        this.method = Objects.requireNonNull(method);
+        super.setLabel(createLabel(method));
     }
 
     private static String removePackageName(String name) {
-        int index = name.lastIndexOf(".");
-
-        if (name.contains("dummyMainMethod")) {
-            index = name.lastIndexOf("_");
-        }
-
-        if (index != -1) {
-            name = name.replace(name.substring(0, index + 1), "");
-        }
-
-        return name;
+        int index = (name.contains("dummyMainMethod") ? name.lastIndexOf("_") : name.lastIndexOf("."));
+        return (index != -1 ? name.replace(name.substring(0, index + 1), "") : name);
     }
 
-    private static String getLabel(SootMethod method) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("<").append(MethodVertex.removePackageName(method.getDeclaringClass().getName()))
-                .append(": ").append(MethodVertex.removePackageName(method.getReturnType().toString())).append(" ")
-                .append(MethodVertex.removePackageName(method.getName())).append("(");
-
-        List<soot.Type> parameters = method.getParameterTypes();
-        for (int i = 0; i < method.getParameterCount(); i++) {
-            stringBuilder.append(MethodVertex.removePackageName(parameters.get(i).toString()));
-            if (i != (method.getParameterCount() - 1)) {
-                stringBuilder.append(",");
-            }
-        }
-
-        stringBuilder.append(")>");
-        return stringBuilder.toString();
-    }
-
+    @NotNull
     public SootMethod getMethod() {
         return this.method;
     }
@@ -74,6 +54,26 @@ public class MethodVertex extends Vertex {
         return Style.filled;
     }
 
+    private String createLabel(SootMethod method) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(super.getType().name().substring(0, 1).toUpperCase())
+                .append(super.getType().name().substring(1).toLowerCase()).append("{method=<")
+                .append(MethodVertex.removePackageName(method.getDeclaringClass().getName())).append(": ")
+                .append(MethodVertex.removePackageName(method.getReturnType().toString())).append(" ")
+                .append(MethodVertex.removePackageName(method.getName())).append("(");
+
+        List<soot.Type> parameters = method.getParameterTypes();
+        for (int i = 0; i < method.getParameterCount(); i++) {
+            stringBuilder.append(MethodVertex.removePackageName(parameters.get(i).toString()));
+            if (i != (method.getParameterCount() - 1)) {
+                stringBuilder.append(",");
+            }
+        }
+
+        stringBuilder.append(")>");
+        return stringBuilder.toString();
+    }
+
     @Override
     public Map<String, Attribute> getAttributes() {
         Map<String, Attribute> attributes = super.getAttributes();
@@ -86,21 +86,32 @@ public class MethodVertex extends Vertex {
     }
 
     @Override
+    public String toString() {
+        return "MethodVertex{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
+                super.hasLocalVisit() + ", method=" + this.getMethod() + "}";
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (o == this) {
+        if (this == o) {
             return true;
         }
-
         if (!(o instanceof MethodVertex)) {
+            return false;
+        }
+        if (!super.equals(o)) {
             return false;
         }
 
         MethodVertex vertex = (MethodVertex) o;
-        return this.method.equals(vertex.getMethod());
+
+        return method.equals(vertex.method);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + this.method.hashCode();
+        int result = super.hashCode();
+        result = 31 * result + method.hashCode();
+        return result;
     }
 }

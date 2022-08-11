@@ -1,5 +1,6 @@
-package phd.research.jGraph;
+package phd.research.vertices;
 
+import org.jetbrains.annotations.NotNull;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
@@ -9,17 +10,24 @@ import phd.research.enums.Type;
 import soot.Unit;
 
 import java.util.Map;
+import java.util.Objects;
+
+/**
+ * @author Jordan Doyle
+ */
 
 public class UnitVertex extends Vertex {
 
+    @NotNull
     private final Unit unit;
 
     public UnitVertex(Unit unit) {
         super(Type.unit);
-        this.unit = unit;
-        this.label = this.unit.toString();
+        this.unit = Objects.requireNonNull(unit);
+        super.setLabel("Unit{unit=" + unit + "}");
     }
 
+    @NotNull
     public Unit getUnit() {
         return this.unit;
     }
@@ -46,22 +54,34 @@ public class UnitVertex extends Vertex {
 
         return attributes;
     }
+
+    @Override
+    public String toString() {
+        return "Unit{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
+                super.hasLocalVisit() + ", unit=" + unit + "}";
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
+        if (this == o) {
             return true;
         }
-
         if (!(o instanceof UnitVertex)) {
+            return false;
+        }
+        if (!super.equals(o)) {
             return false;
         }
 
         UnitVertex vertex = (UnitVertex) o;
-        return this.unit.equals(vertex.unit);
+
+        return unit.equals(vertex.unit);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + this.unit.hashCode();
+        int result = super.hashCode();
+        result = 31 * result + unit.hashCode();
+        return result;
     }
 }

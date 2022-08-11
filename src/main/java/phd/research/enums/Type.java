@@ -5,5 +5,5 @@ package phd.research.enums;
  */
 
 public enum Type {
-    unit, method, other, listener, lifecycle, control, dummyMethod
+    unit, method, other, listener, lifecycle, control, dummy
 }

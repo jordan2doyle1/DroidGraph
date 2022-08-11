@@ -1,5 +1,6 @@
-package phd.research.jGraph;
+package phd.research.vertices;
 
+import org.jetbrains.annotations.NotNull;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
@@ -9,18 +10,26 @@ import phd.research.enums.Type;
 import phd.research.helper.Control;
 
 import java.util.Map;
+import java.util.Objects;
+
+/**
+ * @author Jordan Doyle
+ */
 
 public class ControlVertex extends Vertex {
 
+    @NotNull
     private final Control control;
 
     public ControlVertex(Control control) {
         super(Type.control);
-        this.control = control;
-        this.label = this.control.getControlResource().getResourceName() + " (" +
-                this.control.getControlResource().getResourceID() + ")";
+        this.control = Objects.requireNonNull(control);
+        super.setLabel("Control{control=" + control.getControlResource().getResourceName() + "(" +
+                control.getControlResource().getResourceID() + ")");
+
     }
 
+    @NotNull
     public Control getControl() {
         return this.control;
     }
@@ -48,21 +57,41 @@ public class ControlVertex extends Vertex {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this) {
+    public String toString() {
+        return "Control{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
+                super.hasLocalVisit() + ", control=" + control + "}";
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-
         if (!(o instanceof ControlVertex)) {
             return false;
         }
+        if (!super.equals(o)) {
+            return false;
+        }
 
-        ControlVertex vertex = (ControlVertex) o;
-        return this.control.equals(vertex.control);
+        ControlVertex that = (ControlVertex) o;
+
+        if (!control.equals(that.control)) {
+            return false;
+        }
+
+        return that.canEqual(this);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + this.control.hashCode();
+        int result = super.hashCode();
+        result = 31 * result + control.hashCode();
+        return result;
+    }
+
+    @Override
+    public final boolean canEqual(Object o) {
+        return (o instanceof ControlVertex);
     }
 }
