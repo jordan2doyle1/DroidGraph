@@ -2,14 +2,14 @@ package phd.research.ui;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmlpull.v1.XmlPullParserException;
 import phd.research.core.FlowDroidUtils;
+import phd.research.graph.Filter;
 import phd.research.helper.Control;
+import phd.research.helper.MenuFileParser;
 import phd.research.helper.Status;
 import soot.*;
-import soot.jimple.AbstractStmtSwitch;
-import soot.jimple.InvokeExpr;
-import soot.jimple.InvokeStmt;
-import soot.jimple.Stmt;
+import soot.jimple.*;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -22,23 +22,21 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class UiControls {
 
     private static final Logger logger = LoggerFactory.getLogger(UiControls.class);
 
     private final File collectedCallbacksFile;
-    private final String apk;
+    private final File apk;
 
     private Set<Control> controls;
 
-    public UiControls(File collectedCallbacksFile, String apk) {
-        if (!collectedCallbacksFile.exists()) {
-            logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
-        }
-
+    public UiControls(File collectedCallbacksFile, File apk) {
         this.collectedCallbacksFile = collectedCallbacksFile;
         this.apk = apk;
+        this.controls = processFlowDroidControls();
     }
 
     protected static String getResourceName(String name) {
@@ -94,7 +92,7 @@ public class UiControls {
 
     public Set<Control> getControls() {
         if (this.controls == null) {
-            this.controls = getAllControls();
+            this.controls = processFlowDroidControls();
         }
 
         return this.controls;
@@ -110,6 +108,10 @@ public class UiControls {
         }
 
         return false;
+    }
+
+    public boolean control(SootMethod listener) {
+        return this.getControls().stream().anyMatch(c -> c.getClickListener() != null && c.getClickListener().equals(listener));
     }
 
     public Control getListenerControl(SootMethod listener) {
@@ -155,9 +157,46 @@ public class UiControls {
         return null;
     }
 
-    private Set<Control> getAllControls() {
-        ARSCFileParser resources = FlowDroidUtils.getResources(new File(this.apk));
-        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(new File(this.apk));
+    public Control getAControl(SootClass activity, int resourceId) {
+        for (Control control : this.getControls()) {
+            if (control.getControlResource() != null && control.getControlActivity() != null) {
+                if (control.getControlActivity().equals(activity) &&
+                        control.getControlResource().getResourceID() == resourceId) {
+                    return control;
+                }
+            }
+        }
+
+        Set<Control> matchingControls = this.getControls().stream().filter(
+                c -> c.getControlResource() != null && c.getControlActivity() != null &&
+                        c.getControlActivity().equals(activity) && c.getControlResource().getResourceID() == resourceId)
+                .collect(Collectors.toSet());
+
+        if (matchingControls.size() != 1) {
+            logger.error("");
+        }
+
+        return null;
+    }
+
+    private Set<Control> processFlowDroidControls() {
+        ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
+        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
+
+        List<ARSCFileParser.AbstractResource> menuResources = resources.findResourcesByType("menu");
+        if (!menuResources.isEmpty()) {
+            for (ARSCFileParser.AbstractResource menu : menuResources) {
+                int id = menu.getResourceID();
+            }
+        }
+
+        MenuFileParser menuParser;
+        try {
+            menuParser = new MenuFileParser(FlowDroidUtils.getManifest(apk).getPackageName(), FlowDroidUtils.getResources(apk));
+        } catch (XmlPullParserException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        menuParser.parseLayoutFileDirect(apk.getAbsolutePath());
 
         Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;
@@ -167,6 +206,8 @@ public class UiControls {
             logger.error("Problem getting Layout File Parser. Can't get UI Controls!");
             return uiControls;
         }
+
+        uiControls = something(menuParser, resources);
 
         for (String layoutFile : userControls.keySet()) {
             ARSCFileParser.AbstractResource layoutResource =
@@ -209,6 +250,56 @@ public class UiControls {
         return uiControls;
     }
 
+    private Set<Control> something(MenuFileParser parser, ARSCFileParser resources) {
+        MultiMap<String, AndroidLayoutControl> userControls = parser.getUserControls();
+        Set<Control> uiControls = new HashSet<>();
+
+        for (String layoutFile : userControls.keySet()) {
+            if (layoutFile.equals("res/menu/navigation.xml")) {
+                ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName("menu",
+                        getResourceName(layoutFile));
+
+                SootClass callbackClass = this.findLayoutClass(layoutResource.getResourceID());
+                if (callbackClass == null) {
+                    logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
+                            layoutResource.getResourceName());
+                    continue;
+                }
+
+
+                logger.info("Linked " + callbackClass + " with " + layoutResource.getResourceName());
+                for (AndroidLayoutControl control : userControls.get(layoutFile)) {
+                    if (control.getID() == -1) {
+                        continue;
+                    }
+
+                    ARSCFileParser.AbstractResource controlResource = UiControls.getResourceById(resources,
+                            control.getID());
+                    if (controlResource == null) {
+                        logger.error("No resource found with ID " + control.getID() + ": " + control);
+                        continue;
+                    }
+
+                    SootMethod clickListener = null;
+                    if (control.getClickListener() != null) {
+                        clickListener = UiControls.searchForCallbackMethod(this.collectedCallbacksFile,
+                                control.getClickListener()
+                                                                          );
+                    }
+
+                    if (clickListener == null) {
+                        logger.error("No click listener method with ID: " + control.getID());
+                    }
+
+                    Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
+                    uiControls.add(newControl);
+                }
+            }
+        }
+
+        return uiControls;
+    }
+
     private SootClass findAnySetContentView(int layoutId, SootClass entryClass) {
         for (SootMethod method : entryClass.getMethods()) {
             try {
@@ -227,6 +318,74 @@ public class UiControls {
         }
 
         return null;
+    }
+
+    private SootClass findInflate(int layoutId, SootClass fragmentClass) {
+        for (SootMethod method : fragmentClass.getMethods()) {
+            try {
+                method.retrieveActiveBody();
+            } catch (RuntimeException ignored) {
+                continue;
+            }
+
+            if (!method.hasActiveBody()) {
+                continue;
+            }
+
+            if (searchInflateView(layoutId, method)) {
+                return fragmentClass;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean searchInflateView(int layoutId, SootMethod method) {
+        PatchingChain<Unit> units = method.getActiveBody().getUnits();
+        for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
+            Unit unit = iterator.next();
+
+            Status searchStatus = new Status();
+            unit.apply(new AbstractStmtSwitch<Stmt>() {
+                @Override
+                public void caseInvokeStmt(InvokeStmt stmt) {
+                    super.caseInvokeStmt(stmt);
+
+                    InvokeExpr invokeExpr = stmt.getInvokeExpr();
+                    if (invokeExpr.getMethod().getName().equals("inflate")) {
+                        // System.out.println(invokeExpr);
+                        if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
+                            searchStatus.foundClass(true);
+                        }
+                    }
+                }
+            });
+
+            if (!searchStatus.isClassFound()) {
+                unit.apply(new AbstractStmtSwitch<Stmt>() {
+                    @Override
+                    public void caseAssignStmt(AssignStmt stmt) {
+                        super.caseAssignStmt(stmt);
+
+                        if (stmt.containsInvokeExpr()) {
+                            InvokeExpr invokeExpr = stmt.getInvokeExpr();
+                            if (invokeExpr.getMethod().getName().equals("inflate")) {
+                                // System.out.println(invokeExpr);
+                                if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
+                                    searchStatus.foundClass(true);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (searchStatus.isClassFound()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean searchForSetContentView(int layoutId, SootMethod method) {
@@ -298,7 +457,7 @@ public class UiControls {
     }
 
     protected SootClass findLayoutClass(int layoutId) {
-        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(new File(apk))) {
+        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
             SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
 
             if (layoutClass == null) {
@@ -307,6 +466,20 @@ public class UiControls {
 
             if (layoutClass != null) {
                 return layoutClass;
+            }
+        }
+
+        return findFragmentLayoutClass(layoutId);
+    }
+
+    protected SootClass findFragmentLayoutClass(int layoutId) {
+        for (SootClass clazz : Scene.v().getClasses()) {
+            if (Filter.isValidClass(null, null, clazz)) {
+                SootClass layoutClass = findInflate(layoutId, clazz);
+
+                if (layoutClass != null) {
+                    return layoutClass;
+                }
             }
         }
 
