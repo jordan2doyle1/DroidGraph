@@ -7,7 +7,7 @@ import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Style;
 import phd.research.enums.Type;
-import phd.research.helper.Control;
+import phd.research.graph.Control;
 
 import java.util.Map;
 import java.util.Objects;
@@ -25,8 +25,7 @@ public class ControlVertex extends Vertex {
         super(Type.control);
         this.control = Objects.requireNonNull(control);
         super.setLabel("Control{control=" + control.getControlResource().getResourceName() + "(" +
-                control.getControlResource().getResourceID() + ")");
-
+                control.getControlResource().getResourceID() + ")}");
     }
 
     @NotNull
@@ -59,7 +58,8 @@ public class ControlVertex extends Vertex {
     @Override
     public String toString() {
         return "Control{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", control=" + control + "}";
+                super.hasLocalVisit() + ", control=" + control.getControlResource().getResourceName() + "(" +
+                control.getControlResource().getResourceID() + ")" + "}";
     }
 
     @Override
@@ -84,7 +84,7 @@ public class ControlVertex extends Vertex {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = super.hashCode();
         result = 31 * result + control.hashCode();
         return result;

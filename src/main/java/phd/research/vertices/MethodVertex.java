@@ -33,7 +33,7 @@ public class MethodVertex extends Vertex {
     }
 
     private static String removePackageName(String name) {
-        int index = (name.contains("dummyMainMethod") ? name.lastIndexOf("_") : name.lastIndexOf("."));
+        int index = (name.toLowerCase().contains("dummymainmethod") ? name.lastIndexOf("_") : name.lastIndexOf("."));
         return (index != -1 ? name.replace(name.substring(0, index + 1), "") : name);
     }
 
@@ -87,8 +87,8 @@ public class MethodVertex extends Vertex {
 
     @Override
     public String toString() {
-        return "MethodVertex{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", method=" + this.getMethod() + "}";
+        return "Method{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
+                super.hasLocalVisit() + ", method=" + this.method.getSignature() + "}";
     }
 
     @Override

@@ -1,7 +1,8 @@
-package phd.research.helper;
+package phd.research.graph;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.Test;
+import phd.research.graph.Control;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -49,8 +50,10 @@ public class ControlTest {
 
     @Test
     public void testSetClickListener() {
-        Control c = new Control(mock(ARSCFileParser.AbstractResource.class), mock(ARSCFileParser.AbstractResource.class),
-                        mock(SootClass.class), null);
+        Control c =
+                new Control(mock(ARSCFileParser.AbstractResource.class), mock(ARSCFileParser.AbstractResource.class),
+                        mock(SootClass.class), null
+                );
         assertNull("Expected Null", c.getClickListener());
 
         SootMethod method = mock(SootMethod.class);
@@ -74,11 +77,13 @@ public class ControlTest {
 
         Control c = new Control(control, layout, activity, method);
         assertEquals("toString Failed: Wrong Output", "Control: (btn_click_A, activity_A.xml, .ActivityA, onClick)",
-                c.toString());
+                c.toString()
+                    );
 
         c = new Control(control, layout, activity, null);
         assertEquals("toString Failed: Wrong Output", "Control: (btn_click_A, activity_A.xml, .ActivityA, null)",
-                c.toString());
+                c.toString()
+                    );
     }
 
     @Test
@@ -88,20 +93,4 @@ public class ControlTest {
                 .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
                 .withIgnoredFields("clickListener").verify();
     }
-
-//    @Test
-//    public void testSootClassEquality() {
-//        EqualsVerifier.forClass(SootClass.class)
-//                .withPrefabValues(RefType.class, mock(RefType.class), mock(RefType.class))
-//                .withPrefabValues(SootModuleInfo.class, mock(SootModuleInfo.class), mock(SootModuleInfo.class))
-//                .withPrefabValues(SootClass.class, mock(SootClass.class), mock(SootClass.class))
-//                .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
-//                .suppress(Warning.INHERITED_DIRECTLY_FROM_OBJECT).usingGetClass().withIgnoredFields("name").verify();
-//    }
-//
-//    @Test
-//    public void testAbstractResourceEquality() {
-//        EqualsVerifier.forClass(ARSCFileParser.AbstractResource.class).suppress(Warning.NONFINAL_FIELDS).usingGetClass()
-//                .verify();
-//    }
 }

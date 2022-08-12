@@ -1,6 +1,7 @@
 package phd.research.vertices;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,27 +13,42 @@ import static org.junit.Assert.*;
 
 public class VertexTest {
 
+    private final String LABEL = "Vertex{type=other}";
+
     Vertex v;
 
     @Before
     public void setUp() {
-        v = new Vertex(Type.other, "Test");
+        v = new Vertex(Type.other, LABEL);
     }
 
     @Test
-    public void testConstructor() {
-        assertEquals("Type should be 'other'.", Type.other, this.v.getType());
-        assertEquals("Label should be 'Test'.", "Test", this.v.getLabel());
+    public void testSimpleConstructor() {
+        Vertex s = new Vertex(Type.other);
+        assertEquals("Wrong type returned.", Type.other, s.getType());
+        assertEquals("Wrong label returned.", LABEL, s.getLabel());
+    }
+
+    @Test
+    public void testBaseConstructor() {
+        assertEquals("Wrong type returned.", Type.other, this.v.getType());
+        assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
     }
 
     @Test(expected = NullPointerException.class)
     public void testTypeNullException() {
-        new Vertex(null, "Test");
+        new Vertex(null, LABEL);
     }
 
     @Test(expected = NullPointerException.class)
     public void testLabelNullException() {
         new Vertex(Type.other, null);
+    }
+
+    @Test
+    public void testSetLabel() {
+        this.v.setLabel("Other{}");
+        assertEquals("Wrong label returned.", "Other{}", this.v.getLabel());
     }
 
     @Test
@@ -54,23 +70,21 @@ public class VertexTest {
     @Test
     public void getAttributes() {
         Map<String, Attribute> attributes = this.v.getAttributes();
-
         assertEquals("Should be exactly 2 attributes.", 2, attributes.size());
-        assertEquals("Type attribute value should be 'other'.", "other", attributes.get("type").getValue());
-        assertEquals("Label attribute value should be 'Test'.", "Test", attributes.get("label").getValue());
-
+        assertEquals("Wrong type attribute returned.", "other", attributes.get("type").getValue());
+        assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
     }
 
     @Test
     public void testToString() {
-        assertEquals("Wrong string value returned.", "Vertex{type=other, label='Test', visit=false, localVisit=false}",
-                this.v.toString()
+        assertEquals("Wrong string value returned.",
+                "Vertex{type=other, label='" + LABEL + "', visit=false, localVisit=false}", this.v.toString()
                     );
     }
 
     @Test
     public void testEquals() {
         EqualsVerifier.forClass(Vertex.class).withIgnoredFields("visit", "localVisit")
-                .withRedefinedSubclass(ControlVertex.class).verify();
+                .withRedefinedSubclass(ControlVertex.class).suppress(Warning.NONFINAL_FIELDS).verify();
     }
 }

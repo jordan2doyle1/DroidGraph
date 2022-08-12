@@ -1,11 +1,14 @@
 package phd.research.vertices;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
 import phd.research.enums.Type;
-import phd.research.helper.Control;
+import phd.research.graph.Control;
+import soot.SootClass;
+import soot.SootMethod;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import java.util.Map;
@@ -16,26 +19,32 @@ import static org.mockito.Mockito.when;
 
 public class ControlVertexTest {
 
+    private final String RESOURCE_NAME = "btn_click_A";
+    private final int RESOURCE_ID = 123456789;
+    private final String SUMMARY = RESOURCE_NAME + "(" + RESOURCE_ID + ")";
+    private final String LABEL = "Control{control=" + SUMMARY + "}";
+
     ControlVertex v;
 
     @Before
     public void setUp() {
         ARSCFileParser.AbstractResource controlResource = mock(ARSCFileParser.AbstractResource.class);
-        when(controlResource.getResourceName()).thenReturn("btn_click_A");
-        when(controlResource.getResourceID()).thenReturn(123456789);
+        when(controlResource.getResourceName()).thenReturn(RESOURCE_NAME);
+        when(controlResource.getResourceID()).thenReturn(RESOURCE_ID);
+
         Control control = mock(Control.class);
         when(control.getControlResource()).thenReturn(controlResource);
-        //when(control.toString()).thenReturn("Control: (btn_click_A, activity_A, ActivityA, null)");
+
         v = new ControlVertex(control);
     }
 
     @Test
     public void testConstructor() {
-        assertEquals("Resource name should be 'btnStartA'.", "btn_click_A",
+        assertEquals("Type should be 'control'.", Type.control, this.v.getType());
+        assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
+        assertEquals("Wrong resource returned.", RESOURCE_NAME,
                 this.v.getControl().getControlResource().getResourceName()
                     );
-        assertEquals("Type should be 'control'.", Type.control, this.v.getType());
-        assertEquals("Label should be 'btn_click_A (123456789)'.", "btn_click_A (123456789)", this.v.getLabel());
     }
 
     @Test(expected = NullPointerException.class)
@@ -46,28 +55,27 @@ public class ControlVertexTest {
     @Test
     public void getAttributes() {
         Map<String, Attribute> attributes = this.v.getAttributes();
-
-        assertEquals("Should be exactly 2 attributes.", 5, attributes.size());
-        assertEquals("Type attribute value should be 'control'.", "control", attributes.get("type").getValue());
-        assertEquals("Label attribute value should be 'btn_click_A (123456789)'.", "btn_click_A (123456789)",
-                attributes.get("label").getValue()
-                    );
-        assertEquals("Color attribute value should be 'red'.", "red", attributes.get("color").getValue());
-        assertEquals("Shape attribute value should be 'circle'.", "circle", attributes.get("shape").getValue());
-        assertEquals("Style attribute value should be 'filled'.", "filled", attributes.get("style").getValue());
+        assertEquals("Should be exactly 5 attributes.", 5, attributes.size());
+        assertEquals("Wrong type attribute returned.", "control", attributes.get("type").getValue());
+        assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
+        assertEquals("Wrong color attribute returned.", "red", attributes.get("color").getValue());
+        assertEquals("Wrong shape attribute returned.", "circle", attributes.get("shape").getValue());
+        assertEquals("Wrong style attribute returned.", "filled", attributes.get("style").getValue());
     }
 
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                "ControlVertex{type=control, label='btn_click_A (123456789)', visit=false, localVisit=false}",
+                "Control{label='" + LABEL + "', visit=false, localVisit=false, control=" + SUMMARY + "}",
                 this.v.toString()
                     );
     }
 
     @Test
     public void testEquals() {
-        EqualsVerifier.forClass(Vertex.class).withRedefinedSuperclass().verify();
+        EqualsVerifier.forClass(ControlVertex.class).withRedefinedSuperclass()
+                .withPrefabValues(SootClass.class, mock(SootClass.class), mock(SootClass.class))
+                .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
+                .withIgnoredFields("visit", "localVisit").suppress(Warning.NONFINAL_FIELDS).verify();
     }
-
 }

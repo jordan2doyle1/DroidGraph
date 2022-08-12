@@ -28,6 +28,6 @@ public class DummyVertex extends MethodVertex {
     @Override
     public String toString() {
         return "Dummy{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", method=" + this.getMethod() + "}";
+                super.hasLocalVisit() + ", method=" + this.getMethod().getSignature() + "}";
     }
 }
