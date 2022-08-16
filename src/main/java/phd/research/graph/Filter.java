@@ -1,5 +1,6 @@
 package phd.research.graph;
 
+import org.xmlpull.v1.XmlPullParserException;
 import phd.research.core.FlowDroidUtils;
 import soot.Scene;
 import soot.SootClass;
@@ -12,25 +13,18 @@ import soot.jimple.infoflow.util.SystemClassHandler;
 import soot.util.MultiMap;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Set;
 
 /**
  * @author Jordan Doyle
  */
+
 public class Filter {
 
-    public Filter() {
-
-    }
-
-    public static boolean isEntryPointClass(String apk, SootClass sootClass) {
-        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(new File(apk))) {
-            if (entryClass.equals(sootClass)) {
-                return true;
-            }
-        }
-
-        return false;
+    public static boolean isEntryPointClass(File apk, SootClass clazz) throws XmlPullParserException, IOException {
+        return FlowDroidUtils.getEntryPointClasses(apk).stream().anyMatch(e -> e.equals(clazz));
     }
 
     public static boolean isLifecycleMethod(SootMethod method) {
@@ -38,7 +32,7 @@ public class Filter {
         return entryPointUtils.isEntryPointMethod(method);
     }
 
-    public static boolean isListenerMethod(File callbackFile, SootMethod method) {
+    public static boolean isListenerMethod(File callbackFile, SootMethod method) throws FileNotFoundException {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbackFile);
         if (callbacks != null) {
             return Filter.isListenerMethod(callbacks.getCallbackMethods(), method);
@@ -62,7 +56,7 @@ public class Filter {
         return false;
     }
 
-    public static boolean isOtherCallbackMethod(File callbackFile, SootMethod method) {
+    public static boolean isOtherCallbackMethod(File callbackFile, SootMethod method) throws FileNotFoundException {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbackFile);
         if (callbacks != null) {
             return Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method);
@@ -85,7 +79,7 @@ public class Filter {
         return false;
     }
 
-    public static boolean isPossibleListenerMethod(File callbackFile, SootMethod method) {
+    public static boolean isPossibleListenerMethod(File callbackFile, SootMethod method) throws FileNotFoundException {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbackFile);
         if (callbacks != null) {
             return Filter.isPossibleListenerMethod(callbacks.getCallbackMethods(), method);

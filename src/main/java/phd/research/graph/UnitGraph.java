@@ -3,8 +3,8 @@ package phd.research.graph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
-import phd.research.jGraph.UnitVertex;
-import phd.research.jGraph.Vertex;
+import phd.research.vertices.UnitVertex;
+import phd.research.vertices.Vertex;
 import soot.Body;
 import soot.Unit;
 import soot.toolkits.graph.BriefUnitGraph;
@@ -16,6 +16,7 @@ import java.util.Set;
 /**
  * @author Jordan Doyle
  */
+
 public class UnitGraph extends BriefUnitGraph {
 
     private Graph<Vertex, DefaultEdge> graph;

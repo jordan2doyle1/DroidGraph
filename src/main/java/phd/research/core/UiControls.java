@@ -1,13 +1,11 @@
-package phd.research.ui;
+package phd.research.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
-import phd.research.core.FlowDroidUtils;
+import phd.research.graph.Control;
 import phd.research.graph.Filter;
-import phd.research.helper.Control;
 import phd.research.helper.MenuFileParser;
-import phd.research.helper.Status;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
@@ -17,12 +15,11 @@ import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
 import soot.util.MultiMap;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 public class UiControls {
 
@@ -33,7 +30,7 @@ public class UiControls {
 
     private Set<Control> controls;
 
-    public UiControls(File collectedCallbacksFile, File apk) {
+    public UiControls(File collectedCallbacksFile, File apk) throws XmlPullParserException, IOException {
         this.collectedCallbacksFile = collectedCallbacksFile;
         this.apk = apk;
         this.controls = processFlowDroidControls();
@@ -53,7 +50,8 @@ public class UiControls {
         return name;
     }
 
-    protected static SootMethod searchForCallbackMethod(File callbacksFile, String methodName) {
+    protected static SootMethod searchForCallbackMethod(File callbacksFile, String methodName)
+            throws FileNotFoundException {
         CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbacksFile);
         SootMethod foundMethod = null;
 
@@ -90,7 +88,7 @@ public class UiControls {
         return foundResources.get(0);
     }
 
-    public Set<Control> getControls() {
+    public Set<Control> getControls() throws XmlPullParserException, IOException {
         if (this.controls == null) {
             this.controls = processFlowDroidControls();
         }
@@ -99,7 +97,7 @@ public class UiControls {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean hasControl(SootMethod listener) {
+    public boolean hasControl(SootMethod listener) throws XmlPullParserException, IOException {
         for (Control control : this.getControls()) {
             SootMethod controlClickListener = control.getClickListener();
             if (controlClickListener != null && controlClickListener.equals(listener)) {
@@ -110,11 +108,7 @@ public class UiControls {
         return false;
     }
 
-    public boolean control(SootMethod listener) {
-        return this.getControls().stream().anyMatch(c -> c.getClickListener() != null && c.getClickListener().equals(listener));
-    }
-
-    public Control getListenerControl(SootMethod listener) {
+    public Control getListenerControl(SootMethod listener) throws XmlPullParserException, IOException {
         Control foundControl = null;
         for (Control control : this.getControls()) {
             if (control.getClickListener() != null) {
@@ -131,7 +125,7 @@ public class UiControls {
         return foundControl;
     }
 
-    public Control getControl(SootClass activity, String resourceName) {
+    public Control getControl(SootClass activity, String resourceName) throws XmlPullParserException, IOException {
         for (Control control : this.getControls()) {
             if (control.getControlResource() != null && control.getControlActivity() != null) {
                 if (control.getControlActivity().equals(activity) &&
@@ -144,7 +138,7 @@ public class UiControls {
         return null;
     }
 
-    public Control getControl(SootClass activity, int resourceId) {
+    public Control getControl(SootClass activity, int resourceId) throws XmlPullParserException, IOException {
         for (Control control : this.getControls()) {
             if (control.getControlResource() != null && control.getControlActivity() != null) {
                 if (control.getControlActivity().equals(activity) &&
@@ -157,29 +151,7 @@ public class UiControls {
         return null;
     }
 
-    public Control getAControl(SootClass activity, int resourceId) {
-        for (Control control : this.getControls()) {
-            if (control.getControlResource() != null && control.getControlActivity() != null) {
-                if (control.getControlActivity().equals(activity) &&
-                        control.getControlResource().getResourceID() == resourceId) {
-                    return control;
-                }
-            }
-        }
-
-        Set<Control> matchingControls = this.getControls().stream().filter(
-                c -> c.getControlResource() != null && c.getControlActivity() != null &&
-                        c.getControlActivity().equals(activity) && c.getControlResource().getResourceID() == resourceId)
-                .collect(Collectors.toSet());
-
-        if (matchingControls.size() != 1) {
-            logger.error("");
-        }
-
-        return null;
-    }
-
-    private Set<Control> processFlowDroidControls() {
+    private Set<Control> processFlowDroidControls() throws IOException, XmlPullParserException {
         ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
         LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
 
@@ -192,12 +164,11 @@ public class UiControls {
 
         MenuFileParser menuParser;
         try {
-            menuParser = new MenuFileParser(FlowDroidUtils.getManifest(apk).getPackageName(), FlowDroidUtils.getResources(apk));
+            menuParser = new MenuFileParser(FlowDroidUtils.getBasePackageName(apk), FlowDroidUtils.getResources(apk));
         } catch (XmlPullParserException | IOException e) {
             throw new RuntimeException(e);
         }
         menuParser.parseLayoutFileDirect(apk.getAbsolutePath());
-
         Set<Control> uiControls = new HashSet<>();
         MultiMap<String, AndroidLayoutControl> userControls;
         if (layoutParser != null) {
@@ -215,7 +186,8 @@ public class UiControls {
 
             SootClass callbackClass = this.findLayoutClass(layoutResource.getResourceID());
             if (callbackClass == null) {
-                logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " + layoutResource.getResourceName());
+                logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
+                        layoutResource.getResourceName());
                 continue;
             }
 
@@ -250,22 +222,40 @@ public class UiControls {
         return uiControls;
     }
 
-    private Set<Control> something(MenuFileParser parser, ARSCFileParser resources) {
+    private Set<Control> something(MenuFileParser parser, ARSCFileParser resources)
+            throws IOException, XmlPullParserException {
         MultiMap<String, AndroidLayoutControl> userControls = parser.getUserControls();
         Set<Control> uiControls = new HashSet<>();
 
         for (String layoutFile : userControls.keySet()) {
             if (layoutFile.equals("res/menu/navigation.xml")) {
-                ARSCFileParser.AbstractResource layoutResource = resources.findResourceByName("menu",
-                        getResourceName(layoutFile));
+                ARSCFileParser.AbstractResource layoutResource =
+                        resources.findResourceByName("menu", getResourceName(layoutFile));
 
-                SootClass callbackClass = this.findLayoutClass(layoutResource.getResourceID());
+
+                // TODO: Extract to it's own method.
+                SootClass callbackClass = null;
+                for (String file : userControls.keySet()) {
+                    for (AndroidLayoutControl control : userControls.get(file)) {
+                        if (control.getAdditionalAttributes() != null) {
+                            for (String key : control.getAdditionalAttributes().keySet()) {
+                                if (key.equals("menu")) {
+                                    if ((int) control.getAdditionalAttributes().get(key) == layoutResource.getResourceID()) {
+                                        ARSCFileParser.AbstractResource layout =
+                                                resources.findResourceByName("layout", getResourceName(file));
+                                        callbackClass = this.findLayoutClass(layout.getResourceID());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (callbackClass == null) {
                     logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
                             layoutResource.getResourceName());
                     continue;
                 }
-
 
                 logger.info("Linked " + callbackClass + " with " + layoutResource.getResourceName());
                 for (AndroidLayoutControl control : userControls.get(layoutFile)) {
@@ -273,8 +263,8 @@ public class UiControls {
                         continue;
                     }
 
-                    ARSCFileParser.AbstractResource controlResource = UiControls.getResourceById(resources,
-                            control.getID());
+                    ARSCFileParser.AbstractResource controlResource =
+                            UiControls.getResourceById(resources, control.getID());
                     if (controlResource == null) {
                         logger.error("No resource found with ID " + control.getID() + ": " + control);
                         continue;
@@ -456,7 +446,7 @@ public class UiControls {
         return layoutClass;
     }
 
-    protected SootClass findLayoutClass(int layoutId) {
+    protected SootClass findLayoutClass(int layoutId) throws XmlPullParserException, IOException {
         for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
             SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
 
@@ -504,8 +494,43 @@ public class UiControls {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | XmlPullParserException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static class Status {
+
+        private boolean foundView;
+        private boolean foundClass;
+        private SootClass clazz;
+
+        public Status() {
+
+        }
+
+        public boolean isViewFound() {
+            return foundView;
+        }
+
+        public void foundView(boolean found) {
+            foundView = found;
+        }
+
+        public boolean isClassFound() {
+            return foundClass;
+        }
+
+        public void foundClass(boolean found) {
+            foundClass = found;
+        }
+
+        public SootClass getFoundClass() {
+            return clazz;
+        }
+
+        public void setFoundClass(SootClass foundClass) {
+            clazz = foundClass;
         }
     }
 }

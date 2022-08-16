@@ -5,11 +5,13 @@ import phd.research.enums.Shape;
 import phd.research.enums.Type;
 import soot.SootMethod;
 
+import java.io.Serializable;
+
 /**
  * @author Jordan Doyle
  */
 
-public class LifecycleVertex extends MethodVertex {
+public class LifecycleVertex extends MethodVertex implements Serializable {
 
     public LifecycleVertex(SootMethod method) {
         super(Type.lifecycle, method);
@@ -27,7 +29,8 @@ public class LifecycleVertex extends MethodVertex {
 
     @Override
     public String toString() {
-        return "Lifecycle{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", method=" + this.getMethod().getSignature() + "}";
+        return String.format("Lifecycle{label='%s', visit=%s, localVisit=%s, method=%s}", super.getLabel(),
+                super.hasVisit(), super.hasLocalVisit(), this.getMethod().getSignature()
+                            );
     }
 }

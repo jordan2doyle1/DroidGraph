@@ -9,6 +9,7 @@ import phd.research.enums.Style;
 import phd.research.enums.Type;
 import soot.SootMethod;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,7 +18,7 @@ import java.util.Objects;
  * @author Jordan Doyle
  */
 
-public class MethodVertex extends Vertex {
+public class MethodVertex extends Vertex implements Serializable {
 
     @NotNull
     private final SootMethod method;
@@ -87,8 +88,9 @@ public class MethodVertex extends Vertex {
 
     @Override
     public String toString() {
-        return "Method{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", method=" + this.method.getSignature() + "}";
+        return String.format("Method{label='%s', visit=%s, localVisit=%s, method=%s}", super.getLabel(),
+                super.hasVisit(), super.hasLocalVisit(), this.method.getSignature()
+                            );
     }
 
     @Override

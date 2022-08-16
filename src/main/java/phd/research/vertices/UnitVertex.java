@@ -9,6 +9,7 @@ import phd.research.enums.Style;
 import phd.research.enums.Type;
 import soot.Unit;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
@@ -16,7 +17,7 @@ import java.util.Objects;
  * @author Jordan Doyle
  */
 
-public class UnitVertex extends Vertex {
+public class UnitVertex extends Vertex implements Serializable {
 
     @NotNull
     private final Unit unit;
@@ -24,7 +25,7 @@ public class UnitVertex extends Vertex {
     public UnitVertex(Unit unit) {
         super(Type.unit);
         this.unit = Objects.requireNonNull(unit);
-        super.setLabel("Unit{unit=" + unit + "}");
+        super.setLabel(String.format("Unit{unit=%s}", unit));
     }
 
     @NotNull
@@ -57,8 +58,9 @@ public class UnitVertex extends Vertex {
 
     @Override
     public String toString() {
-        return "Unit{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", unit=" + unit + "}";
+        return String.format("Unit{label='%s', visit=%s, localVisit=%s, unit=%s}", super.getLabel(), super.hasVisit(),
+                super.hasLocalVisit(), this.unit
+                            );
     }
 
     @Override

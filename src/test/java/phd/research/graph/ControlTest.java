@@ -1,8 +1,8 @@
 package phd.research.graph;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
+import org.junit.Before;
 import org.junit.Test;
-import phd.research.graph.Control;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -12,23 +12,37 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class ControlTest {
+
+    private final String CONTROL_NAME = "btn_click_A";
+    private final String LAYOUT_NAME = "activity_A.xml";
+    private final String ACTIVITY_NAME = ".ActivityA";
+    private final String METHOD_NAME = "onClick()";
+
+    private Control c;
+
+    @Before
+    public void setUp() {
+        ARSCFileParser.AbstractResource control = mock(ARSCFileParser.AbstractResource.class);
+        when(control.getResourceName()).thenReturn(CONTROL_NAME);
+        ARSCFileParser.AbstractResource layout = mock(ARSCFileParser.AbstractResource.class);
+        when(layout.getResourceName()).thenReturn(LAYOUT_NAME);
+        SootClass activity = mock(SootClass.class);
+        when(activity.getShortName()).thenReturn(ACTIVITY_NAME);
+
+        this.c = new Control(control, layout, activity, null);
+    }
 
     @Test
     public void testConstructor() {
-        ARSCFileParser.AbstractResource control = mock(ARSCFileParser.AbstractResource.class);
-        when(control.getResourceName()).thenReturn("btn_click_A");
-        ARSCFileParser.AbstractResource layout = mock(ARSCFileParser.AbstractResource.class);
-        when(layout.getResourceName()).thenReturn("activity_A.xml");
-        SootClass activity = mock(SootClass.class);
-        when(activity.getShortName()).thenReturn(".ActivityA");
-
-        Control c = new Control(control, layout, activity, null);
-
-        assertEquals("Wrong Control Resource Name", "btn_click_A", c.getControlResource().getResourceName());
-        assertEquals("Wrong Layout Resource Name", "activity_A.xml", c.getLayoutResource().getResourceName());
-        assertEquals("Wrong Activity Name", ".ActivityA", c.getControlActivity().getShortName());
-        assertNull("Expected Null", c.getClickListener());
+        assertEquals("Wrong control name.", CONTROL_NAME, this.c.getControlResource().getResourceName());
+        assertEquals("Wrong layout name.", LAYOUT_NAME, this.c.getLayoutResource().getResourceName());
+        assertEquals("Wrong activity name.", ACTIVITY_NAME, this.c.getControlActivity().getShortName());
+        assertNull("Expected click listener to be null.", this.c.getClickListener());
     }
 
     @Test(expected = NullPointerException.class)
@@ -43,46 +57,37 @@ public class ControlTest {
 
     @Test(expected = NullPointerException.class)
     public void testActivityNullException() {
-        new Control(mock(ARSCFileParser.AbstractResource.class), mock(ARSCFileParser.AbstractResource.class), null,
-                null
-        );
+        ARSCFileParser.AbstractResource resource = mock(ARSCFileParser.AbstractResource.class);
+        new Control(resource, resource, null, null);
     }
 
     @Test
     public void testSetClickListener() {
-        Control c =
-                new Control(mock(ARSCFileParser.AbstractResource.class), mock(ARSCFileParser.AbstractResource.class),
-                        mock(SootClass.class), null
-                );
-        assertNull("Expected Null", c.getClickListener());
+        assertNull("Expected click listener to be null.", this.c.getClickListener());
 
         SootMethod method = mock(SootMethod.class);
-        when(method.getName()).thenReturn("onClick()");
+        when(method.getName()).thenReturn(METHOD_NAME);
 
-        c.setClickListener(method);
-
-        assertEquals("Wrong Method Name", "onClick()", c.getClickListener().getName());
+        this.c.setClickListener(method);
+        assertEquals("Wrong method name returned.", METHOD_NAME, this.c.getClickListener().getName());
     }
 
     @Test
     public void testToString() {
-        ARSCFileParser.AbstractResource control = mock(ARSCFileParser.AbstractResource.class);
-        when(control.getResourceName()).thenReturn("btn_click_A");
-        ARSCFileParser.AbstractResource layout = mock(ARSCFileParser.AbstractResource.class);
-        when(layout.getResourceName()).thenReturn("activity_A.xml");
-        SootClass activity = mock(SootClass.class);
-        when(activity.getName()).thenReturn(".ActivityA");
-        SootMethod method = mock(SootMethod.class);
-        when(method.getName()).thenReturn("onClick");
-
-        Control c = new Control(control, layout, activity, method);
-        assertEquals("toString Failed: Wrong Output", "Control: (btn_click_A, activity_A.xml, .ActivityA, onClick)",
-                c.toString()
+        assertEquals("Wrong string value returned with null.",
+                String.format("Control{control=%s, layout=%s, activity=%s, clickListener=null}", CONTROL_NAME,
+                        LAYOUT_NAME, ACTIVITY_NAME
+                             ), this.c.toString()
                     );
 
-        c = new Control(control, layout, activity, null);
-        assertEquals("toString Failed: Wrong Output", "Control: (btn_click_A, activity_A.xml, .ActivityA, null)",
-                c.toString()
+        SootMethod method = mock(SootMethod.class);
+        when(method.getName()).thenReturn(METHOD_NAME);
+
+        this.c.setClickListener(method);
+        assertEquals("Wrong string value returned without null.",
+                String.format("Control{control=%s, layout=%s, activity=%s, clickListener=%s}", CONTROL_NAME,
+                        LAYOUT_NAME, ACTIVITY_NAME, METHOD_NAME
+                             ), this.c.toString()
                     );
     }
 

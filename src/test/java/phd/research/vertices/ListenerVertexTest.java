@@ -7,7 +7,7 @@ import phd.research.enums.Type;
 import soot.SootClass;
 import soot.SootMethod;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -15,16 +15,20 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class ListenerVertexTest {
 
     private final String CLASS_NAME = "com.example.android.lifecycle.ActivityA";
     private final String RETURN_TYPE = "void";
-    private final String METHOD = "onClick()";
+    private final String METHOD_NAME = "onClick()";
     private final String PARAM_TYPE = "android.view.View";
-    private final String SIGNATURE = "<" + CLASS_NAME + ": " + RETURN_TYPE + " " + METHOD + "(" + PARAM_TYPE + ")>";
-    private final String LABEL = "Listener{method=<ActivityA: " + RETURN_TYPE + " " + METHOD + "(View)>";
+    private final String LABEL = String.format("Listener{method=<ActivityA: %s %s(View)>", RETURN_TYPE, METHOD_NAME);
+    private final String SIGNATURE = String.format("<%s: %s %s(%s)>", CLASS_NAME, RETURN_TYPE, METHOD_NAME, PARAM_TYPE);
 
-    ListenerVertex v;
+    private ListenerVertex v;
 
     @Before
     public void setUp() {
@@ -38,23 +42,22 @@ public class ListenerVertexTest {
 
         SootMethod method = mock(SootMethod.class);
         when(method.getSignature()).thenReturn(SIGNATURE);
-        when(method.getName()).thenReturn(METHOD);
+        when(method.getName()).thenReturn(METHOD_NAME);
         when(method.getDeclaringClass()).thenReturn(clazz);
         when(method.getParameterCount()).thenReturn(1);
         when(method.getReturnType()).thenReturn(returnType);
 
-        List<soot.Type> parameterList = new ArrayList<>();
-        parameterList.add(paramType);
+        List<soot.Type> parameterList = Collections.singletonList(paramType);
         when(method.getParameterTypes()).thenReturn(parameterList);
 
-        v = new ListenerVertex(method);
+        this.v = new ListenerVertex(method);
     }
 
     @Test
     public void testConstructor() {
         assertEquals("Type should be 'listener'.", Type.listener, this.v.getType());
         assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
-        assertEquals("Wrong method returned.", METHOD, this.v.getMethod().getName());
+        assertEquals("Wrong method returned.", METHOD_NAME, this.v.getMethod().getName());
     }
 
     @Test(expected = NullPointerException.class)
@@ -76,9 +79,8 @@ public class ListenerVertexTest {
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                "Listener{label='" + LABEL + "', visit=false, localVisit=false," + " method=" + SIGNATURE + "}",
+                String.format("Listener{label='%s', visit=false, localVisit=false, method=%s}", LABEL, SIGNATURE),
                 this.v.toString()
                     );
     }
-
 }

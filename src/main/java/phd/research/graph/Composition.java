@@ -2,14 +2,14 @@ package phd.research.graph;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
-import phd.research.jGraph.Vertex;
+import phd.research.vertices.Vertex;
 
-import java.util.Objects;
 import java.util.Set;
 
 /**
  * @author Jordan Doyle
  */
+
 public class Composition {
 
     private int edge, vertex, other, listener, lifecycle, method, dummy, control;
@@ -39,7 +39,7 @@ public class Composition {
                 case lifecycle:
                     this.lifecycle++;
                     break;
-                case dummyMethod:
+                case dummy:
                     this.dummy++;
                     break;
                 case control:
@@ -79,32 +79,58 @@ public class Composition {
 
     @Override
     public String toString() {
-        return "(Vertex:" + this.vertex + ", Edge:" + this.edge + ", Other:" + this.other + ", Listener:" +
-                this.listener + ", Lifecycle:" + this.lifecycle + ", Method:" + this.method + ", Dummy:" + this.dummy +
-                ", Interface:" + this.control + ")";
+        return String.format(
+                "%s{edge=%s, vertex=%s, other=%s, listener=%s, lifecycle=%s, method=%s, dummy=%s, control=%s}",
+                getClass().getSimpleName(), this.edge, this.vertex, this.other, this.listener, this.lifecycle,
+                this.method, this.dummy, this.control
+                            );
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
+        if (this == o) {
             return true;
         }
-
         if (!(o instanceof Composition)) {
             return false;
         }
 
-        Composition composition = (Composition) o;
-        return this.edge == composition.edge && this.vertex == composition.vertex && this.other == composition.other &&
-                this.listener == composition.listener && this.lifecycle == composition.lifecycle &&
-                this.method == composition.method && this.dummy == composition.dummy &&
-                this.control == composition.control;
+        Composition that = (Composition) o;
+
+        if (edge != that.edge) {
+            return false;
+        }
+        if (vertex != that.vertex) {
+            return false;
+        }
+        if (other != that.other) {
+            return false;
+        }
+        if (listener != that.listener) {
+            return false;
+        }
+        if (lifecycle != that.lifecycle) {
+            return false;
+        }
+        if (method != that.method) {
+            return false;
+        }
+        if (dummy != that.dummy) {
+            return false;
+        }
+        return control == that.control;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.edge, this.vertex, this.other, this.listener, this.lifecycle, this.method, this.dummy,
-                this.control
-                           );
+        int result = edge;
+        result = 31 * result + vertex;
+        result = 31 * result + other;
+        result = 31 * result + listener;
+        result = 31 * result + lifecycle;
+        result = 31 * result + method;
+        result = 31 * result + dummy;
+        result = 31 * result + control;
+        return result;
     }
 }

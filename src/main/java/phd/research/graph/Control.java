@@ -1,4 +1,4 @@
-package phd.research.helper;
+package phd.research.graph;
 
 import soot.SootClass;
 import soot.SootMethod;
@@ -10,6 +10,7 @@ import java.util.Objects;
 /**
  * @author Jordan Doyle
  */
+
 public class Control {
 
     @Nonnull
@@ -50,30 +51,42 @@ public class Control {
 
     @Override
     public String toString() {
-        return String.format("%s: (%s, %s, %s, %s)", getClass().getSimpleName(), this.control.getResourceName(),
-                this.layout.getResourceName(), this.activity.getName(),
+        return String.format("%s{control=%s, layout=%s, activity=%s, clickListener=%s}", getClass().getSimpleName(),
+                this.control.getResourceName(), this.layout.getResourceName(), this.activity.getShortName(),
                 (this.clickListener != null ? this.clickListener.getName() : null)
                             );
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (o == this) {
+        if (this == o) {
             return true;
         }
-
         if (!(o instanceof Control)) {
             return false;
         }
 
-        Control control = (Control) o;
-        return Objects.equals(this.control.getResourceName(), control.control.getResourceName()) &&
-                Objects.equals(this.control.getResourceID(), control.control.getResourceID()) &&
-                Objects.equals(this.layout, control.layout) && Objects.equals(this.activity, control.activity);
+        Control that = (Control) o;
+
+        if (!this.control.getResourceName().equals(that.control.getResourceName())) {
+            return false;
+        }
+        if (this.control.getResourceID() != that.control.getResourceID()) {
+            return false;
+        }
+        if (!this.layout.equals(that.layout)) {
+            return false;
+        }
+        return this.activity.equals(that.activity);
     }
 
     @Override
     public final int hashCode() {
-        return this.control.hashCode() + this.layout.hashCode() + this.activity.hashCode();
+        int result = this.control.hashCode();
+        result = 31 * result + this.layout.hashCode();
+        result = 31 * result + this.activity.hashCode();
+        return result;
     }
+
+
 }

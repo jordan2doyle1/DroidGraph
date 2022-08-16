@@ -4,11 +4,11 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xmlpull.v1.XmlPullParserException;
 import phd.research.core.FlowDroidUtils;
+import phd.research.core.UiControls;
 import phd.research.enums.Parts;
-import phd.research.helper.Control;
-import phd.research.jGraph.Vertex;
-import phd.research.ui.UiControls;
+import phd.research.vertices.Vertex;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -16,6 +16,7 @@ import soot.Unit;
 import soot.util.Chain;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Set;
 /**
  * @author Jordan Doyle
  */
+
 public class Viewer {
 
     private static final Logger logger = LoggerFactory.getLogger(Viewer.class);
@@ -187,7 +189,7 @@ public class Viewer {
         return this.lifecycleMethods;
     }
 
-    public Set<SootMethod> getListenerMethods() {
+    public Set<SootMethod> getListenerMethods() throws FileNotFoundException {
         if (this.listenerMethods == null) {
             this.listenerMethods = filterListenerMethods(this.collectedCallbacksFile);
         }
@@ -195,7 +197,7 @@ public class Viewer {
         return this.listenerMethods;
     }
 
-    public Set<SootMethod> getOtherCallbackMethods() {
+    public Set<SootMethod> getOtherCallbackMethods() throws FileNotFoundException {
         if (this.otherCallbackMethods == null) {
             this.otherCallbackMethods = filterOtherCallbackMethods(this.collectedCallbacksFile);
         }
@@ -203,7 +205,7 @@ public class Viewer {
         return this.otherCallbackMethods;
     }
 
-    public Set<SootMethod> getPossibleCallbacksMethods() {
+    public Set<SootMethod> getPossibleCallbacksMethods() throws FileNotFoundException {
         if (this.possibleCallbackMethods == null) {
             this.possibleCallbackMethods = filterPossibleCallbackMethods(this.collectedCallbacksFile);
         }
@@ -211,7 +213,7 @@ public class Viewer {
         return this.possibleCallbackMethods;
     }
 
-    public void writeContentsToFile(String outputDirectory) throws IOException {
+    public void writeContentsToFile(File outputDirectory) throws IOException, XmlPullParserException {
         Writer.writeContent(outputDirectory, "classes", this.getFilteredClasses());
         Writer.writeContent(outputDirectory, "methods", this.getFilteredMethods());
         Writer.writeContent(outputDirectory, "lifecycle", this.getLifecycleMethods());
@@ -221,7 +223,7 @@ public class Viewer {
         Writer.writeContent(outputDirectory, "controls", this.uiControls.getControls());
     }
 
-    public void printUnassignedCallbacks() {
+    public void printUnassignedCallbacks() throws IOException, XmlPullParserException {
         String separator = "--------------------------------------------------------------------------------";
         String stringFormat = "\t%-35s\t%-20s\t%-10s\n";
 
@@ -263,12 +265,16 @@ public class Viewer {
         }
     }
 
-    public void printAppDetails(File apk) {
+    public void printAppDetails(File apk) throws XmlPullParserException, IOException {
         logger.info("Base package name: " + FlowDroidUtils.getBasePackageName(apk));
         logger.info("Number of entry point classes: " + FlowDroidUtils.getEntryPointClasses(apk).size());
         logger.info("Number of launch activities: " + FlowDroidUtils.getLaunchActivities(apk).size());
-        logger.info("Number of classes: " + this.getFilteredClasses().size() + " (Total: " + this.getAllClasses().size() + ")");
-        logger.info("Number of methods: " + this.getFilteredMethods().size() + " (Total: " + this.getAllMethods().size() + ")");
+        logger.info(
+                "Number of classes: " + this.getFilteredClasses().size() + " (Total: " + this.getAllClasses().size() +
+                        ")");
+        logger.info(
+                "Number of methods: " + this.getFilteredMethods().size() + " (Total: " + this.getAllMethods().size() +
+                        ")");
         logger.info("Number of lifecycle methods: " + this.getLifecycleMethods().size());
         logger.info("Number of listener methods: " + this.getListenerMethods().size());
         logger.info("Number of other callbacks: " + this.getOtherCallbackMethods().size());
@@ -276,7 +282,7 @@ public class Viewer {
         logger.info("Number of UI controls: " + this.uiControls.getControls().size());
     }
 
-    public void printCallbackTable() {
+    public void printCallbackTable() throws XmlPullParserException, IOException {
         String separator = "--------------------------------------------------------------------------------";
         String stringFormat = "\t%-15s\t%-35s\t%-15s\t%-15s\n";
 
@@ -322,7 +328,7 @@ public class Viewer {
         return lifecycleMethods;
     }
 
-    private Set<SootMethod> filterListenerMethods(File callbacksFile) {
+    private Set<SootMethod> filterListenerMethods(File callbacksFile) throws FileNotFoundException {
         Set<SootMethod> listenerMethods = new HashSet<>();
 
         if (this.filteredMethods == null) {
@@ -339,7 +345,7 @@ public class Viewer {
         return listenerMethods;
     }
 
-    private Set<SootMethod> filterOtherCallbackMethods(File callbacksFile) {
+    private Set<SootMethod> filterOtherCallbackMethods(File callbacksFile) throws FileNotFoundException {
         Set<SootMethod> callbackMethods = new HashSet<>();
 
         if (this.filteredMethods == null) {
@@ -356,7 +362,7 @@ public class Viewer {
         return callbackMethods;
     }
 
-    private Set<SootMethod> filterPossibleCallbackMethods(File callbacksFile) {
+    private Set<SootMethod> filterPossibleCallbackMethods(File callbacksFile) throws FileNotFoundException {
         Set<SootMethod> callbackMethods = new HashSet<>();
 
         if (this.filteredMethods == null) {

@@ -17,25 +17,29 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class ControlVertexTest {
 
     private final String RESOURCE_NAME = "btn_click_A";
     private final int RESOURCE_ID = 123456789;
-    private final String SUMMARY = RESOURCE_NAME + "(" + RESOURCE_ID + ")";
-    private final String LABEL = "Control{control=" + SUMMARY + "}";
+    private final String SUMMARY = String.format("%s(%s)", RESOURCE_NAME, RESOURCE_ID);
+    private final String LABEL = String.format("Control{control=%s}", SUMMARY);
 
-    ControlVertex v;
+    private ControlVertex v;
 
     @Before
     public void setUp() {
-        ARSCFileParser.AbstractResource controlResource = mock(ARSCFileParser.AbstractResource.class);
-        when(controlResource.getResourceName()).thenReturn(RESOURCE_NAME);
-        when(controlResource.getResourceID()).thenReturn(RESOURCE_ID);
+        ARSCFileParser.AbstractResource resource = mock(ARSCFileParser.AbstractResource.class);
+        when(resource.getResourceName()).thenReturn(RESOURCE_NAME);
+        when(resource.getResourceID()).thenReturn(RESOURCE_ID);
 
         Control control = mock(Control.class);
-        when(control.getControlResource()).thenReturn(controlResource);
+        when(control.getControlResource()).thenReturn(resource);
 
-        v = new ControlVertex(control);
+        this.v = new ControlVertex(control);
     }
 
     @Test
@@ -66,7 +70,7 @@ public class ControlVertexTest {
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                "Control{label='" + LABEL + "', visit=false, localVisit=false, control=" + SUMMARY + "}",
+                String.format("Control{label='%s', visit=false, localVisit=false, control=%s}", LABEL, SUMMARY),
                 this.v.toString()
                     );
     }

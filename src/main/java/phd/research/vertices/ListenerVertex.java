@@ -5,11 +5,13 @@ import phd.research.enums.Shape;
 import phd.research.enums.Type;
 import soot.SootMethod;
 
+import java.io.Serializable;
+
 /**
  * @author Jordan Doyle
  */
 
-public class ListenerVertex extends MethodVertex {
+public class ListenerVertex extends MethodVertex implements Serializable {
 
     public ListenerVertex(SootMethod method) {
         super(Type.listener, method);
@@ -27,7 +29,8 @@ public class ListenerVertex extends MethodVertex {
 
     @Override
     public String toString() {
-        return "Listener{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", method=" + this.getMethod().getSignature() + "}";
+        return String.format("Listener{label='%s', visit=%s, localVisit=%s, method=%s}", super.getLabel(),
+                super.hasVisit(), super.hasLocalVisit(), this.getMethod().getSignature()
+                            );
     }
 }

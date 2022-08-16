@@ -27,7 +27,7 @@ public class Vertex implements Serializable {
     private boolean localVisit;
 
     public Vertex(Type type) {
-        this(type, "Vertex{type=" + type + "}");
+        this(type, String.format("Vertex{type=%s}", type));
     }
 
     public Vertex(Type type, String label) {
@@ -95,7 +95,9 @@ public class Vertex implements Serializable {
 
     @Override
     public String toString() {
-        return "Vertex{type=" + type + ", label='" + label + "', visit=" + visit + ", localVisit=" + localVisit + "}";
+        return String.format("%s{type=%s, label='%s', visit=%s, localVisit=%s}", getClass().getSimpleName(), this.type,
+                this.label, this.visit, this.localVisit
+                            );
     }
 
     @Override

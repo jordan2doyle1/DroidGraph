@@ -12,20 +12,24 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class UnitVertexTest {
 
-    // TODO: All tests failing because I can't mock a toString() method. Need to find a better way of adding the unit
-    //  object to the label and toString() method.
+    // TODO: Fix Failing Tests: I can't mock a toString() method. Need to find a different way representing the Unit
+    //  object in the label and toString() method.
 
     private final String SUMMARY = "";
     private final String LABEL = "Unit{unit=}";
 
-    UnitVertex v;
+    private UnitVertex v;
 
     @Before
     public void setUp() {
         Unit unit = mock(Unit.class);
-        v = new UnitVertex(unit);
+        this.v = new UnitVertex(unit);
     }
 
     @Test
@@ -54,7 +58,8 @@ public class UnitVertexTest {
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                "Unit{label='" + LABEL + "', visit=false, localVisit=false, unit=" + SUMMARY + "}", this.v.toString()
+                String.format("Unit{label='%s', visit=false, localVisit=false, unit=%s}", LABEL, SUMMARY),
+                this.v.toString()
                     );
     }
 

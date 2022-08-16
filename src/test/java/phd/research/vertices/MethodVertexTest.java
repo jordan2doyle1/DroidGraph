@@ -9,7 +9,7 @@ import phd.research.enums.Type;
 import soot.SootClass;
 import soot.SootMethod;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -17,17 +17,22 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class MethodVertexTest {
 
     private final String CLASS_NAME = "com_example_android_lifecycle_DummyMainMethod";
     private final String RETURN_TYPE = "void";
-    private final String METHOD = "dummyMainMethod";
+    private final String METHOD_NAME = "dummyMainMethod";
     private final String PARAM_TYPE = "android.view.View";
+    private final String LABEL =
+            String.format("Method{method=<DummyMainMethod: %s %s(View,View)>", RETURN_TYPE, METHOD_NAME);
     private final String SIGNATURE =
-            "<" + CLASS_NAME + ": " + RETURN_TYPE + " " + METHOD + "(" + PARAM_TYPE + "," + PARAM_TYPE + ")>";
-    private final String LABEL = "Method{method=<DummyMainMethod: " + RETURN_TYPE + " " + METHOD + "(View,View)>";
+            String.format("<%s: %s %s(%s,%s)>", CLASS_NAME, RETURN_TYPE, METHOD_NAME, PARAM_TYPE, PARAM_TYPE);
 
-    MethodVertex v;
+    private MethodVertex v;
 
     @Before
     public void setUp() {
@@ -41,24 +46,22 @@ public class MethodVertexTest {
 
         SootMethod method = mock(SootMethod.class);
         when(method.getSignature()).thenReturn(SIGNATURE);
-        when(method.getName()).thenReturn(METHOD);
+        when(method.getName()).thenReturn(METHOD_NAME);
         when(method.getDeclaringClass()).thenReturn(clazz);
         when(method.getParameterCount()).thenReturn(2);
         when(method.getReturnType()).thenReturn(returnType);
 
-        List<soot.Type> parameterList = new ArrayList<>();
-        parameterList.add(paramType);
-        parameterList.add(paramType);
+        List<soot.Type> parameterList = Arrays.asList(paramType, paramType);
         when(method.getParameterTypes()).thenReturn(parameterList);
 
-        v = new MethodVertex(method);
+        this.v = new MethodVertex(method);
     }
 
     @Test
     public void testConstructor() {
         assertEquals("Type should be 'method'.", Type.method, this.v.getType());
         assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
-        assertEquals("Wrong method returned.", METHOD, this.v.getMethod().getName());
+        assertEquals("Wrong method returned.", METHOD_NAME, this.v.getMethod().getName());
     }
 
     @Test(expected = NullPointerException.class)
@@ -81,14 +84,14 @@ public class MethodVertexTest {
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                "Method{label='" + LABEL + "', visit=false, localVisit=false, method=" + SIGNATURE + "}",
+                String.format("Method{label='%s', visit=false, localVisit=false, method=%s}", LABEL, SIGNATURE),
                 this.v.toString()
                     );
     }
 
     @Test
     public void testEquals() {
-        //TODO: Test Failing - Redefined superclass: Method{} should not equal superclass instance Vertex{} but it does.
+        //TODO: Fix Test: Redefined superclass: Method{} should not equal superclass instance Vertex{} but it does.
         EqualsVerifier.forClass(MethodVertex.class).withRedefinedSuperclass()
                 .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
                 .withIgnoredFields("visit", "localVisit").suppress(Warning.NONFINAL_FIELDS).verify();

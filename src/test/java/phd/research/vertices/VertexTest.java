@@ -11,15 +11,19 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class VertexTest {
 
     private final String LABEL = "Vertex{type=other}";
 
-    Vertex v;
+    private Vertex v;
 
     @Before
     public void setUp() {
-        v = new Vertex(Type.other, LABEL);
+        this.v = new Vertex(Type.other, LABEL);
     }
 
     @Test
@@ -78,7 +82,7 @@ public class VertexTest {
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                "Vertex{type=other, label='" + LABEL + "', visit=false, localVisit=false}", this.v.toString()
+                String.format("Vertex{type=other, label='%s', visit=false, localVisit=false}", LABEL), this.v.toString()
                     );
     }
 

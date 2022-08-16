@@ -9,6 +9,7 @@ import phd.research.enums.Style;
 import phd.research.enums.Type;
 import phd.research.graph.Control;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
@@ -16,7 +17,7 @@ import java.util.Objects;
  * @author Jordan Doyle
  */
 
-public class ControlVertex extends Vertex {
+public class ControlVertex extends Vertex implements Serializable {
 
     @NotNull
     private final Control control;
@@ -57,9 +58,10 @@ public class ControlVertex extends Vertex {
 
     @Override
     public String toString() {
-        return "Control{label='" + super.getLabel() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + ", control=" + control.getControlResource().getResourceName() + "(" +
-                control.getControlResource().getResourceID() + ")" + "}";
+        return String.format("Control{label='%s', visit=%s, localVisit=%s, control=%s}", super.getLabel(),
+                super.hasVisit(), super.hasLocalVisit(), this.control.getControlResource().getResourceName() + "(" +
+                        this.control.getControlResource().getResourceID() + ")"
+                            );
     }
 
     @Override
