@@ -94,7 +94,7 @@ public class MethodVertex extends Vertex implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -105,15 +105,24 @@ public class MethodVertex extends Vertex implements Serializable {
             return false;
         }
 
-        MethodVertex vertex = (MethodVertex) o;
+        MethodVertex that = (MethodVertex) o;
 
-        return method.equals(vertex.method);
+        if (!this.method.equals(that.method)) {
+            return false;
+        }
+
+        return that.canEqual(this);
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = super.hashCode();
         result = 31 * result + method.hashCode();
         return result;
+    }
+
+    @Override
+    public final boolean canEqual(Object o) {
+        return (o instanceof MethodVertex);
     }
 }

@@ -1,6 +1,7 @@
 package phd.research.vertices;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,7 +10,7 @@ import soot.Unit;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -18,11 +19,7 @@ import static org.mockito.Mockito.mock;
 
 public class UnitVertexTest {
 
-    // TODO: Fix Failing Tests: I can't mock a toString() method. Need to find a different way representing the Unit
-    //  object in the label and toString() method.
-
-    private final String SUMMARY = "";
-    private final String LABEL = "Unit{unit=}";
+    private final String LABEL_REGEX = "Unit\\{unit=.+}";
 
     private UnitVertex v;
 
@@ -35,8 +32,7 @@ public class UnitVertexTest {
     @Test
     public void testConstructor() {
         assertEquals("Type should be 'unit'.", Type.unit, this.v.getType());
-        assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
-        assertEquals("Wrong unit returned.", SUMMARY, this.v.getUnit().toString());
+        assertTrue("Wrong label returned.", this.v.getLabel().matches(LABEL_REGEX));
     }
 
     @Test(expected = NullPointerException.class)
@@ -45,11 +41,16 @@ public class UnitVertexTest {
     }
 
     @Test
-    public void getAttributes() {
+    public void testGetUnit() {
+        assertNotNull("Unit is null.", this.v.getUnit());
+    }
+
+    @Test
+    public void testGetAttributes() {
         Map<String, Attribute> attributes = this.v.getAttributes();
         assertEquals("Should be exactly 5 attributes.", 5, attributes.size());
         assertEquals("Wrong type attribute returned.", "unit", attributes.get("type").getValue());
-        assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
+        assertTrue("Wrong label attribute returned.", attributes.get("label").getValue().matches(LABEL_REGEX));
         assertEquals("Wrong color attribute returned.", "yellow", attributes.get("color").getValue());
         assertEquals("Wrong shape attribute returned.", "box", attributes.get("shape").getValue());
         assertEquals("Wrong style attribute returned.", "filled", attributes.get("style").getValue());
@@ -57,14 +58,13 @@ public class UnitVertexTest {
 
     @Test
     public void testToString() {
-        assertEquals("Wrong string value returned.",
-                String.format("Unit{label='%s', visit=false, localVisit=false, unit=%s}", LABEL, SUMMARY),
-                this.v.toString()
-                    );
+        String TO_STRING_REGEX = "Unit\\{label='Unit\\{unit=.+}', visit=false, localVisit=false, unit=.+}";
+        assertTrue("Wrong string value returned.", this.v.toString().matches(TO_STRING_REGEX));
     }
 
     @Test
     public void testEquals() {
-        EqualsVerifier.forClass(Vertex.class).withRedefinedSuperclass().verify();
+        EqualsVerifier.forClass(UnitVertex.class).withRedefinedSuperclass().withIgnoredFields("visit", "localVisit")
+                .suppress(Warning.NONFINAL_FIELDS).verify();
     }
 }

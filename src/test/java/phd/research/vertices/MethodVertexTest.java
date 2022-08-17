@@ -91,7 +91,6 @@ public class MethodVertexTest {
 
     @Test
     public void testEquals() {
-        //TODO: Fix Test: Redefined superclass: Method{} should not equal superclass instance Vertex{} but it does.
         EqualsVerifier.forClass(MethodVertex.class).withRedefinedSuperclass()
                 .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
                 .withIgnoredFields("visit", "localVisit").suppress(Warning.NONFINAL_FIELDS).verify();

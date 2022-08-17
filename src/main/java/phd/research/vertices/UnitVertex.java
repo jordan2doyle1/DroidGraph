@@ -64,7 +64,7 @@ public class UnitVertex extends Vertex implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -75,15 +75,24 @@ public class UnitVertex extends Vertex implements Serializable {
             return false;
         }
 
-        UnitVertex vertex = (UnitVertex) o;
+        UnitVertex that = (UnitVertex) o;
 
-        return unit.equals(vertex.unit);
+        if (!this.unit.equals(that.unit)) {
+            return false;
+        }
+
+        return that.canEqual(this);
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = super.hashCode();
         result = 31 * result + unit.hashCode();
         return result;
+    }
+
+    @Override
+    public final boolean canEqual(Object o) {
+        return (o instanceof UnitVertex);
     }
 }
