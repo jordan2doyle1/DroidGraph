@@ -6,12 +6,10 @@ import org.jgrapht.graph.DefaultEdge;
 import phd.research.vertices.UnitVertex;
 import phd.research.vertices.Vertex;
 import soot.Body;
-import soot.Unit;
 import soot.toolkits.graph.BriefUnitGraph;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * @author Jordan Doyle
@@ -33,36 +31,27 @@ public class UnitGraph extends BriefUnitGraph {
         return this.graph;
     }
 
-    public Set<Vertex> getRoots() {
-        Set<Vertex> rootVertices = new HashSet<>();
-
+    public Collection<Vertex> getRoots() {
         if (this.graph == null) {
             this.graph = generateGraph();
         }
 
-        for (Vertex vertex : this.graph.vertexSet()) {
-            if (this.graph.inDegreeOf(vertex) == 0) {
-                rootVertices.add(vertex);
-            }
-        }
-
-        return rootVertices;
+        return this.graph.vertexSet().stream().filter(v -> this.graph.inDegreeOf(v) == 0).collect(Collectors.toSet());
     }
 
     private Graph<Vertex, DefaultEdge> generateGraph() {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-        for (Unit unit : super.unitChain) {
+        super.unitChain.forEach(unit -> {
             UnitVertex vertex = new UnitVertex(unit);
             graph.addVertex(vertex);
 
-            List<Unit> successors = super.getSuccsOf(unit);
-            for (Unit nextUnit : successors) {
+            super.getSuccsOf(unit).forEach(nextUnit -> {
                 UnitVertex nextVertex = new UnitVertex(nextUnit);
                 graph.addVertex(nextVertex);
                 graph.addEdge(vertex, nextVertex);
-            }
-        }
+            });
+        });
 
         return graph;
     }

@@ -409,7 +409,7 @@ public class DroidGraph {
                     Graph<Vertex, DefaultEdge> methodSubGraph = unitGraph.getGraph();
                     Graphs.addGraph(graph, methodSubGraph);
 
-                    Set<Vertex> roots = unitGraph.getRoots();
+                    Collection<Vertex> roots = unitGraph.getRoots();
                     for (Vertex root : roots) {
                         graph.addEdge(vertex, root);
                     }
