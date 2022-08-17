@@ -285,7 +285,7 @@ public class DroidGraph {
 
 
         for (SootClass sootClass : classes) {
-            if (Filter.isValidClass(null, null, sootClass)) {
+            if (Filter.isValidClass(sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
                     Type methodType = this.getMethodType(method);
@@ -318,8 +318,7 @@ public class DroidGraph {
         while (sourceItr.hasNext()) {
             SootMethod srcMethod = sourceItr.next().method();
 
-            if (Filter.isValidMethod(null, null, srcMethod) ||
-                    srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
+            if (Filter.isValidMethod(srcMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                 Type methodType = this.getMethodType(srcMethod);
                 Vertex srcVertex = null;
                 switch (methodType) {
@@ -347,8 +346,7 @@ public class DroidGraph {
                     while (edgeItr.hasNext()) {
                         SootMethod tgtMethod = edgeItr.next().tgt();
 
-                        if (Filter.isValidMethod(null, null, tgtMethod) ||
-                                srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
+                        if (Filter.isValidMethod(tgtMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                             methodType = this.getMethodType(tgtMethod);
                             Vertex tgtVertex = null;
                             switch (methodType) {

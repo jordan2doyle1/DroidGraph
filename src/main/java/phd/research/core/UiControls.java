@@ -464,7 +464,7 @@ public class UiControls {
 
     protected SootClass findFragmentLayoutClass(int layoutId) {
         for (SootClass clazz : Scene.v().getClasses()) {
-            if (Filter.isValidClass(null, null, clazz)) {
+            if (Filter.isValidClass(clazz)) {
                 SootClass layoutClass = findInflate(layoutId, clazz);
 
                 if (layoutClass != null) {

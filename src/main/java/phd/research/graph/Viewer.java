@@ -119,10 +119,10 @@ public class Viewer {
         Set<SootMethod> acceptedMethods = new HashSet<>();
 
         for (SootClass sootClass : classes) {
-            if (Filter.isValidClass(null, null, sootClass)) {
+            if (Filter.isValidClass(sootClass)) {
                 List<SootMethod> methods = sootClass.getMethods();
                 for (SootMethod method : methods) {
-                    if (Filter.isValidMethod(null, null, method)) {
+                    if (Filter.isValidMethod(method)) {
                         acceptedMethods.add(method);
                     }
                 }
@@ -141,7 +141,7 @@ public class Viewer {
         Set<SootClass> filteredClasses = new HashSet<>();
 
         for (SootClass sootClass : allClasses) {
-            if (Filter.isValidClass(null, null, sootClass)) {
+            if (Filter.isValidClass(sootClass)) {
                 filteredClasses.add(sootClass);
             }
         }

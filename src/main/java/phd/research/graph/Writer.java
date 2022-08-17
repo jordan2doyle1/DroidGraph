@@ -52,7 +52,7 @@ public class Writer {
 
     public static void outputMethods(File directory, Format format) throws IOException {
         for (SootClass clazz : Scene.v().getClasses()) {
-            if (Filter.isValidClass(null, null, clazz)) {
+            if (Filter.isValidClass(clazz)) {
                 for (SootMethod method : clazz.getMethods()) {
                     if (method.hasActiveBody()) {
                         Body body = method.getActiveBody();
