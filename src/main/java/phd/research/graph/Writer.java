@@ -11,7 +11,10 @@ import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -20,16 +23,8 @@ import java.util.Collection;
 
 public class Writer {
 
-    private static final String CONTENT_DIRECTORY_NAME = "CONTENT";
-    private static final String DOT_DIRECTORY = "DOT";
-    private static final String DOT_EXTENSION = ".dot";
-    private static final String PNG_EXTENSION = ".png";
-    private static final String JSON_DIRECTORY = "JSON";
-    private static final String JSON_EXTENSION = ".json";
-
-
     public static void writeGraph(Format format, File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
-            throws IOException, InterruptedException {
+            throws IOException {
         switch (format) {
             case dot:
                 exportDOT(directory, fileName, graph);
@@ -41,6 +36,33 @@ public class Writer {
                 exportDOT(directory, fileName, graph);
                 exportJSON(directory, fileName, graph);
                 break;
+        }
+    }
+
+    public static void writeContent(File directory, String fileName, Collection<?> collection) throws IOException {
+        File file = new File(directory + File.separator + "CONTENT" + File.separator + fileName);
+        createFile(file);
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        for (Object item : collection) {
+            writer.write(item.toString() + "\n");
+        }
+        writer.close();
+    }
+
+    public static void outputMethods(File directory, Format format) throws IOException {
+        for (SootClass clazz : Scene.v().getClasses()) {
+            if (Filter.isValidClass(null, null, clazz)) {
+                for (SootMethod method : clazz.getMethods()) {
+                    if (method.hasActiveBody()) {
+                        Body body = method.getActiveBody();
+                        UnitGraph unitGraph = new UnitGraph(body);
+
+                        String fileName = clazz.getShortName() + "_" + method.getName();
+                        Writer.writeGraph(format, directory, fileName, unitGraph.getGraph());
+                    }
+                }
+            }
         }
     }
 
@@ -58,80 +80,29 @@ public class Writer {
         }
     }
 
-    public static void writeContent(File directory, String fileName, Collection<?> collection) throws IOException {
-        File outputFile = new File(directory + File.separator + CONTENT_DIRECTORY_NAME + File.separator + fileName);
-        createFile(outputFile);
-
-        BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
-        for (Object item : collection) {
-            writer.write(item.toString() + "\n");
-        }
-        writer.close();
-    }
-
-    public static void outputMethods(File directory, Format format) throws Exception {
-        for (SootClass sootClass : Scene.v().getClasses()) {
-            if (Filter.isValidClass(null, null, sootClass)) {
-                for (SootMethod method : sootClass.getMethods()) {
-                    if (method.hasActiveBody()) {
-                        Body body = method.getActiveBody();
-                        UnitGraph unitGraph = new UnitGraph(body);
-
-                        String name = sootClass.getName().substring(sootClass.getName().lastIndexOf(".") + 1) + "_" +
-                                method.getName();
-
-                        name = name.replaceAll(":", "_");
-                        Writer.writeGraph(format, directory, name, unitGraph.getGraph());
-                    }
-                }
-            }
-        }
-    }
-
     private static void exportDOT(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
-            throws IOException, InterruptedException {
-        File dotFile = new File(directory + File.separator + DOT_DIRECTORY + File.separator + fileName + DOT_EXTENSION);
-        createFile(dotFile);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(dotFile));
+            throws IOException {
+        File file = new File(directory + File.separator + "DOT" + File.separator + fileName + ".dot");
+        createFile(file);
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
         DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(v -> String.valueOf(v.hashCode()));
         exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
 
         writer.close();
-
-        File pngFile = new File(directory + File.separator + DOT_DIRECTORY + File.separator + fileName + PNG_EXTENSION);
-        String command = "dot -T png " + dotFile + " -o " + pngFile;
-        executeCommand(command);
     }
 
     private static void exportJSON(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
-        File jsonFile =
-                new File(directory + File.separator + JSON_DIRECTORY + File.separator + fileName + JSON_EXTENSION);
-        createFile(jsonFile);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(jsonFile));
+        File file = new File(directory + File.separator + "JSON" + File.separator + fileName + ".json");
+        createFile(file);
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
         JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(v -> String.valueOf(v.hashCode()));
         exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
 
         writer.close();
-    }
-
-    @SuppressWarnings("UnusedReturnValue")
-    private static String executeCommand(String command) throws IOException, InterruptedException {
-        StringBuilder output = new StringBuilder();
-        Process process = Runtime.getRuntime().exec(command);
-        process.waitFor();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-        String line;
-        while ((line = reader.readLine()) != null) {
-            output.append(line).append("\n");
-        }
-
-        // "Error executing command \"" + command + "\": " + e.getMessage()
-        return output.toString();
     }
 }
