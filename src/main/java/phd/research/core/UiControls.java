@@ -348,7 +348,8 @@ public class UiControls {
                     InvokeExpr invokeExpr = stmt.getInvokeExpr();
                     if (invokeExpr.getMethod().getName().equals("inflate")) {
                         // System.out.println(invokeExpr);
-                        if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
+                        if (invokeExpr.getArgCount() > 0 &&
+                                invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
                             searchStatus.foundClass(true);
                         }
                     }
@@ -365,7 +366,8 @@ public class UiControls {
                             InvokeExpr invokeExpr = stmt.getInvokeExpr();
                             if (invokeExpr.getMethod().getName().equals("inflate")) {
                                 // System.out.println(invokeExpr);
-                                if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
+                                if (invokeExpr.getArgCount() > 0 &&
+                                        invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
                                     searchStatus.foundClass(true);
                                 }
                             }
