@@ -34,8 +34,7 @@ public class FrameworkMain {
         options.addOption(Option.builder("f").longOpt("output-format").hasArg().numberOfArgs(1).argName("FORMAT")
                 .desc("Graph output format ('DOT','JSON','ALL').").build());
         options.addOption(Option.builder("c").longOpt("clean-directory").desc("Clean output directory.").build());
-        options.addOption(Option.builder("t").longOpt("terminal-output").desc("Print output to terminal.").build());
-        options.addOption(Option.builder("s").longOpt("soot-content").desc("Output soot content files.").build());
+        options.addOption(Option.builder("s").longOpt("output-analysis").desc("Output soot content files.").build());
         options.addOption(Option.builder("g").longOpt("generate-graph").desc("Generate control-flow graph.").build());
         options.addOption(Option.builder("ug").longOpt("unit-graph").desc("Output Unit Graphs.").build());
         options.addOption(Option.builder("cg").longOpt("call-graph").desc("Output Call Graph.").build());
@@ -107,11 +106,10 @@ public class FrameworkMain {
         }
 
         boolean generateGraph = cmd.hasOption("g");
-        boolean consoleOutput = cmd.hasOption("t");
-        boolean outputContent = cmd.hasOption("s");
+        boolean outputAnalysis = cmd.hasOption("s");
         boolean outputUnitGraphs = cmd.hasOption("ug");
         boolean outputCallGraph = cmd.hasOption("cg");
-        boolean outputControlFlowGraph = cmd.hasOption("cfg");
+        boolean outputControlFlowGraph = cmd.hasOption("cf");
 
         if (cmd.hasOption("c")) {
             try {
@@ -141,30 +139,16 @@ public class FrameworkMain {
         }
         logger.info("(" + cTimer.end() + ") UI control processing took " + cTimer.secondsDuration() + " second(s).");
 
-        Viewer viewer = null;
-        if (outputContent) {
+        if (outputAnalysis) {
             logger.info("Starting file output... (" + cTimer.start(true) + ")");
-            viewer = new Viewer(callbackFile, uiControls);
-            try {
-                viewer.writeContentsToFile(outputDirectory);
-            } catch (IOException | XmlPullParserException e) {
-                logger.error("Problem writing content to output file: " + e.getMessage());
-            }
-            logger.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
-        }
-
-        if (consoleOutput) {
-            if (viewer == null) {
-                viewer = new Viewer(callbackFile, uiControls);
-            }
-
+            Viewer viewer = new Viewer(callbackFile, uiControls);
             try {
                 viewer.printAppDetails(apk);
-                viewer.printCallbackTable();
-                viewer.printUnassignedCallbacks();
-            } catch (XmlPullParserException | IOException e) {
-                logger.error("Problem getting app details: " + e.getMessage());
+                viewer.writeAnalysisToFile(outputDirectory);
+            } catch (IOException | XmlPullParserException e) {
+                logger.error("Problem writing app analysis to output file: " + e.getMessage());
             }
+            logger.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
         }
 
         if (generateGraph) {
@@ -207,10 +191,10 @@ public class FrameworkMain {
                 logger.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
             }
 
-            if (consoleOutput) {
+            if (outputAnalysis) {
                 try {
-                    Viewer.printCallGraphDetails(droidGraph.getCallGraph());
-                    Viewer.printCFGDetails(droidGraph.getControlFlowGraph());
+                    Viewer.outputCGDetails(outputDirectory, droidGraph.getCallGraph());
+                    Viewer.outputCFGDetails(outputDirectory, droidGraph.getControlFlowGraph());
                 } catch (IOException | XmlPullParserException e) {
                     logger.error("Problem getting graphs: " + e.getMessage());
                 }

@@ -38,12 +38,13 @@ public class Filter {
         return Filter.isListenerMethod(callbacks.getCallbackMethods(), method);
     }
 
-    public static boolean isListenerMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
+    public static boolean isListenerMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks,
+            SootMethod method) {
         SootClass parentClass = getParentClass(method);
         for (AndroidCallbackDefinition callbackDefinition : callbacks.get(parentClass)) {
             if (callbackDefinition.getTargetMethod().equals(method) &&
                     callbackDefinition.getCallbackType() == AndroidCallbackDefinition.CallbackType.Widget) {
-                    return true;
+                return true;
             }
         }
         return false;
@@ -54,7 +55,8 @@ public class Filter {
         return Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method);
     }
 
-    public static boolean isOtherCallbackMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
+    public static boolean isOtherCallbackMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks,
+            SootMethod method) {
         if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks, method)) {
             SootClass methodClass = Filter.getParentClass(method);
             for (AndroidCallbackDefinition callbackDefinition : callbacks.get(methodClass)) {
@@ -71,8 +73,10 @@ public class Filter {
         return Filter.isPossibleListenerMethod(callbacks.getCallbackMethods(), method);
     }
 
-    public static boolean isPossibleListenerMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks, SootMethod method) {
-        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks, method) && !Filter.isOtherCallbackMethod(callbacks, method)) {
+    public static boolean isPossibleListenerMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks,
+            SootMethod method) {
+        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks, method) &&
+                !Filter.isOtherCallbackMethod(callbacks, method)) {
             if ((!method.toString().startsWith("<androidx"))) {
                 for (Type paramType : method.getParameterTypes()) {
                     if (paramType.toString().equals("android.view.View")) {

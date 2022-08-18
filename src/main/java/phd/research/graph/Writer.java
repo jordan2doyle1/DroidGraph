@@ -39,8 +39,16 @@ public class Writer {
         }
     }
 
-    public static void writeContent(File directory, String fileName, Collection<?> collection) throws IOException {
-        File file = new File(directory + File.separator + "CONTENT" + File.separator + fileName);
+    public static void writeString(File directory, String fileName, String content) throws IOException {
+        File file = new File(directory + File.separator + fileName);
+        createFile(file);
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        writer.write(content);
+        writer.close();
+    }
+
+    public static void writeCollection(File directory, String fileName, Collection<?> collection) throws IOException {
+        File file = new File(directory + File.separator + fileName);
         createFile(file);
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));

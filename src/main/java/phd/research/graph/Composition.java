@@ -2,6 +2,7 @@ package phd.research.graph;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
+import phd.research.helper.StringTable;
 import phd.research.vertices.Vertex;
 
 import java.util.Set;
@@ -49,32 +50,14 @@ public class Composition {
         }
     }
 
-    public String toTableString(String tableTitle) {
-        String separator = "--------------------------------------------------------------------------------";
-        String stringFormat = "\t%-40s\t%-40s\n";
-        boolean even = true;
+    public String toTableString() {
+        String[][] data = new String[][]{{"TYPE", "COUNT"}, {"Vertex", String.valueOf(this.vertex)},
+                {"Edge", String.valueOf(this.edge)}, {"Lifecycle", String.valueOf(this.lifecycle)},
+                {"Listener", String.valueOf(this.listener)}, {"Other", String.valueOf(this.other)},
+                {"Dummy", String.valueOf(this.dummy)}, {"Method", String.valueOf(this.method)},
+                {"Interface", String.valueOf(this.control)}};
 
-        int numDashes = (80 - (tableTitle.length() + 2));
-        if ((numDashes % 2) != 0) {
-            numDashes = numDashes - 1;
-            even = false;
-        }
-
-        StringBuilder dashStringBuilder = new StringBuilder();
-        for (int i = 0; i < (numDashes / 2); i++) {
-            dashStringBuilder.append("-");
-        }
-
-        String before = even ? dashStringBuilder + " " : dashStringBuilder + "- ";
-        String after = " " + dashStringBuilder;
-
-        return before + tableTitle + after + String.format("\n" + stringFormat, "Vertex", this.vertex) +
-                String.format(stringFormat, "Edge", this.edge) +
-                String.format(stringFormat, "Lifecycle", this.lifecycle) +
-                String.format(stringFormat, "Listener", this.listener) +
-                String.format(stringFormat, "Other", this.other) + String.format(stringFormat, "Method", this.method) +
-                String.format(stringFormat, "Dummy", this.dummy) +
-                String.format(stringFormat, "Interface", this.control) + separator;
+        return StringTable.tableWithLines(data, true);
     }
 
     @Override

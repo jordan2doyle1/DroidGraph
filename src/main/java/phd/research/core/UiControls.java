@@ -21,6 +21,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class UiControls {
 
     private static final Logger logger = LoggerFactory.getLogger(UiControls.class);
