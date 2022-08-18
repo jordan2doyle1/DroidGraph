@@ -22,11 +22,10 @@ public class StringTable {
         String line = getHeaderLine(columnLengths);
 
         StringBuilder stringBuilder = new StringBuilder(line);
-        Arrays.stream(data).limit(1)
-                .forEach(a -> stringBuilder.append(String.format(formatString, (Object[]) a)));
+        Arrays.stream(data).limit(1).forEach(a -> stringBuilder.append(String.format(formatString, (Object[]) a)));
         stringBuilder.append(line);
 
-        Stream.iterate(1, i -> ++i).limit(data.length -1)
+        Stream.iterate(1, i -> ++i).limit(data.length - 1)
                 .forEach(a -> stringBuilder.append(String.format(formatString, (Object[]) data[a])));
         stringBuilder.append(line);
         return stringBuilder.toString();
@@ -69,8 +68,7 @@ public class StringTable {
         String line = getHeaderLine(columnLengths);
 
         StringBuilder stringBuilder = new StringBuilder(line);
-        Arrays.stream(finalData).limit(1)
-                .forEach(a -> stringBuilder.append(String.format(formatString, (Object[]) a)));
+        Arrays.stream(finalData).limit(1).forEach(a -> stringBuilder.append(String.format(formatString, (Object[]) a)));
         stringBuilder.append(line);
 
         Stream.iterate(1, i -> ++i).limit(finalData.length - 1)

@@ -8,8 +8,6 @@ import soot.jimple.infoflow.InfoflowConfiguration;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.axml.AXmlNode;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
@@ -17,16 +15,18 @@ import soot.jimple.infoflow.cfg.LibraryClassPatcher;
 import soot.options.Options;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
 public class FlowDroidUtils {
 
-    //TODO: Write getFragmentClasses(). Method to retrieve only the classes implementing fragments.
-
     public static final String CALLBACK_FILE_NAME = "CollectedCallbacks";
-    public static final String SOURCE_SINK_FILE_NAME = "SourcesAndSinks.txt";
+
+    public static String getBasePackageName(File apk) throws XmlPullParserException, IOException {
+        try (ProcessManifest manifest = new ProcessManifest(apk)) {
+            return manifest.getPackageName();
+        }
+    }
 
     public static Set<SootClass> getLaunchActivities(File apk) throws XmlPullParserException, IOException {
         try (ProcessManifest manifest = new ProcessManifest(apk)) {
@@ -45,10 +45,10 @@ public class FlowDroidUtils {
         }
     }
 
-    public static String getBasePackageName(File apk) throws XmlPullParserException, IOException {
-        try (ProcessManifest manifest = new ProcessManifest(apk)) {
-            return manifest.getPackageName();
-        }
+    public static ARSCFileParser getResources(File apk) throws IOException {
+        ARSCFileParser resources = new ARSCFileParser();
+        resources.parse(apk.getAbsolutePath());
+        return resources;
     }
 
     public static Set<SootClass> getEntryPointClasses(File apk) throws XmlPullParserException, IOException {
@@ -64,22 +64,12 @@ public class FlowDroidUtils {
         }
     }
 
-    public static ARSCFileParser getResources(File apk) throws IOException {
-        ARSCFileParser resources = new ARSCFileParser();
-        resources.parse(apk.getAbsolutePath());
-        return resources;
-    }
-
     public static LayoutFileParser getLayoutFileParser(File apk) throws XmlPullParserException, IOException {
         try (ProcessManifest manifest = new ProcessManifest(apk)) {
             LayoutFileParser layoutParser = new LayoutFileParser(manifest.getPackageName(), getResources(apk));
             layoutParser.parseLayoutFileDirect(apk.getAbsolutePath());
             return layoutParser;
         }
-    }
-
-    public static CollectedCallbacks readCollectedCallbacks(File callbackFile) throws FileNotFoundException {
-        return CollectedCallbacksSerializer.deserialize(callbackFile);
     }
 
     public static Format stringToFormat(String format) throws RuntimeException {
@@ -95,15 +85,15 @@ public class FlowDroidUtils {
         }
     }
 
-    private static void initializeSoot(File apk, File androidPlatform, File outputDirectory) {
-        G.reset();  // Clean up any old Soot instance we may have
+    private static void initializeSoot(File apk, File platform, File outputDirectory) {
+        G.reset();
 
         Options.v().set_no_bodies_for_excluded(true);
         Options.v().set_allow_phantom_refs(true);
         Options.v().set_output_format(soot.options.Options.output_format_none);
         Options.v().set_whole_program(true);
         Options.v().set_process_dir(Collections.singletonList(apk.getAbsolutePath()));
-        Options.v().set_android_jars(androidPlatform.getAbsolutePath());
+        Options.v().set_android_jars(platform.getAbsolutePath());
         Options.v().set_src_prec(soot.options.Options.src_prec_apk_class_jimple);
         Options.v().set_keep_offset(false);
         Options.v().set_keep_line_number(false);
@@ -112,23 +102,18 @@ public class FlowDroidUtils {
         Options.v().set_ignore_resolution_errors(true);
         Options.v().set_output_dir(outputDirectory.getAbsolutePath());
 
-        // Set Soot configuration options. Note this needs to be done before computing the classpath.
-        // (SA) Exclude classes of android.* will cause layout class cannot be loaded for layout file based callback
-        // analysis. Added back the exclusion, because removing it breaks calls to Android SDK stubs.
+        // Removed android.*, androidx.* exclusions because they cause errors and bugs with androidx fragment classes.
         List<String> excludeList = new LinkedList<>(
                 Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*", "org.eclipse.*", "soot.*"));
-        // "android.*", "androidx.*"
         Options.v().set_exclude(excludeList);
 
-        Options.v().set_soot_classpath(
-                Scene.v().getAndroidJarPath(androidPlatform.getAbsolutePath(), apk.getAbsolutePath()));
+        Options.v().set_soot_classpath(Scene.v().getAndroidJarPath(platform.getAbsolutePath(), apk.getAbsolutePath()));
         Main.v().autoSetOptions();
 
         Scene.v().addBasicClass("android.view.View", soot.SootClass.BODIES);
         Scene.v().loadNecessaryClasses();
 
-        //This pack allows you to insert pre-processors that are run before call-graph construction. Only enabled in
-        // whole-program mode.
+        // Allows you to add pre-processors that run before call-graph construction. Only enabled in whole-program mode.
         PackManager.v().getPack("wjpp").apply();
 
         // Patch the call graph to support additional edges. We do this now, because during callback discovery, the
@@ -137,27 +122,25 @@ public class FlowDroidUtils {
         patcher.patchLibraries();
     }
 
-    private static InfoflowAndroidConfiguration getFlowDroidConfiguration(File apk, File androidPlatform,
-            File outputDirectory) {
+    private static InfoflowAndroidConfiguration getFlowDroidConfiguration(File apk, File platform, File directory) {
         InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
         config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
         config.setCodeEliminationMode(InfoflowConfiguration.CodeEliminationMode.NoCodeElimination);
         config.setCallgraphAlgorithm(InfoflowConfiguration.CallgraphAlgorithm.SPARK);
         config.setMergeDexFiles(true);
-        config.getAnalysisFileConfig().setAndroidPlatformDir(androidPlatform.getAbsolutePath());
-        config.getAnalysisFileConfig()
-                .setSourceSinkFile(System.getProperty("user.dir") + File.separator + SOURCE_SINK_FILE_NAME);
+        config.getAnalysisFileConfig().setAndroidPlatformDir(platform.getAbsolutePath());
+        String sourceAndSinkFileName = System.getProperty("user.dir") + File.separator + "SourcesAndSinks.txt";
+        config.getAnalysisFileConfig().setSourceSinkFile(sourceAndSinkFileName);
         config.getAnalysisFileConfig().setTargetAPKFile(apk.getAbsolutePath());
         config.getCallbackConfig().setSerializeCallbacks(true);
-        config.getCallbackConfig().setCallbacksFile(outputDirectory + File.separator + CALLBACK_FILE_NAME);
+        config.getCallbackConfig().setCallbacksFile(directory + File.separator + CALLBACK_FILE_NAME);
         return config;
     }
 
     @API
-    public static void runFlowDroid(File apk, File androidPlatform, File outputDirectory) {
-        FlowDroidUtils.initializeSoot(apk, androidPlatform, outputDirectory);
-        InfoflowAndroidConfiguration configuration =
-                FlowDroidUtils.getFlowDroidConfiguration(apk, androidPlatform, outputDirectory);
+    public static void runFlowDroid(File apk, File platform, File directory) {
+        FlowDroidUtils.initializeSoot(apk, platform, directory);
+        InfoflowAndroidConfiguration configuration = FlowDroidUtils.getFlowDroidConfiguration(apk, platform, directory);
 
         SetupApplication application = new SetupApplication(configuration);
         application.constructCallgraph();

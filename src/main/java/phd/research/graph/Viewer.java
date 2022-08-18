@@ -181,8 +181,8 @@ public class Viewer {
     }
 
     public void writeAnalysisToFile(File directory) throws XmlPullParserException, IOException {
-        // TODO: Verify file contents for ActivityLifecycle, MoClock and VolumeControl.
-        // TODO: Make sure method list does not include other method types. No duplicates.
+        //TODO: Verify file contents for ActivityLifecycle, MoClock and VolumeControl.
+        //TODO: Make sure method list does not include other method types. No duplicates.
         Writer.writeCollection(directory, "Class_List", this.getFilteredClasses());
         Writer.writeCollection(directory, "Methods_List", this.getFilteredMethods());
         Writer.writeCollection(directory, "Lifecycle_List", this.getLifecycleMethods());
@@ -195,7 +195,7 @@ public class Viewer {
     }
 
     public void printAppDetails(File apk) throws XmlPullParserException, IOException {
-        // TODO: Make sure method count does not include other method types. No duplicates.
+        //TODO: Make sure method count does not include other method types. No duplicates.
         logger.info(String.format("Package name: %s", FlowDroidUtils.getBasePackageName(apk)));
         logger.info(String.format("Found %s entry points.", FlowDroidUtils.getEntryPointClasses(apk).size()));
         logger.info(String.format("Found %s launch activities.", FlowDroidUtils.getLaunchActivities(apk).size()));

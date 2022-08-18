@@ -16,6 +16,7 @@ import phd.research.helper.API;
 import phd.research.vertices.*;
 import soot.*;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
+import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
@@ -187,7 +188,7 @@ public class DroidGraph {
     }
 
     private Type getMethodType(SootMethod method) throws FileNotFoundException {
-        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(this.collectedCallbacksFile);
+        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(this.collectedCallbacksFile);
 
         if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
             return Type.dummy;
@@ -346,7 +347,8 @@ public class DroidGraph {
                     while (edgeItr.hasNext()) {
                         SootMethod tgtMethod = edgeItr.next().tgt();
 
-                        if (Filter.isValidMethod(tgtMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
+                        if (Filter.isValidMethod(tgtMethod) ||
+                                srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
                             methodType = this.getMethodType(tgtMethod);
                             Vertex tgtVertex = null;
                             switch (methodType) {

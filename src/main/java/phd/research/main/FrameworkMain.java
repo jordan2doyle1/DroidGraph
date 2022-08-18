@@ -1,4 +1,4 @@
-package phd.research.core;
+package phd.research.main;
 
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
@@ -6,6 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.Timer;
+import phd.research.core.DroidGraph;
+import phd.research.core.FlowDroidUtils;
+import phd.research.core.UiControls;
 import phd.research.enums.Format;
 import phd.research.graph.Viewer;
 import phd.research.graph.Writer;
@@ -135,7 +138,7 @@ public class FrameworkMain {
         try {
             uiControls = new UiControls(callbackFile, apk);
         } catch (XmlPullParserException | IOException e) {
-            logger.error("Problem reading apk manifest: " + e.getMessage());
+            logger.error("Failure while parsing app interface: " + e.getMessage());
         }
         logger.info("(" + cTimer.end() + ") UI control processing took " + cTimer.secondsDuration() + " second(s).");
 
@@ -146,7 +149,7 @@ public class FrameworkMain {
                 viewer.printAppDetails(apk);
                 viewer.writeAnalysisToFile(outputDirectory);
             } catch (IOException | XmlPullParserException e) {
-                logger.error("Problem writing app analysis to output file: " + e.getMessage());
+                logger.error("Failed to write app analysis to output file: " + e.getMessage());
             }
             logger.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
         }
@@ -157,7 +160,8 @@ public class FrameworkMain {
             try {
                 droidGraph.generateGraphs();
             } catch (IOException | XmlPullParserException e) {
-                logger.error("Problem generating graphs: " + e.getMessage());
+                logger.error("Failure while generating Call Graph and Control Flow Graph: " + e.getMessage());
+                System.exit(60);
             }
             logger.info("(" + cTimer.end() + ") Graph generation took " + cTimer.secondsDuration() + " second(s).");
 
@@ -196,7 +200,7 @@ public class FrameworkMain {
                     Viewer.outputCGDetails(outputDirectory, droidGraph.getCallGraph());
                     Viewer.outputCFGDetails(outputDirectory, droidGraph.getControlFlowGraph());
                 } catch (IOException | XmlPullParserException e) {
-                    logger.error("Problem getting graphs: " + e.getMessage());
+                    logger.error("Failed to write graph composition details to output file: " + e.getMessage());
                 }
             }
         }

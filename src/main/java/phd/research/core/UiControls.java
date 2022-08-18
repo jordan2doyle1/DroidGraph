@@ -10,6 +10,7 @@ import soot.*;
 import soot.jimple.*;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
+import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
@@ -56,7 +57,7 @@ public class UiControls {
 
     protected static SootMethod searchForCallbackMethod(File callbacksFile, String methodName)
             throws FileNotFoundException {
-        CollectedCallbacks callbacks = FlowDroidUtils.readCollectedCallbacks(callbacksFile);
+        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbacksFile);
         SootMethod foundMethod = null;
 
         for (SootClass currentClass : callbacks.getCallbackMethods().keySet()) {
@@ -244,7 +245,8 @@ public class UiControls {
                         if (control.getAdditionalAttributes() != null) {
                             for (String key : control.getAdditionalAttributes().keySet()) {
                                 if (key.equals("menu")) {
-                                    if ((int) control.getAdditionalAttributes().get(key) == layoutResource.getResourceID()) {
+                                    if ((int) control.getAdditionalAttributes().get(key) ==
+                                            layoutResource.getResourceID()) {
                                         ARSCFileParser.AbstractResource layout =
                                                 resources.findResourceByName("layout", getResourceName(file));
                                         callbackClass = this.findLayoutClass(layout.getResourceID());

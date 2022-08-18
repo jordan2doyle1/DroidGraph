@@ -130,7 +130,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>phd.research.core.FrameworkMain</mainClass>
+                            <mainClass>phd.research.main.FrameworkMain</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
