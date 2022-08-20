@@ -52,6 +52,7 @@ public class Writer {
         createFile(file);
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        writer.write("Found " + collection.size() + " item(s).\n\n");
         for (Object item : collection) {
             writer.write(item.toString() + "\n");
         }

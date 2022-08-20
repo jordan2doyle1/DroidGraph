@@ -146,8 +146,7 @@ public class FrameworkMain {
             logger.info("Starting file output... (" + cTimer.start(true) + ")");
             Viewer viewer = new Viewer(callbackFile, uiControls);
             try {
-                viewer.printAppDetails(apk);
-                viewer.writeAnalysisToFile(outputDirectory);
+                viewer.writeAnalysisToFile(outputDirectory, apk);
             } catch (IOException | XmlPullParserException e) {
                 logger.error("Failed to write app analysis to output file: " + e.getMessage());
             }
