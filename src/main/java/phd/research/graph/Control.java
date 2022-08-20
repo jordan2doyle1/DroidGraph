@@ -87,6 +87,4 @@ public class Control {
         result = 31 * result + this.activity.hashCode();
         return result;
     }
-
-
 }

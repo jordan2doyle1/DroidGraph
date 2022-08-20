@@ -38,7 +38,7 @@ import java.util.Set;
  * @author Steven Arzt
  */
 
-//TODO: Remove necessary code. entire class copied from FlowDroid, only some of it is needed.
+//TODO: Remove unnecessary code. entire class copied from FlowDroid, only some of it is needed.
 
 public class MenuFileParser extends AbstractResourceParser {
 
