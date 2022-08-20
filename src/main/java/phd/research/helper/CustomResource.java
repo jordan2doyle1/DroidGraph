@@ -6,16 +6,16 @@ import soot.jimple.infoflow.android.resources.ARSCFileParser;
  * @author Jordan Doyle
  */
 
-public class OnTheFlyControl extends ARSCFileParser.AbstractResource{
+public class CustomResource extends ARSCFileParser.AbstractResource {
     String overrideResourceName;
     int overrideResourceID;
 
-    public OnTheFlyControl(String resourceName, int resourceId) {
+    public CustomResource(String resourceName, int resourceId) {
         this.overrideResourceName = resourceName;
         this.overrideResourceID = resourceId;
     }
 
-    public OnTheFlyControl(String resourceName) {
+    public CustomResource(String resourceName) {
         this.overrideResourceName = resourceName;
     }
 
