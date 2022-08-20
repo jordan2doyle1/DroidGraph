@@ -24,6 +24,7 @@ import java.util.*;
  * @author Jordan Doyle
  */
 
+@SuppressWarnings("CommentedOutCode")
 public class UiControls {
 
     private static final Logger logger = LoggerFactory.getLogger(UiControls.class);
@@ -41,7 +42,7 @@ public class UiControls {
         this.controls = processFlowDroidControls();
     }
 
-    protected static String getResourceName(String name) {
+    private static String getResourceName(String name) {
         int index = name.lastIndexOf("/");
 
         if (index != -1) {
@@ -55,7 +56,7 @@ public class UiControls {
         return name;
     }
 
-    protected static SootMethod searchForCallbackMethod(File callbacksFile, String methodName)
+    private static SootMethod searchForCallbackMethod(File callbacksFile, String methodName)
             throws FileNotFoundException {
         CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbacksFile);
         SootMethod foundMethod = null;
@@ -75,37 +76,35 @@ public class UiControls {
         return foundMethod;
     }
 
-    protected static ARSCFileParser.AbstractResource getResourceById(ARSCFileParser resources, int resourceId) {
+    private static List<ARSCFileParser.AbstractResource> getResourcesWithId(ARSCFileParser resources, int resourceId) {
         ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
         if (resType == null) {
             return null;
         }
 
-        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
-        if (foundResources.isEmpty()) {
-            return null;
-        }
-
-        if (foundResources.size() > 1) {
-            logger.warn("Multiple resources with ID " + resourceId + ", returning the first.");
-        }
-
-        return foundResources.get(0);
+        return resType.getAllResources(resourceId);
     }
+
+    //    private static ARSCFileParser.AbstractResource getResourceById(ARSCFileParser resources, int resourceId) {
+    //        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
+    //        if (resType == null) {
+    //            return null;
+    //        }
+    //
+    //        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
+    //        if (foundResources.isEmpty()) {
+    //            return null;
+    //        }
+    //
+    //        if (foundResources.size() > 1) {
+    //            logger.warn("Multiple resources with ID " + resourceId + ", returning the first.");
+    //        }
+    //
+    //        return foundResources.get(0);
+    //    }
 
     public Collection<Control> getControls() {
         return this.controls;
-    }
-
-    public boolean hasControl(SootMethod listener) {
-        for (Control control : this.getControls()) {
-            SootMethod controlClickListener = control.getClickListener();
-            if (controlClickListener != null && controlClickListener.equals(listener)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public Control getListenerControl(SootMethod listener) {
@@ -127,355 +126,11 @@ public class UiControls {
 
     public Control getControl(SootClass activity, String resourceName) {
         for (Control control : this.getControls()) {
-            if (control.getControlResource() != null && control.getControlActivity() != null) {
-                if (control.getControlActivity().equals(activity) &&
-                        control.getControlResource().getResourceName().equals(resourceName)) {
-                    return control;
-                }
+            if (control.getControlActivity().equals(activity) &&
+                    control.getControlResource().getResourceName().equals(resourceName)) {
+                return control;
             }
         }
-
-        return null;
-    }
-
-    public Control getControl(SootClass activity, int resourceId) {
-        for (Control control : this.getControls()) {
-            if (control.getControlResource() != null && control.getControlActivity() != null) {
-                if (control.getControlActivity().equals(activity) &&
-                        control.getControlResource().getResourceID() == resourceId) {
-                    return control;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private Set<Control> processFlowDroidControls() throws XmlPullParserException, IOException {
-        ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
-        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
-
-        List<ARSCFileParser.AbstractResource> menuResources = resources.findResourcesByType("menu");
-        if (!menuResources.isEmpty()) {
-            for (ARSCFileParser.AbstractResource menu : menuResources) {
-                int id = menu.getResourceID();
-            }
-        }
-
-        MenuFileParser menuParser;
-        try {
-            menuParser = new MenuFileParser(FlowDroidUtils.getBasePackageName(apk), FlowDroidUtils.getResources(apk));
-        } catch (XmlPullParserException | IOException e) {
-            throw new RuntimeException(e);
-        }
-        menuParser.parseLayoutFileDirect(apk.getAbsolutePath());
-        Set<Control> uiControls = new HashSet<>();
-        MultiMap<String, AndroidLayoutControl> userControls;
-        if (layoutParser != null) {
-            userControls = layoutParser.getUserControls();
-        } else {
-            logger.error("Problem getting Layout File Parser. Can't get UI Controls!");
-            return uiControls;
-        }
-
-        uiControls = something(menuParser, resources);
-
-        for (String layoutFile : userControls.keySet()) {
-            ARSCFileParser.AbstractResource layoutResource =
-                    resources.findResourceByName("layout", getResourceName(layoutFile));
-
-            SootClass callbackClass = this.findLayoutClass(layoutResource.getResourceID());
-            if (callbackClass == null) {
-                logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
-                        layoutResource.getResourceName());
-                continue;
-            }
-
-            logger.info("Linked " + callbackClass + " with " + layoutResource.getResourceName());
-            for (AndroidLayoutControl control : userControls.get(layoutFile)) {
-                if (control.getID() == -1) {
-                    continue;
-                }
-
-                ARSCFileParser.AbstractResource controlResource =
-                        UiControls.getResourceById(resources, control.getID());
-                if (controlResource == null) {
-                    logger.error("No resource found with ID " + control.getID() + ": " + control);
-                    continue;
-                }
-
-                SootMethod clickListener = null;
-                if (control.getClickListener() != null) {
-                    clickListener =
-                            UiControls.searchForCallbackMethod(this.collectedCallbacksFile, control.getClickListener());
-                }
-
-                if (clickListener == null) {
-                    logger.error("No click listener method with ID: " + control.getID());
-                }
-
-                Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
-                uiControls.add(newControl);
-            }
-        }
-
-        return uiControls;
-    }
-
-    private Set<Control> something(MenuFileParser parser, ARSCFileParser resources)
-            throws XmlPullParserException, IOException {
-        MultiMap<String, AndroidLayoutControl> userControls = parser.getUserControls();
-        Set<Control> uiControls = new HashSet<>();
-
-        for (String layoutFile : userControls.keySet()) {
-            if (layoutFile.equals("res/menu/navigation.xml")) {
-                ARSCFileParser.AbstractResource layoutResource =
-                        resources.findResourceByName("menu", getResourceName(layoutFile));
-
-
-                // TODO: Extract to it's own method.
-                SootClass callbackClass = null;
-                for (String file : userControls.keySet()) {
-                    for (AndroidLayoutControl control : userControls.get(file)) {
-                        if (control.getAdditionalAttributes() != null) {
-                            for (String key : control.getAdditionalAttributes().keySet()) {
-                                if (key.equals("menu")) {
-                                    if ((int) control.getAdditionalAttributes().get(key) ==
-                                            layoutResource.getResourceID()) {
-                                        ARSCFileParser.AbstractResource layout =
-                                                resources.findResourceByName("layout", getResourceName(file));
-                                        callbackClass = this.findLayoutClass(layout.getResourceID());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (callbackClass == null) {
-                    logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
-                            layoutResource.getResourceName());
-                    continue;
-                }
-
-                logger.info("Linked " + callbackClass + " with " + layoutResource.getResourceName());
-                for (AndroidLayoutControl control : userControls.get(layoutFile)) {
-                    if (control.getID() == -1) {
-                        continue;
-                    }
-
-                    ARSCFileParser.AbstractResource controlResource =
-                            UiControls.getResourceById(resources, control.getID());
-                    if (controlResource == null) {
-                        logger.error("No resource found with ID " + control.getID() + ": " + control);
-                        continue;
-                    }
-
-                    SootMethod clickListener = null;
-                    if (control.getClickListener() != null) {
-                        clickListener = UiControls.searchForCallbackMethod(this.collectedCallbacksFile,
-                                control.getClickListener()
-                                                                          );
-                    }
-
-                    if (clickListener == null) {
-                        logger.error("No click listener method with ID: " + control.getID());
-                    }
-
-                    Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
-                    uiControls.add(newControl);
-                }
-            }
-        }
-
-        return uiControls;
-    }
-
-    private SootClass findAnySetContentView(int layoutId, SootClass entryClass) {
-        for (SootMethod method : entryClass.getMethods()) {
-            try {
-                method.retrieveActiveBody();
-            } catch (RuntimeException ignored) {
-                continue;
-            }
-
-            if (!method.hasActiveBody()) {
-                continue;
-            }
-
-            if (searchForSetContentView(layoutId, method)) {
-                return entryClass;
-            }
-        }
-
-        return null;
-    }
-
-    private SootClass findInflate(int layoutId, SootClass fragmentClass) {
-        for (SootMethod method : fragmentClass.getMethods()) {
-            try {
-                method.retrieveActiveBody();
-            } catch (RuntimeException ignored) {
-                continue;
-            }
-
-            if (!method.hasActiveBody()) {
-                continue;
-            }
-
-            if (searchInflateView(layoutId, method)) {
-                return fragmentClass;
-            }
-        }
-
-        return null;
-    }
-
-    private boolean searchInflateView(int layoutId, SootMethod method) {
-        PatchingChain<Unit> units = method.getActiveBody().getUnits();
-        for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
-            Unit unit = iterator.next();
-
-            Status searchStatus = new Status();
-            unit.apply(new AbstractStmtSwitch<Stmt>() {
-                @Override
-                public void caseInvokeStmt(InvokeStmt stmt) {
-                    super.caseInvokeStmt(stmt);
-
-                    InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                    if (invokeExpr.getMethod().getName().equals("inflate")) {
-                        // System.out.println(invokeExpr);
-                        if (invokeExpr.getArgCount() > 0 &&
-                                invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
-                            searchStatus.foundClass(true);
-                        }
-                    }
-                }
-            });
-
-            if (!searchStatus.isClassFound()) {
-                unit.apply(new AbstractStmtSwitch<Stmt>() {
-                    @Override
-                    public void caseAssignStmt(AssignStmt stmt) {
-                        super.caseAssignStmt(stmt);
-
-                        if (stmt.containsInvokeExpr()) {
-                            InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                            if (invokeExpr.getMethod().getName().equals("inflate")) {
-                                // System.out.println(invokeExpr);
-                                if (invokeExpr.getArgCount() > 0 &&
-                                        invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
-                                    searchStatus.foundClass(true);
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            if (searchStatus.isClassFound()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean searchForSetContentView(int layoutId, SootMethod method) {
-        PatchingChain<Unit> units = method.getActiveBody().getUnits();
-        for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
-            Unit unit = iterator.next();
-
-            Status searchStatus = new Status();
-            unit.apply(new AbstractStmtSwitch<Stmt>() {
-                @Override
-                public void caseInvokeStmt(InvokeStmt stmt) {
-                    super.caseInvokeStmt(stmt);
-
-                    InvokeExpr invokeExpr = stmt.getInvokeExpr();
-                    if (invokeExpr.getMethod().getName().equals("setContentView")) {
-                        if (invokeExpr.getArg(0).toString().equals(String.valueOf(layoutId))) {
-                            searchStatus.foundClass(true);
-                        }
-                    }
-                }
-            });
-
-            if (searchStatus.isClassFound()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private SootClass findOnCreateSetContentView(int layoutId, SootClass entryClass) {
-        SootMethod onCreateMethod;
-        try {
-            onCreateMethod = entryClass.getMethodByNameUnsafe("onCreate");
-        } catch (AmbiguousMethodException ignored) {
-            return null;
-        }
-
-        if (onCreateMethod == null) {
-            return null;
-        }
-
-        try {
-            onCreateMethod.retrieveActiveBody();
-        } catch (RuntimeException ignored) {
-            return null;
-        }
-
-        if (searchForSetContentView(layoutId, onCreateMethod)) {
-            return entryClass;
-        }
-
-        return null;
-    }
-
-    private SootClass findLayoutClassRecursively(int layoutId, SootClass entryClass, boolean onCreate) {
-        SootClass layoutClass;
-        if (onCreate) {
-            layoutClass = findOnCreateSetContentView(layoutId, entryClass);
-        } else {
-            layoutClass = findAnySetContentView(layoutId, entryClass);
-        }
-
-        if (layoutClass == null && entryClass.hasSuperclass()) {
-            layoutClass = findLayoutClassRecursively(layoutId, entryClass.getSuperclassUnsafe(), onCreate);
-        }
-
-        return layoutClass;
-    }
-
-    protected SootClass findLayoutClass(int layoutId) throws XmlPullParserException, IOException {
-        for (SootClass entryClass : FlowDroidUtils.getEntryPointClasses(apk)) {
-            SootClass layoutClass = findLayoutClassRecursively(layoutId, entryClass, true);
-
-            if (layoutClass == null) {
-                layoutClass = findLayoutClassRecursively(layoutId, entryClass, false);
-            }
-
-            if (layoutClass != null) {
-                return layoutClass;
-            }
-        }
-
-        return findFragmentLayoutClass(layoutId);
-    }
-
-    protected SootClass findFragmentLayoutClass(int layoutId) {
-        for (SootClass clazz : Scene.v().getClasses()) {
-            if (Filter.isValidClass(clazz)) {
-                SootClass layoutClass = findInflate(layoutId, clazz);
-
-                if (layoutClass != null) {
-                    return layoutClass;
-                }
-            }
-        }
-
         return null;
     }
 
@@ -494,38 +149,210 @@ public class UiControls {
         }
     }
 
-    public static class Status {
+    private Collection<Control> processFlowDroidControls() throws XmlPullParserException, IOException {
+        ARSCFileParser resources = FlowDroidUtils.getResources(this.apk);
+        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
+        MultiMap<String, AndroidLayoutControl> flowDroidControls = layoutParser.getUserControls();
 
-        private boolean foundView;
-        private boolean foundClass;
-        private SootClass clazz;
+        Collection<Control> uiControls = processMenuControls(resources);
 
-        public Status() {
+        for (String layoutFile : flowDroidControls.keySet()) {
+            ARSCFileParser.AbstractResource layoutResource =
+                    resources.findResourceByName("layout", getResourceName(layoutFile));
+            if (Filter.isBlackListedLayout(layoutResource.getResourceName())) {
+                continue;
+            }
 
+            SootClass callbackClass = this.findClassLinkedWithLayout(layoutResource.getResourceID());
+            if (callbackClass == null) {
+                logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
+                        layoutResource.getResourceName());
+                continue;
+            }
+            logger.debug("Linked " + callbackClass + " with " + layoutResource.getResourceName());
+
+            for (AndroidLayoutControl control : flowDroidControls.get(layoutFile)) {
+                if (control.getID() == -1) {
+                    continue;
+                }
+
+                List<ARSCFileParser.AbstractResource> controlResources =
+                        UiControls.getResourcesWithId(resources, control.getID());
+                if (controlResources == null || controlResources.isEmpty()) {
+                    logger.error("No resource found with ID " + control.getID() + ": " + control);
+                    continue;
+                } else if (controlResources.size() > 1) {
+                    logger.warn("Multiple resources with ID " + control.getID() + ", returning the first.");
+                }
+                ARSCFileParser.AbstractResource controlResource = controlResources.get(0);
+
+                SootMethod clickListener = null;
+                if (control.getClickListener() != null) {
+                    clickListener = UiControls.searchForCallbackMethod(this.collectedCallbacksFile, control.getClickListener());
+                }
+
+                if (clickListener == null) {
+                    logger.debug("No click listener method with ID: " + control.getID());
+                }
+
+                Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
+                uiControls.add(newControl);
+            }
         }
 
-        public boolean isViewFound() {
-            return foundView;
+        return uiControls;
+    }
+
+    private Collection<Control> processMenuControls(ARSCFileParser resources)
+            throws XmlPullParserException, IOException {
+        MenuFileParser menuParser =
+                new MenuFileParser(FlowDroidUtils.getBasePackageName(this.apk), FlowDroidUtils.getResources(this.apk));
+        menuParser.parseLayoutFileDirect(this.apk.getAbsolutePath());
+        MultiMap<String, AndroidLayoutControl> flowDroidControls = menuParser.getUserControls();
+
+        Set<Control> controls = new HashSet<>();
+        for (String layoutFile : flowDroidControls.keySet()) {
+            if (layoutFile.equals("res/menu/navigation.xml")) {
+                ARSCFileParser.AbstractResource layoutResource =
+                        resources.findResourceByName("menu", getResourceName(layoutFile));
+
+                // TODO: Extract to it's own method.
+                SootClass callbackClass = null;
+                for (String file : flowDroidControls.keySet()) {
+                    for (AndroidLayoutControl control : flowDroidControls.get(file)) {
+                        if (control.getAdditionalAttributes() != null) {
+                            for (String key : control.getAdditionalAttributes().keySet()) {
+                                if (key.equals("menu")) {
+                                    if ((int) control.getAdditionalAttributes().get(key) ==
+                                            layoutResource.getResourceID()) {
+                                        ARSCFileParser.AbstractResource layout =
+                                                resources.findResourceByName("layout", getResourceName(file));
+                                        callbackClass = this.findClassLinkedWithLayout(layout.getResourceID());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (callbackClass == null) {
+                    logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
+                            layoutResource.getResourceName());
+                    continue;
+                }
+                logger.info("Linked " + callbackClass + " with " + layoutResource.getResourceName());
+
+                for (AndroidLayoutControl control : flowDroidControls.get(layoutFile)) {
+                    if (control.getID() == -1) {
+                        continue;
+                    }
+
+                    List<ARSCFileParser.AbstractResource> controlResources =
+                            UiControls.getResourcesWithId(resources, control.getID());
+                    if (controlResources == null || controlResources.isEmpty()) {
+                        logger.error("No resource found with ID " + control.getID() + ": " + control);
+                        continue;
+                    } else if (controlResources.size() > 1) {
+                        logger.warn("Multiple resources with ID " + control.getID() + ", returning the first.");
+                    }
+                    ARSCFileParser.AbstractResource controlResource = controlResources.get(0);
+
+                    SootMethod clickListener = null;
+                    if (control.getClickListener() != null) {
+                        clickListener = UiControls.searchForCallbackMethod(this.collectedCallbacksFile,
+                                control.getClickListener()
+                                                                          );
+                    }
+
+                    if (clickListener == null) {
+                        logger.error("No click listener method with ID: " + control.getID());
+                    }
+
+                    Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
+                    controls.add(newControl);
+                }
+            }
         }
 
-        public void foundView(boolean found) {
-            foundView = found;
+        return controls;
+    }
+
+    private SootClass findClassLinkedWithLayout(int layoutId) {
+        for (SootClass clazz : Scene.v().getClasses()) {
+            if (Filter.isValidClass(clazz)) {
+                SootClass layoutClass = recursiveClassSearch(clazz, "setContentView", layoutId);
+                if (layoutClass == null) {
+                    layoutClass = recursiveClassSearch(clazz, "inflate", layoutId);
+                    if (layoutClass != null) {
+                        return layoutClass;
+                    }
+                } else {
+                    return layoutClass;
+                }
+            }
+        }
+        return null;
+    }
+
+    private SootClass recursiveClassSearch(SootClass clazz, String invokeMethodName, int id) {
+        for (SootMethod method : clazz.getMethods()) {
+            try {
+                method.retrieveActiveBody();
+            } catch (RuntimeException ignored) {
+                continue;
+            }
+
+            if (!method.hasActiveBody()) {
+                continue;
+            }
+
+            if (searchMethodInvokeExprForId(method, invokeMethodName, id)) {
+                return clazz;
+            }
         }
 
-        public boolean isClassFound() {
-            return foundClass;
+        if (clazz.hasSuperclass()) {
+            return recursiveClassSearch(clazz.getSuperclassUnsafe(), invokeMethodName, id);
         }
+        return null;
+    }
 
-        public void foundClass(boolean found) {
-            foundClass = found;
-        }
+    private boolean searchMethodInvokeExprForId(SootMethod method, String invokeMethodName, int id) {
+        PatchingChain<Unit> units = method.getActiveBody().getUnits();
+        for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
+            Unit unit = iterator.next();
 
-        public SootClass getFoundClass() {
-            return clazz;
-        }
+            final boolean[] searchStatus = {false};
+            unit.apply(new AbstractStmtSwitch<Stmt>() {
+                @Override
+                public void caseInvokeStmt(InvokeStmt stmt) {
+                    super.caseInvokeStmt(stmt);
+                    InvokeExpr expr = stmt.getInvokeExpr();
+                    if (expr.getMethod().getName().equals(invokeMethodName)) {
+                        if (expr.getArgCount() > 0 && expr.getArg(0).toString().equals(String.valueOf(id))) {
+                            searchStatus[0] = true;
+                        }
+                    }
+                }
 
-        public void setFoundClass(SootClass foundClass) {
-            clazz = foundClass;
+                @Override
+                public void caseAssignStmt(AssignStmt stmt) {
+                    super.caseAssignStmt(stmt);
+                    if (stmt.containsInvokeExpr()) {
+                        InvokeExpr expr = stmt.getInvokeExpr();
+                        if (expr.getMethod().getName().equals(invokeMethodName)) {
+                            if (expr.getArgCount() > 0 && expr.getArg(0).toString().equals(String.valueOf(id))) {
+                                searchStatus[0] = true;
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (searchStatus[0]) {
+                return true;
+            }
         }
+        return false;
     }
 }

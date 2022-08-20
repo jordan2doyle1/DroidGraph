@@ -264,7 +264,7 @@ public class DroidGraph {
         return false;
     }
 
-    private ControlVertex getInterfaceControl(ListenerVertex vertex) throws XmlPullParserException, IOException {
+    private ControlVertex getInterfaceControl(ListenerVertex vertex) {
         Control control = this.uiControls.getListenerControl(vertex.getMethod());
         if (control != null) {
             return new ControlVertex(control);
