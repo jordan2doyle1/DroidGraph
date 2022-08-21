@@ -18,6 +18,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class FlowDroidUtils {
 
     public static final String CALLBACK_FILE_NAME = "CollectedCallbacks";

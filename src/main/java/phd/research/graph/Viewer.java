@@ -114,15 +114,24 @@ public class Viewer {
         return filteredClasses;
     }
 
-    public String getCallbackTable() throws XmlPullParserException, IOException {
+    public String getCallbackTable() {
         List<Control> controls = new ArrayList<>(this.uiControls.getControls());
         String[][] data = new String[controls.size() + 1][];
         data[0] = new String[]{"WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD"};
         for (int i = 0; i < controls.size(); i++) {
             Control control = controls.get(i);
+
+            StringBuilder builder = new StringBuilder("[");
+            control.getClickListeners().forEach(l -> builder.append(l.getName()).append(","));
+            if (builder.charAt(builder.length() - 1) != '[') {
+                builder.replace(builder.length() - 1, builder.length(), "]");
+            } else {
+                builder.append("]");
+            }
+
             data[i + 1] = new String[]{String.valueOf(control.getControlResource().getResourceID()),
                     control.getControlResource().getResourceName(), control.getControlActivity().getName(),
-                    (control.getClickListener() != null ? control.getClickListener().getSignature() : "NULL")};
+                    builder.toString()};
         }
         return StringTable.tableWithLines(data, true);
     }

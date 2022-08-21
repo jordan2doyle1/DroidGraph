@@ -9,7 +9,6 @@ import phd.research.graph.Filter;
 import phd.research.helper.MenuFileParser;
 import soot.*;
 import soot.jimple.*;
-import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -17,14 +16,16 @@ import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
 import soot.util.MultiMap;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Jordan Doyle
  */
 
-@SuppressWarnings("CommentedOutCode")
 public class UiControls {
 
     private static final Logger logger = LoggerFactory.getLogger(UiControls.class);
@@ -44,109 +45,34 @@ public class UiControls {
 
     private static String getResourceName(String name) {
         int index = name.lastIndexOf("/");
-
-        if (index != -1) {
-            name = name.replace(name.substring(0, index + 1), "");
-        }
-
-        if (name.contains(".xml")) {
-            name = name.replace(".xml", "");
-        }
-
-        return name;
-    }
-
-    private static SootMethod searchForCallbackMethod(File callbacksFile, String methodName)
-            throws FileNotFoundException {
-        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbacksFile);
-        SootMethod foundMethod = null;
-
-        for (SootClass currentClass : callbacks.getCallbackMethods().keySet()) {
-            for (AndroidCallbackDefinition callbackDefinition : callbacks.getCallbackMethods().get(currentClass)) {
-                if (callbackDefinition.getTargetMethod().getName().equals(methodName)) {
-                    if (foundMethod != null) {
-                        logger.error("Multiple callbacks with the name " + methodName + ".");
-                        return null;
-                    }
-                    foundMethod = callbackDefinition.getTargetMethod();
-                }
-            }
-        }
-
-        return foundMethod;
+        name = index != -1 ? name.replace(name.substring(0, index + 1), "") : name;
+        return name.contains(".xml") ? name.replace(".xml", "") : name;
     }
 
     private static List<ARSCFileParser.AbstractResource> getResourcesWithId(ARSCFileParser resources, int resourceId) {
         ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
-        if (resType == null) {
-            return null;
-        }
-
-        return resType.getAllResources(resourceId);
+        return resType != null ? resType.getAllResources(resourceId) : new ArrayList<>();
     }
 
-    //    private static ARSCFileParser.AbstractResource getResourceById(ARSCFileParser resources, int resourceId) {
-    //        ARSCFileParser.ResType resType = resources.findResourceType(resourceId);
-    //        if (resType == null) {
-    //            return null;
-    //        }
-    //
-    //        List<ARSCFileParser.AbstractResource> foundResources = resType.getAllResources(resourceId);
-    //        if (foundResources.isEmpty()) {
-    //            return null;
-    //        }
-    //
-    //        if (foundResources.size() > 1) {
-    //            logger.warn("Multiple resources with ID " + resourceId + ", returning the first.");
-    //        }
-    //
-    //        return foundResources.get(0);
-    //    }
+    private static Collection<SootMethod> searchForCallbackMethods(File callbacksFile, String methodName)
+            throws FileNotFoundException {
+        // Warning: if method name is not specific enough, false positives may be returned. e.g. methodName = onClick()
+        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbacksFile);
+        Collection<SootMethod> methods = new ArrayList<>();
+        callbacks.getCallbackMethods().keySet().forEach(clazz -> callbacks.getCallbackMethods().get(clazz).stream()
+                .filter(definition -> definition.getTargetMethod().getName().equals(methodName))
+                .forEach(callback -> methods.add(callback.getTargetMethod())));
+        return methods;
+    }
 
     public Collection<Control> getControls() {
         return this.controls;
     }
 
-    public Control getListenerControl(SootMethod listener) {
-        Control foundControl = null;
-        for (Control control : this.getControls()) {
-            if (control.getClickListener() != null) {
-                if (control.getClickListener().equals(listener)) {
-                    if (foundControl != null) {
-                        logger.error("Found multiple controls with the same listener: " + listener.getSignature());
-                        return null;
-                    }
-                    foundControl = control;
-                }
-            }
-        }
-
-        return foundControl;
-    }
-
-    public Control getControl(SootClass activity, String resourceName) {
-        for (Control control : this.getControls()) {
-            if (control.getControlActivity().equals(activity) &&
-                    control.getControlResource().getResourceName().equals(resourceName)) {
-                return control;
-            }
-        }
-        return null;
-    }
-
-    private void addControlListeners(File collectedUiCallbackLinks) throws IOException {
-        String line;
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(collectedUiCallbackLinks));
-        while ((line = bufferedReader.readLine()) != null) {
-            String[] controlListenerTuple = line.split(",");
-            Control control = getControl(Scene.v().getSootClass(controlListenerTuple[0]), controlListenerTuple[1]);
-            if (control != null) {
-                SootMethod listener = Scene.v().getMethod(controlListenerTuple[2]);
-                if (listener != null) {
-                    control.setClickListener(listener);
-                }
-            }
-        }
+    public Collection<Control> getControlsWithListener(SootMethod listener) {
+        return this.getControls().stream()
+                .filter(c -> !c.getClickListeners().isEmpty() && c.getClickListeners().contains(listener))
+                .collect(Collectors.toList());
     }
 
     private Collection<Control> processFlowDroidControls() throws XmlPullParserException, IOException {
@@ -165,8 +91,9 @@ public class UiControls {
 
             SootClass callbackClass = this.findClassLinkedWithLayout(layoutResource.getResourceID());
             if (callbackClass == null) {
-                logger.error("No class found for layout resource " + layoutResource.getResourceID() + ": " +
-                        layoutResource.getResourceName());
+                logger.error(String.format("Could not find class linked with layout resource %s(%s).",
+                        layoutResource.getResourceName(), layoutResource.getResourceID()
+                                          ));
                 continue;
             }
             logger.debug("Linked " + callbackClass + " with " + layoutResource.getResourceName());
@@ -178,24 +105,29 @@ public class UiControls {
 
                 List<ARSCFileParser.AbstractResource> controlResources =
                         UiControls.getResourcesWithId(resources, control.getID());
-                if (controlResources == null || controlResources.isEmpty()) {
-                    logger.error("No resource found with ID " + control.getID() + ": " + control);
+                if (controlResources.isEmpty()) {
+                    logger.error(String.format("Could not find resource with id %s (%s).", control.getID(), control));
                     continue;
                 } else if (controlResources.size() > 1) {
-                    logger.warn("Multiple resources with ID " + control.getID() + ", returning the first.");
+                    logger.warn(String.format("Found multiple resources with id %s, returning the first.",
+                            control.getID()
+                                             ));
                 }
                 ARSCFileParser.AbstractResource controlResource = controlResources.get(0);
 
-                SootMethod clickListener = null;
+                Collection<SootMethod> clickListeners = new ArrayList<>();
                 if (control.getClickListener() != null) {
-                    clickListener = UiControls.searchForCallbackMethod(this.collectedCallbacksFile, control.getClickListener());
+                    clickListeners = UiControls.searchForCallbackMethods(this.collectedCallbacksFile,
+                            control.getClickListener()
+                                                                        );
+                    if (clickListeners.isEmpty()) {
+                        logger.debug(String.format("No click listener method with id %s.", control.getID()));
+                    } else if (controlResources.size() > 1) {
+                        logger.warn(String.format("Found multiple click listeners with id %s.", control.getID()));
+                    }
                 }
 
-                if (clickListener == null) {
-                    logger.debug("No click listener method with ID: " + control.getID());
-                }
-
-                Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
+                Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListeners);
                 uiControls.add(newControl);
             }
         }
@@ -257,18 +189,19 @@ public class UiControls {
                     }
                     ARSCFileParser.AbstractResource controlResource = controlResources.get(0);
 
-                    SootMethod clickListener = null;
+                    Collection<SootMethod> clickListeners = new ArrayList<>();
                     if (control.getClickListener() != null) {
-                        clickListener = UiControls.searchForCallbackMethod(this.collectedCallbacksFile,
+                        clickListeners = UiControls.searchForCallbackMethods(this.collectedCallbacksFile,
                                 control.getClickListener()
-                                                                          );
+                                                                            );
+                        if (clickListeners.isEmpty()) {
+                            logger.debug(String.format("No click listener method with id %s.", control.getID()));
+                        } else if (controlResources.size() > 1) {
+                            logger.warn(String.format("Found multiple click listeners with id %s.", control.getID()));
+                        }
                     }
 
-                    if (clickListener == null) {
-                        logger.error("No click listener method with ID: " + control.getID());
-                    }
-
-                    Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListener);
+                    Control newControl = new Control(controlResource, layoutResource, callbackClass, clickListeners);
                     controls.add(newControl);
                 }
             }
@@ -292,6 +225,7 @@ public class UiControls {
             }
         }
         return null;
+        //TODO: Try not to return null.
     }
 
     private SootClass recursiveClassSearch(SootClass clazz, String invokeMethodName, int id) {
@@ -302,11 +236,7 @@ public class UiControls {
                 continue;
             }
 
-            if (!method.hasActiveBody()) {
-                continue;
-            }
-
-            if (searchMethodInvokeExprForId(method, invokeMethodName, id)) {
+            if (method.hasActiveBody() && searchMethodInvokeExprForId(method, invokeMethodName, id)) {
                 return clazz;
             }
         }
@@ -315,6 +245,7 @@ public class UiControls {
             return recursiveClassSearch(clazz.getSuperclassUnsafe(), invokeMethodName, id);
         }
         return null;
+        //TODO: Try not to return null.
     }
 
     private boolean searchMethodInvokeExprForId(SootMethod method, String invokeMethodName, int id) {

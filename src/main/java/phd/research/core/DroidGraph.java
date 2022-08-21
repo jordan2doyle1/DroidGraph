@@ -1,5 +1,6 @@
 package phd.research.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -36,32 +37,24 @@ public class DroidGraph {
 
     private static final Logger logger = LoggerFactory.getLogger(DroidGraph.class);
 
+    @NotNull
     private final File collectedCallbacksFile;
+    @NotNull
     private final UiControls uiControls;
 
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
 
-
-    public DroidGraph(File collectedCallbacksFile, UiControls controls) {
-        if (!collectedCallbacksFile.exists()) {
-            logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
-        }
-
-        this.collectedCallbacksFile = collectedCallbacksFile;
-        this.uiControls = controls;
+    public DroidGraph(File collectedCallbacksFile, UiControls uiControls) {
+        this.collectedCallbacksFile = Objects.requireNonNull(collectedCallbacksFile);
+        this.uiControls = Objects.requireNonNull(uiControls);
     }
 
     @API
     public DroidGraph(File collectedCallbacksFile, File apk) throws XmlPullParserException, IOException {
-        if (!collectedCallbacksFile.exists()) {
-            logger.error("Collected Callbacks File Does Not Exist!:" + collectedCallbacksFile);
-        }
-
-        this.collectedCallbacksFile = collectedCallbacksFile;
+        this.collectedCallbacksFile = Objects.requireNonNull(collectedCallbacksFile);
         this.uiControls = new UiControls(this.collectedCallbacksFile, apk);
     }
-
 
     public static Vertex getUnitVertex(Unit unit, Set<Vertex> set) {
         for (Vertex vertex : set) {
@@ -73,6 +66,7 @@ public class DroidGraph {
         }
 
         return null;
+        //TODO: Try not to return null.
     }
 
     public static Vertex getMethodVertex(Type type, SootMethod method, Set<Vertex> set) {
@@ -85,6 +79,7 @@ public class DroidGraph {
         }
 
         return null;
+        //TODO: Try not to return null.
     }
 
     public static Collection<Vertex> getControlsNotVisited(Collection<Vertex> vertices) {
@@ -104,7 +99,6 @@ public class DroidGraph {
                 .collect(Collectors.toList());
     }
 
-
     @API
     public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> set) {
         for (Vertex vertex : set) {
@@ -118,6 +112,7 @@ public class DroidGraph {
         }
 
         return null;
+        //TODO: Try not to return null.
     }
 
     //TODO: Which getControlVertex method is being used (above or below)?
@@ -135,18 +130,19 @@ public class DroidGraph {
         }
 
         return null;
-    }
-
-    @API
-    public static void resetLocalVisits(Graph<Vertex, DefaultEdge> graph) {
-        for (Vertex vertex : graph.vertexSet()) {
-            vertex.localVisitReset();
-        }
+        //TODO: Try not to return null.
     }
 
     public static void resetVisits(Graph<Vertex, DefaultEdge> graph) {
         for (Vertex vertex : graph.vertexSet()) {
             vertex.visitReset();
+            vertex.localVisitReset();
+        }
+    }
+
+    @API
+    public static void resetLocalVisits(Graph<Vertex, DefaultEdge> graph) {
+        for (Vertex vertex : graph.vertexSet()) {
             vertex.localVisitReset();
         }
     }
@@ -201,6 +197,7 @@ public class DroidGraph {
         } else {
             return Type.method;
         }
+        //TODO: Throw exception is type is not recognised.
     }
 
     public Graph<Vertex, DefaultEdge> getCallGraph() throws FileNotFoundException {
@@ -220,23 +217,19 @@ public class DroidGraph {
         return this.controlFlowGraph;
     }
 
-    public void setControlFlowGraph(Graph<Vertex, DefaultEdge> graph) {
-        this.controlFlowGraph = graph;
-    }
-
     @API
     public void generateGraphs() throws IOException, XmlPullParserException {
         this.callGraph = generateGraph(Scene.v().getCallGraph());
         this.controlFlowGraph = generateGraph(this.callGraph);
     }
 
-    public void resetCFGLocalVisits() throws IOException, XmlPullParserException {
-        DroidGraph.resetLocalVisits(this.getControlFlowGraph());
-    }
-
     @API
     public void resetCFGVisits() throws IOException, XmlPullParserException {
         DroidGraph.resetVisits(this.getControlFlowGraph());
+    }
+
+    public void resetCFGLocalVisits() throws IOException, XmlPullParserException {
+        DroidGraph.resetLocalVisits(this.getControlFlowGraph());
     }
 
     @API
@@ -251,31 +244,34 @@ public class DroidGraph {
             if (vertex.getType() == Type.method || vertex.getType() == Type.lifecycle ||
                     vertex.getType() == Type.listener || vertex.getType() == Type.dummy) {
                 SootMethod currentMethod = ((MethodVertex) vertex).getMethod();
-                if (currentMethod != null) {
-                    logger.debug("Found method: " + currentMethod.getSignature());
-                    if (currentMethod.equals(method)) {
-                        vertex.visit();
-                        return true;
-                    }
+                logger.debug("Found method: " + currentMethod.getSignature());
+                if (currentMethod.equals(method)) {
+                    vertex.visit();
+                    return true;
                 }
             }
         }
-
         return false;
     }
 
     private ControlVertex getInterfaceControl(ListenerVertex vertex) {
-        Control control = this.uiControls.getListenerControl(vertex.getMethod());
-        if (control != null) {
-            return new ControlVertex(control);
-        } else {
+        Control control;
+        Collection<Control> controls = this.uiControls.getControlsWithListener(vertex.getMethod());
+        if (controls.size() > 1) {
+            logger.error("Multiple controls have the same listener, returning the first.");
+        } else if (controls.isEmpty()) {
             logger.error("No control for " + vertex.getLabel());
         }
+        control = ((List<Control>) controls).get(0);
+        if (control != null) {
+            return new ControlVertex(control);
+        }
 
+        // TODO: Try not to return null, leads to null pointer exceptions.
         return null;
     }
 
-    private Set<SootMethod> checkGraph(Graph<Vertex, DefaultEdge> graph) throws IOException, XmlPullParserException {
+    private boolean checkGraph(Graph<Vertex, DefaultEdge> graph) throws IOException, XmlPullParserException {
         // TODO: Verify graph is complete and correct (all methods present?, all vertices have input edges?, etc.)
         Chain<SootClass> classes = Scene.v().getClasses();
         Set<SootMethod> notInGraph = new HashSet<>();
@@ -308,11 +304,11 @@ public class DroidGraph {
             }
         }
 
-        return notInGraph;
+        return true;
     }
 
-    // TODO: Confirm Graph Generation is correct?
     private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) throws FileNotFoundException {
+        // TODO: Confirm Graph Generation is correct?
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         Iterator<MethodOrMethodContext> sourceItr = sootCallGraph.sourceMethods();
@@ -383,8 +379,7 @@ public class DroidGraph {
         return graph;
     }
 
-    private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph)
-            throws IOException, XmlPullParserException {
+    private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph) throws IOException {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Graphs.addGraph(graph, callGraph);
         JimpleBasedInterproceduralCFG jimpleCFG = new JimpleBasedInterproceduralCFG();

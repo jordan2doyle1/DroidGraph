@@ -5,6 +5,7 @@ import soot.SootMethod;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -19,14 +20,15 @@ public class Control {
     private final ARSCFileParser.AbstractResource layout;
     @Nonnull
     private final SootClass activity;
-    private SootMethod clickListener;
+    @Nonnull
+    private Collection<SootMethod> clickListeners;
 
     public Control(ARSCFileParser.AbstractResource control, ARSCFileParser.AbstractResource layout, SootClass activity,
-            SootMethod clickListener) {
+            Collection<SootMethod> clickListeners) {
         this.control = Objects.requireNonNull(control);
         this.layout = Objects.requireNonNull(layout);
         this.activity = Objects.requireNonNull(activity);
-        this.clickListener = clickListener;
+        this.clickListeners = Objects.requireNonNull(clickListeners);
     }
 
     public ARSCFileParser.AbstractResource getControlResource() {
@@ -41,20 +43,27 @@ public class Control {
         return this.activity;
     }
 
-    public SootMethod getClickListener() {
-        return this.clickListener;
+    @Nonnull
+    public Collection<SootMethod> getClickListeners() {
+        return this.clickListeners;
     }
 
-    public void setClickListener(SootMethod method) {
-        this.clickListener = method;
+    public void setClickListeners(Collection<SootMethod> listeners) {
+        this.clickListeners = Objects.requireNonNull(listeners);
     }
 
     @Override
     public String toString() {
+        StringBuilder builder = new StringBuilder("[");
+        this.clickListeners.forEach(l -> builder.append(l.getName()).append(","));
+        if (builder.charAt(builder.length() - 1) != '[') {
+            builder.replace(builder.length() -1, builder.length(), "]");
+        } else {
+            builder.append("]");
+        }
+
         return String.format("%s{control=%s, layout=%s, activity=%s, clickListener=%s}", getClass().getSimpleName(),
-                this.control.getResourceName(), this.layout.getResourceName(), this.activity.getShortName(),
-                (this.clickListener != null ? this.clickListener.getName() : null)
-                            );
+                this.control.getResourceName(), this.layout.getResourceName(), this.activity.getShortName(), builder);
     }
 
     @Override
@@ -74,17 +83,21 @@ public class Control {
         if (this.control.getResourceID() != that.control.getResourceID()) {
             return false;
         }
-        if (!this.layout.equals(that.layout)) {
+        if (!layout.equals(that.layout)) {
             return false;
         }
-        return this.activity.equals(that.activity);
+        if (!activity.equals(that.activity)) {
+            return false;
+        }
+        return clickListeners.equals(that.clickListeners);
     }
 
     @Override
     public final int hashCode() {
-        int result = this.control.hashCode();
-        result = 31 * result + this.layout.hashCode();
-        result = 31 * result + this.activity.hashCode();
+        int result = control.hashCode();
+        result = 31 * result + layout.hashCode();
+        result = 31 * result + activity.hashCode();
+        result = 31 * result + clickListeners.hashCode();
         return result;
     }
 }
