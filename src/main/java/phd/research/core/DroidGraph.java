@@ -255,14 +255,16 @@ public class DroidGraph {
     }
 
     private ControlVertex getInterfaceControl(ListenerVertex vertex) {
-        Control control;
+        Control control = null;
         Collection<Control> controls = this.uiControls.getControlsWithListener(vertex.getMethod());
         if (controls.size() > 1) {
             logger.error("Multiple controls have the same listener, returning the first.");
         } else if (controls.isEmpty()) {
             logger.error("No control for " + vertex.getLabel());
+        } else {
+            control = ((List<Control>) controls).get(0);
         }
-        control = ((List<Control>) controls).get(0);
+
         if (control != null) {
             return new ControlVertex(control);
         }
@@ -435,20 +437,40 @@ public class DroidGraph {
         }
 
         // checkGraph(graph);
+        // TODO: Get all methods and controls and check if they are in the graph. If they are not, then add
+        //  standalone vertices for each of them.
 
-        for (Vertex v : graph.vertexSet()) {
-            if (v.getType() == Type.method || v.getType() == Type.lifecycle || v.getType() == Type.listener ||
-                    v.getType() == Type.dummy) {
-                SootMethod m = ((MethodVertex) v).getMethod();
-                if (m.getDeclaringClass().getName().contains("FragmentB")) {
-                    System.out.println(m.getSignature());
+        for (Control control : uiControls.getControls()) {
+            Vertex v = new ControlVertex(control);
+            if (graph.containsVertex(v)) {
+                logger.error("Adding left out control: " + v);
+                graph.addVertex(v);
+            }
+        }
+
+        for (SootClass clazz : Scene.v().getClasses()) {
+            if (Filter.isValidClass(clazz)) {
+                for (SootMethod method : clazz.getMethods()) {
+                    if (!searchVertices(graph, method)) {
+                        Vertex v = new MethodVertex(method);
+                        logger.error("Adding left out method: " + v);
+                        graph.addVertex(v);
+                    }
                 }
             }
         }
 
-        // TODO: Get all methods and controls and check if they are in the graph. If they are not, then add
-        //  standalone vertices for each of them.
-
         return graph;
+    }
+
+    private boolean searchVertices(Graph<Vertex, DefaultEdge> graph, SootMethod method) {
+        for (Vertex v : graph.vertexSet()) {
+            if (v instanceof MethodVertex) {
+                if (((MethodVertex) v).getMethod().equals(method)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -56,7 +56,6 @@ public class MenuFileParser extends AbstractResourceParser {
     public void parseLayoutFileDirect(String packageName, final String apkFileName) {
         handleAndroidResourceFiles(apkFileName, null, (fileName, fileNameFilter, stream) -> {
             if (!fileName.startsWith("res/menu") || !fileName.endsWith(".xml")) {
-                logger.debug(String.format("Skipping fileName %s in layout folder...", fileName));
                 return;
             }
 

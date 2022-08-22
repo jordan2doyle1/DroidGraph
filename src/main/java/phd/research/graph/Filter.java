@@ -18,9 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Jordan Doyle
@@ -106,7 +104,8 @@ public class Filter {
     }
 
     public static boolean isValidClass(SootClass clazz) {
-        return Filter.isValidClass(null, null, clazz);
+        return Filter.isValidClass(Collections.singletonList("androidx"), Arrays.asList("R$", "dummyMainClass", "androidx"),
+                clazz);
     }
 
     public static boolean isValidClass(Collection<String> packageBlacklist, Collection<String> classBlacklist,
