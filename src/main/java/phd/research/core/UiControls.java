@@ -102,7 +102,7 @@ public class UiControls {
             MultiMap<String, AndroidLayoutControl> flowDroidControls) throws FileNotFoundException, RuntimeException {
 
         Collection<Control> controls = new HashSet<>();
-        SootClass layoutClass = this.findClassLinkedWithLayout(layoutResource.getResourceID());
+        SootClass layoutClass = this.findClassLinkedWithLayout(layoutResource);
 
         for (AndroidLayoutControl control : flowDroidControls.get(fileName)) {
             if (control.getID() == -1) {
@@ -179,16 +179,17 @@ public class UiControls {
         return controls;
     }
 
-    private SootClass findClassLinkedWithLayout(int layoutId) throws RuntimeException {
+    private SootClass findClassLinkedWithLayout(ARSCFileParser.AbstractResource layout) throws RuntimeException {
         for (SootClass clazz : Scene.v().getClasses()) {
             if (Filter.isValidClass(clazz)) {
-                SootClass layoutClass = recursiveClassSearch(clazz, layoutId);
+                SootClass layoutClass = recursiveClassSearch(clazz, layout.getResourceID());
                 if (layoutClass != null) {
                     return layoutClass;
                 }
             }
         }
-        throw new RuntimeException(String.format("Could not find class linked with layout resource %s.", layoutId));
+        throw new RuntimeException(String.format("Could not find class linked with layout resource %s (%s).",
+                layout.getResourceID(), layout.getResourceName()));
     }
 
     private SootClass recursiveClassSearch(SootClass clazz, int id) {

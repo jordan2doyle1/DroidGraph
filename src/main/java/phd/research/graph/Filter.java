@@ -16,8 +16,9 @@ import soot.util.MultiMap;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -93,30 +94,14 @@ public class Filter {
     }
 
     public static boolean isBlackListedResource(String layout) {
-        List<String> blackListedLayouts = new ArrayList<>(
-                Arrays.asList("abc_alert_dialog_title_material", "abc_alert_dialog_button_bar_material",
-                        "notification_template_big_media", "notification_action_tombstone",
-                        "abc_screen_content_include", "abc_popup_menu_item_layout", "notification_action",
-                        "abc_expanded_menu_layout", "notification_template_big_media_narrow_custom",
-                        "notification_template_part_chronometer", "abc_alert_dialog_button_bar_material",
-                        "abc_dialog_title_material", "abc_alert_dialog_title_material",
-                        "notification_template_media_custom", "abc_action_menu_item_layout",
-                        "select_dialog_singlechoice_material", "select_dialog_item_material",
-                        "select_dialog_multichoice_material", "abc_screen_toolbar", "abc_alert_dialog_material",
-                        "abc_action_mode_bar", "abc_action_mode_close_item_material", "notification_media_action",
-                        "abc_search_dropdown_item_icons_2line", "abc_screen_toolbar", "abc_list_menu_item_layout",
-                        "notification_template_big_media_custom", "abc_screen_simple_overlay_action_mode",
-                        "notification_template_custom_big", "abc_list_menu_item_checkbox",
-                        "abc_popup_menu_header_item_layout", "abc_list_menu_item_radio", "abc_activity_chooser_view",
-                        "abc_screen_simple", "abc_action_bar_up_container", "notification_template_icon_group",
-                        "abc_search_view", "abc_tooltip", "abc_cascading_menu_item_layout",
-                        "abc_activity_chooser_view_list_item", "custom_dialog", "notification_template_media",
-                        "notification_template_lines_media", "abc_action_menu_layout",
-                        "notification_template_big_media_narrow", "abc_action_bar_title_item",
-                        "notification_media_cancel_action", "support_simple_spinner_dropdown_item",
-                        "abc_list_menu_item_icon"
-                             ));
-
+        List<String> blackListedLayouts;
+        try {
+            blackListedLayouts = Files.readAllLines(Paths.get(
+                    System.getProperty("user.dir") + File.separator + "LayoutBlacklist.txt")
+                                                   );
+        } catch (IOException e) {
+            blackListedLayouts = new ArrayList<>();
+        }
         return blackListedLayouts.contains(layout);
     }
 
