@@ -6,7 +6,7 @@ import soot.jimple.infoflow.android.resources.controls.LayoutControlFactory;
  * @author Jordan Doyle
  */
 
-public class MenuControlFactory extends LayoutControlFactory {
+public class DroidControlFactory extends LayoutControlFactory {
 
     @Override
     protected boolean isAndroidNamespace(String namespace) {

@@ -92,7 +92,7 @@ public class Filter {
         return false;
     }
 
-    public static boolean isBlackListedLayout(String layout) {
+    public static boolean isBlackListedResource(String layout) {
         List<String> blackListedLayouts = new ArrayList<>(
                 Arrays.asList("abc_alert_dialog_title_material", "abc_alert_dialog_button_bar_material",
                         "notification_template_big_media", "notification_action_tombstone",

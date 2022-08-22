@@ -3,6 +3,8 @@ package phd.research.core;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.enums.Format;
 import phd.research.helper.API;
+import phd.research.helper.DroidControlFactory;
+import phd.research.helper.MenuFileParser;
 import soot.*;
 import soot.jimple.infoflow.InfoflowConfiguration;
 import soot.jimple.infoflow.android.InfoflowAndroidConfiguration;
@@ -11,6 +13,7 @@ import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
+import soot.jimple.infoflow.android.resources.controls.LayoutControlFactory;
 import soot.jimple.infoflow.cfg.LibraryClassPatcher;
 import soot.options.Options;
 
@@ -68,9 +71,23 @@ public class FlowDroidUtils {
         }
     }
 
+    public static MenuFileParser getMenuFileParser(File apk) throws XmlPullParserException, IOException {
+        try (ProcessManifest manifest = new ProcessManifest(apk)) {
+            LayoutControlFactory controlFactory = new DroidControlFactory();
+            controlFactory.setLoadAdditionalAttributes(true);
+            MenuFileParser menuParser = new MenuFileParser();
+            menuParser.setControlFactory(controlFactory);
+            menuParser.parseLayoutFileDirect(manifest.getPackageName(), apk.getAbsolutePath());
+            return menuParser;
+        }
+    }
+
     public static LayoutFileParser getLayoutFileParser(File apk) throws XmlPullParserException, IOException {
         try (ProcessManifest manifest = new ProcessManifest(apk)) {
+            LayoutControlFactory controlFactory = new DroidControlFactory();
+            controlFactory.setLoadAdditionalAttributes(true);
             LayoutFileParser layoutParser = new LayoutFileParser(manifest.getPackageName(), getResources(apk));
+            layoutParser.setControlFactory(controlFactory);
             layoutParser.parseLayoutFileDirect(apk.getAbsolutePath());
             return layoutParser;
         }
