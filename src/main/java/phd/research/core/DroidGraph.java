@@ -454,7 +454,6 @@ public class DroidGraph {
                     if (!searchVertices(graph, method)) {
                         Vertex v = new MethodVertex(method);
                         logger.error("Adding left out method: " + v);
-                        System.out.println(clazz.getTags());
                         graph.addVertex(v);
                     }
                 }
