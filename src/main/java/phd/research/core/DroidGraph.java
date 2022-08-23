@@ -442,7 +442,7 @@ public class DroidGraph {
 
         for (Control control : uiControls.getControls()) {
             Vertex v = new ControlVertex(control);
-            if (graph.containsVertex(v)) {
+            if (!graph.containsVertex(v)) {
                 logger.error("Adding left out control: " + v);
                 graph.addVertex(v);
             }
@@ -454,6 +454,7 @@ public class DroidGraph {
                     if (!searchVertices(graph, method)) {
                         Vertex v = new MethodVertex(method);
                         logger.error("Adding left out method: " + v);
+                        System.out.println(clazz.getTags());
                         graph.addVertex(v);
                     }
                 }
