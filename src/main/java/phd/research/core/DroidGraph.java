@@ -15,18 +15,24 @@ import phd.research.graph.Filter;
 import phd.research.graph.UnitGraph;
 import phd.research.helper.API;
 import phd.research.vertices.*;
-import soot.*;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
+import soot.Scene;
+import soot.SootClass;
+import soot.SootMethod;
+import soot.Unit;
+import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.toolkits.callgraph.CallGraph;
-import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
-import soot.util.Chain;
+import soot.util.MultiMap;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -36,50 +42,25 @@ import java.util.stream.Collectors;
 public class DroidGraph {
 
     private static final Logger logger = LoggerFactory.getLogger(DroidGraph.class);
-
     @NotNull
-    private final File collectedCallbacksFile;
+    private final DroidControls droidControls;
     @NotNull
-    private final UiControls uiControls;
-
+    private final MultiMap<SootClass, AndroidCallbackDefinition> collectedCallbacks;
+    @NotNull
     private Graph<Vertex, DefaultEdge> callGraph;
+    @NotNull
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
-
-    public DroidGraph(File collectedCallbacksFile, UiControls uiControls) {
-        this.collectedCallbacksFile = Objects.requireNonNull(collectedCallbacksFile);
-        this.uiControls = Objects.requireNonNull(uiControls);
-    }
 
     @API
     public DroidGraph(File collectedCallbacksFile, File apk) throws XmlPullParserException, IOException {
-        this.collectedCallbacksFile = Objects.requireNonNull(collectedCallbacksFile);
-        this.uiControls = new UiControls(this.collectedCallbacksFile, apk);
+        this(collectedCallbacksFile, new DroidControls(collectedCallbacksFile, apk));
     }
 
-    public static Vertex getUnitVertex(Unit unit, Set<Vertex> set) {
-        for (Vertex vertex : set) {
-            if (vertex.getType() == Type.unit) {
-                if (((UnitVertex) vertex).getUnit().equals(unit)) {
-                    return vertex;
-                }
-            }
-        }
-
-        return null;
-        //TODO: Try not to return null.
-    }
-
-    public static Vertex getMethodVertex(Type type, SootMethod method, Set<Vertex> set) {
-        for (Vertex vertex : set) {
-            if (vertex.getType() == type) {
-                if (((MethodVertex) vertex).getMethod().equals(method)) {
-                    return vertex;
-                }
-            }
-        }
-
-        return null;
-        //TODO: Try not to return null.
+    public DroidGraph(File collectedCallbacksFile, DroidControls droidControls) throws FileNotFoundException {
+        this.collectedCallbacks = CollectedCallbacksSerializer.deserialize(collectedCallbacksFile).getCallbackMethods();
+        this.droidControls = Objects.requireNonNull(droidControls);
+        this.callGraph = generateCallGraph(Scene.v().getCallGraph());
+        this.controlFlowGraph = generateCFGraph(this.callGraph);
     }
 
     public static Collection<Vertex> getControlsNotVisited(Collection<Vertex> vertices) {
@@ -91,61 +72,52 @@ public class DroidGraph {
                 .collect(Collectors.toSet());
     }
 
-    public static Collection<Vertex> getControlVertices(SootClass activity, Collection<Integer> controlIds,
-            Collection<Vertex> vertices) {
-        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
-                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
-                        controlIds.contains(v.getControl().getControlResource().getResourceID()))
-                .collect(Collectors.toList());
-    }
-
-    @API
-    public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> set) {
-        for (Vertex vertex : set) {
-            if (vertex.getType() == Type.control) {
-                Control currentControl = ((ControlVertex) vertex).getControl();
-                if (currentControl.getControlActivity().equals(activity) &&
-                        currentControl.getControlResource().getResourceID() == controlId) {
-                    return vertex;
-                }
-            }
-        }
-
-        return null;
-        //TODO: Try not to return null.
-    }
-
-    //TODO: Which getControlVertex method is being used (above or below)?
-
-    @API
-    public static Vertex getControlVertex(SootClass activity, String controlName, Set<Vertex> set) {
-        for (Vertex vertex : set) {
-            if (vertex.getType() == Type.control) {
-                Control currentControl = ((ControlVertex) vertex).getControl();
-                if (currentControl.getControlActivity().equals(activity) &&
-                        currentControl.getControlResource().getResourceName().equals(controlName)) {
-                    return vertex;
-                }
-            }
-        }
-
-        return null;
-        //TODO: Try not to return null.
-    }
-
     public static void resetVisits(Graph<Vertex, DefaultEdge> graph) {
-        for (Vertex vertex : graph.vertexSet()) {
+        graph.vertexSet().forEach(vertex -> {
             vertex.visitReset();
             vertex.localVisitReset();
-        }
+        });
     }
 
     @API
     public static void resetLocalVisits(Graph<Vertex, DefaultEdge> graph) {
-        for (Vertex vertex : graph.vertexSet()) {
-            vertex.localVisitReset();
-        }
+        graph.vertexSet().forEach(Vertex::localVisitReset);
     }
+
+    public static Vertex getUnitVertex(Unit unit, Set<Vertex> vertices) {
+        return vertices.stream().filter(v -> v.getType() == Type.unit && ((UnitVertex) v).getUnit().equals(unit))
+                .findFirst().orElse(null);
+    }
+
+    public static Vertex getMethodVertex(SootMethod method, Set<Vertex> vertices) {
+        return vertices.stream().filter(v ->
+                        (v.getType() == Type.listener || v.getType() == Type.lifecycle || v.getType() == Type.dummy ||
+                                v.getType() == Type.method) && ((MethodVertex) v).getMethod().equals(method)).findFirst()
+                .orElse(null);
+    }
+
+    @API
+    public static Vertex getControlVertex(SootClass activity, String controlName, Set<Vertex> vertices) {
+        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
+                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
+                        v.getControl().getControlResource().getResourceName().equals(controlName)).findFirst()
+                .orElse(null);
+    }
+
+    //    public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> vertices) {
+    //        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
+    //                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
+    //                        v.getControl().getControlResource().getResourceID() == controlId).findFirst().orElse
+    //                        (null);
+    //    }
+    //
+    //    public static Collection<Vertex> getControlVertices(SootClass activity, Collection<Integer> controlIds,
+    //            Collection<Vertex> vertices) {
+    //        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
+    //                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
+    //                        controlIds.contains(v.getControl().getControlResource().getResourceID()))
+    //                .collect(Collectors.toSet());
+    //    }
 
     public static Pair<Float, Float> calculateGraphCoverage(Graph<Vertex, DefaultEdge> graph) {
         float interfaceCoverage, interfaceTotal, methodCoverage, methodTotal;
@@ -173,304 +145,200 @@ public class DroidGraph {
         return new Pair<>((interfaceCoverage / interfaceTotal) * 100, (methodCoverage / methodTotal) * 100);
     }
 
-    @API
-    public Collection<Vertex> getCFGControlsNotVisited() throws IOException, XmlPullParserException {
-        return DroidGraph.getControlsNotVisited(this.getControlFlowGraph().vertexSet());
-    }
-
-    @API
-    public Collection<Vertex> getCFGMethodsNotVisited() throws IOException, XmlPullParserException {
-        return DroidGraph.getMethodsNotVisited(this.getControlFlowGraph().vertexSet());
-    }
-
-    private Type getMethodType(SootMethod method) throws FileNotFoundException {
-        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(this.collectedCallbacksFile);
-
-        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
-            return Type.dummy;
-        } else if (Filter.isListenerMethod(callbacks.getCallbackMethods(), method)) {
-            return Type.listener;
-        } else if (Filter.isLifecycleMethod(method)) {
-            return Type.lifecycle;
-        } else if (Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method)) {
-            return Type.other;
-        } else {
-            return Type.method;
-        }
-        //TODO: Throw exception is type is not recognised.
-    }
-
-    public Graph<Vertex, DefaultEdge> getCallGraph() throws FileNotFoundException {
-        if (this.callGraph == null) {
-            this.callGraph = generateGraph(Scene.v().getCallGraph());
-        }
-
+    @Nonnull
+    public Graph<Vertex, DefaultEdge> getCallGraph() {
         return this.callGraph;
     }
 
+    @Nonnull
     @API
-    public Graph<Vertex, DefaultEdge> getControlFlowGraph() throws IOException, XmlPullParserException {
-        if (this.controlFlowGraph == null) {
-            this.controlFlowGraph = generateGraph(this.getCallGraph());
-        }
-
+    public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
         return this.controlFlowGraph;
     }
 
     @API
-    public void generateGraphs() throws IOException, XmlPullParserException {
-        this.callGraph = generateGraph(Scene.v().getCallGraph());
-        this.controlFlowGraph = generateGraph(this.callGraph);
+    public void generateGraphs() {
+        this.callGraph = generateCallGraph(Scene.v().getCallGraph());
+        this.controlFlowGraph = generateCFGraph(this.callGraph);
     }
 
     @API
-    public void resetCFGVisits() throws IOException, XmlPullParserException {
+    public Collection<Vertex> getCFGControlsNotVisited() {
+        return DroidGraph.getControlsNotVisited(this.getControlFlowGraph().vertexSet());
+    }
+
+    @API
+    public Collection<Vertex> getCFGMethodsNotVisited() {
+        return DroidGraph.getMethodsNotVisited(this.getControlFlowGraph().vertexSet());
+    }
+
+    @API
+    public void resetCFGVisits() {
         DroidGraph.resetVisits(this.getControlFlowGraph());
     }
 
-    public void resetCFGLocalVisits() throws IOException, XmlPullParserException {
+    @API
+    public void resetCFGLocalVisits() {
         DroidGraph.resetLocalVisits(this.getControlFlowGraph());
     }
 
     @API
-    public Pair<Float, Float> calculateCFGCoverage() throws IOException, XmlPullParserException {
+    public Pair<Float, Float> calculateCFGCoverage() {
         return calculateGraphCoverage(this.getControlFlowGraph());
     }
 
     @API
-    public boolean visitMethod(SootMethod method) throws IOException, XmlPullParserException {
-        logger.debug("Looking for method: " + method.getSignature());
+    public boolean visitCFGMethodVertex(SootMethod method) {
         for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
-            if (vertex.getType() == Type.method || vertex.getType() == Type.lifecycle ||
-                    vertex.getType() == Type.listener || vertex.getType() == Type.dummy) {
-                SootMethod currentMethod = ((MethodVertex) vertex).getMethod();
-                logger.debug("Found method: " + currentMethod.getSignature());
-                if (currentMethod.equals(method)) {
-                    vertex.visit();
-                    return true;
-                }
+            if ((vertex.getType() == Type.method || vertex.getType() == Type.lifecycle ||
+                    vertex.getType() == Type.listener || vertex.getType() == Type.dummy) &&
+                    ((MethodVertex) vertex).getMethod().equals(method)) {
+                vertex.visit();
+                return true;
             }
         }
         return false;
     }
 
-    private ControlVertex getInterfaceControl(ListenerVertex vertex) {
-        Control control = null;
-        Collection<Control> controls = this.uiControls.getControlsWithListener(vertex.getMethod());
-        if (controls.size() > 1) {
-            logger.error("Multiple controls have the same listener, returning the first.");
-        } else if (controls.isEmpty()) {
-            logger.error("No control for " + vertex.getLabel());
+    //    public Type getMethodType(SootMethod method) throws RuntimeException {
+    //        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
+    //            return Type.dummy;
+    //        } else if (Filter.isLifecycleMethod(method)) {
+    //            return Type.lifecycle;
+    //        } else if (Filter.isListenerMethod(this.collectedCallbacks, method) ||
+    //                Filter.isPossibleListenerMethod(this.collectedCallbacks, method)) {
+    //            return Type.listener;
+    //        } else if (Filter.isOtherCallbackMethod(collectedCallbacks, method)) {
+    //            return Type.other;
+    //        } else if (Filter.isValidMethod(method)) {
+    //            return Type.method;
+    //        } else {
+    //            throw new RuntimeException("Found method with unknown type.");
+    //        }
+    //    }
+
+    public MethodVertex createMethodVertex(SootMethod method) {
+        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
+            return new DummyVertex(method);
+        } else if (Filter.isLifecycleMethod(method)) {
+            return new LifecycleVertex(method);
+        } else if (Filter.isListenerMethod(this.collectedCallbacks, method) ||
+                Filter.isPossibleListenerMethod(this.collectedCallbacks, method)) {
+            return new ListenerVertex(method);
+        } else if (Filter.isOtherCallbackMethod(this.collectedCallbacks, method)) {
+            return new MethodVertex(Type.other, method);
+        } else if (Filter.isValidMethod(method)) {
+            return new MethodVertex(method);
         } else {
-            control = ((List<Control>) controls).get(0);
+            throw new RuntimeException(String.format("Found method %s with an unknown type.", method));
         }
-
-        if (control != null) {
-            return new ControlVertex(control);
-        }
-
-        // TODO: Try not to return null, leads to null pointer exceptions.
-        return null;
     }
 
-    private boolean checkGraph(Graph<Vertex, DefaultEdge> graph) throws IOException, XmlPullParserException {
-        // TODO: Verify graph is complete and correct (all methods present?, all vertices have input edges?, etc.)
-        Chain<SootClass> classes = Scene.v().getClasses();
-        Set<SootMethod> notInGraph = new HashSet<>();
+    //    private Collection<ControlVertex> getControlsForListener(ListenerVertex vertex) {
+    //        Collection<ControlVertex> vertices = new HashSet<>();
+    //        Collection<Control> controls = this.droidControls.getControlsWithListener(vertex.getMethod());
+    //
+    //        for (Control control : controls) {
+    //            vertices.add(new ControlVertex(control));
+    //        }
+    //
+    //        return vertices;
+    //    }
 
-        if (graph == null) {
-            graph = this.getControlFlowGraph();
-        }
-
-
-        for (SootClass sootClass : classes) {
-            if (Filter.isValidClass(sootClass)) {
-                List<SootMethod> methods = sootClass.getMethods();
-                for (SootMethod method : methods) {
-                    Type methodType = this.getMethodType(method);
-                    MethodVertex vertex = new MethodVertex(methodType, method);
-                    if (!graph.containsVertex(vertex)) {
-                        notInGraph.add(method);
-                    }
-                }
-            }
-        }
-
-        if (notInGraph.isEmpty()) {
-            logger.info("All methods in the graph.");
-        } else {
-            logger.error(notInGraph.size() + " methods are not in the graph. ");
-
-            for (SootMethod method : notInGraph) {
-                logger.info(method.toString());
-            }
-        }
-
-        return true;
-    }
-
-    private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) throws FileNotFoundException {
-        // TODO: Confirm Graph Generation is correct?
+    private Graph<Vertex, DefaultEdge> generateCallGraph(CallGraph sootCallGraph) {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-        Iterator<MethodOrMethodContext> sourceItr = sootCallGraph.sourceMethods();
-        while (sourceItr.hasNext()) {
-            SootMethod srcMethod = sourceItr.next().method();
-
-            if (Filter.isValidMethod(srcMethod) || srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
-                Type methodType = this.getMethodType(srcMethod);
-                Vertex srcVertex = null;
-                switch (methodType) {
-                    case method:
-                        srcVertex = new MethodVertex(srcMethod);
-                        break;
-                    case lifecycle:
-                        srcVertex = new LifecycleVertex(srcMethod);
-                        break;
-                    case listener:
-                        srcVertex = new ListenerVertex(srcMethod);
-                        break;
-                    case dummy:
-                        srcVertex = new DummyVertex(srcMethod);
-                        break;
-                    default:
-                        logger.error("Found unknown method type.");
-                        break;
-                }
-
-                if (srcVertex != null) {
-                    graph.addVertex(srcVertex);
-
-                    Iterator<Edge> edgeItr = sootCallGraph.edgesOutOf(srcMethod);
-                    while (edgeItr.hasNext()) {
-                        SootMethod tgtMethod = edgeItr.next().tgt();
-
-                        if (Filter.isValidMethod(tgtMethod) ||
-                                srcMethod.getDeclaringClass().getName().equals("dummyMainClass")) {
-                            methodType = this.getMethodType(tgtMethod);
-                            Vertex tgtVertex = null;
-                            switch (methodType) {
-                                case method:
-                                    tgtVertex = new MethodVertex(tgtMethod);
-                                    break;
-                                case lifecycle:
-                                    tgtVertex = new LifecycleVertex(tgtMethod);
-                                    break;
-                                case listener:
-                                    tgtVertex = new ListenerVertex(tgtMethod);
-                                    break;
-                                case dummy:
-                                    tgtVertex = new DummyVertex(tgtMethod);
-                                    break;
-                                default:
-                                    logger.error("Found unknown method type.");
-                                    break;
-                            }
-
-                            if (tgtVertex != null) {
-                                graph.addVertex(tgtVertex);
-                                graph.addEdge(srcVertex, tgtVertex);
-                            }
-                        }
-                    }
-                }
+        sootCallGraph.forEach(edge -> {
+            String dummyMain = "dummyMainClass";
+            if ((Filter.isValidMethod(edge.src()) || edge.src().getDeclaringClass().getName().equals(dummyMain)) &&
+                    (Filter.isValidMethod(edge.tgt()) || edge.tgt().getDeclaringClass().getName().equals(dummyMain))) {
+                Vertex srcVertex = createMethodVertex(edge.src());
+                graph.addVertex(srcVertex);
+                Vertex tgtVertex = createMethodVertex(edge.tgt());
+                graph.addVertex(tgtVertex);
+                graph.addEdge(srcVertex, tgtVertex);
             }
-        }
+        });
 
-        // checkGraph(graph);
         return graph;
     }
 
-    private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph) throws IOException {
+    private Graph<Vertex, DefaultEdge> generateCFGraph(Graph<Vertex, DefaultEdge> callGraph) {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Graphs.addGraph(graph, callGraph);
-        JimpleBasedInterproceduralCFG jimpleCFG = new JimpleBasedInterproceduralCFG();
 
-        Set<Vertex> vertexSet = new HashSet<>(graph.vertexSet());
-        for (Vertex vertex : vertexSet) {
-            if (vertex.getType() == Type.listener) {
-                ControlVertex interfaceVertex = getInterfaceControl((ListenerVertex) vertex);
-                if (interfaceVertex != null) {
-                    graph.addVertex(interfaceVertex);
-                    graph.addEdge(interfaceVertex, vertex);
+        this.droidControls.getControls().forEach(control -> {
+            Vertex controlVertex = new ControlVertex(control);
+            graph.addVertex(controlVertex);
+            control.getClickListeners().forEach(method -> {
+                Vertex listenerVertex = getMethodVertex(method, graph.vertexSet());
+                if (listenerVertex != null) {
+                    graph.addEdge(controlVertex, listenerVertex);
                 } else {
-                    logger.error("Failed to find interface control for vertex: \"" + vertex.getLabel() + "\". ");
+                    logger.error(String.format("Listener method %s not found in the graph.", method));
                 }
-            }
+            });
+        });
 
-            if (vertex.getType() == Type.listener || vertex.getType() == Type.lifecycle ||
-                    vertex.getType() == Type.method) {
+        JimpleBasedInterproceduralCFG jimpleCFG = new JimpleBasedInterproceduralCFG();
+        Set<Vertex> graphVertices = new HashSet<>(graph.vertexSet());
+        graphVertices.stream().filter(vertex -> vertex.getType() != Type.control).forEach(vertex -> {
+            SootMethod method = ((MethodVertex) vertex).getMethod();
+            if (method.hasActiveBody()) {
+                UnitGraph unitGraph = new UnitGraph(method.getActiveBody());
+                Graph<Vertex, DefaultEdge> methodSubGraph = unitGraph.getGraph();
+                Graphs.addGraph(graph, methodSubGraph);
+                unitGraph.getRoots().forEach(root -> graph.addEdge(vertex, root));
 
-                if (((MethodVertex) vertex).getMethod().hasActiveBody()) {
-                    UnitGraph unitGraph = new UnitGraph(((MethodVertex) vertex).getMethod().getActiveBody());
-                    Graph<Vertex, DefaultEdge> methodSubGraph = unitGraph.getGraph();
-                    Graphs.addGraph(graph, methodSubGraph);
-
-                    Collection<Vertex> roots = unitGraph.getRoots();
-                    for (Vertex root : roots) {
-                        graph.addEdge(vertex, root);
-                    }
-
-                    //TODO: Don't forget to link the return statement back to the calling statement.
-                    Set<Unit> callStatements = jimpleCFG.getCallsFromWithin(((MethodVertex) vertex).getMethod());
-                    for (Unit callStatement : callStatements) {
-                        Collection<SootMethod> calledMethods = jimpleCFG.getCalleesOfCallAt(callStatement);
-                        for (SootMethod calledMethod : calledMethods) {
-                            Type methodType = getMethodType(calledMethod);
-                            Vertex callVertex = getUnitVertex(callStatement, graph.vertexSet());
-                            Vertex calledVertex = getMethodVertex(methodType, calledMethod, graph.vertexSet());
-                            if (callVertex != null && calledVertex != null) {
-                                graph.addEdge(callVertex, calledVertex);
+                // TODO: Fix - jimpleCFG.getCalleesOfCallAt(caller) produces error method is referenced but has no body
+                jimpleCFG.getCallsFromWithin(method).forEach(caller -> jimpleCFG.getCalleesOfCallAt(caller).stream()
+                        .filter(Filter::isValidMethod).forEach(callee -> {
+                            Vertex callerVertex = getUnitVertex(caller, graph.vertexSet());
+                            if (callerVertex == null) {
+                                logger.error(String.format("Caller %s not found in the graph.", caller));
                             }
-                        }
-                    }
-                }
-            } else if (vertex.getType() != Type.unit && vertex.getType() != Type.control &&
-                    vertex.getType() != Type.dummy) {
-                logger.error("Found unknown vertex type \"" + vertex.getType() + "\": " + vertex.getLabel());
+                            Vertex calleeVertex = getMethodVertex(callee, graph.vertexSet());
+                            if (calleeVertex == null) {
+                                logger.error(String.format("Callee %s not found in the graph.", callee));
+                            }
+                            if (callerVertex != null && calleeVertex != null) {
+                                graph.addEdge(callerVertex, calleeVertex);
+                            }
+                }));
+                //TODO: Link method return unit back to the calling unit.
             }
-        }
+        });
 
-        for (Control control : uiControls.getControls()) {
-            ControlVertex interfaceVertex = new ControlVertex(control);
-            graph.addVertex(interfaceVertex);
-        }
-
-        // checkGraph(graph);
-        // TODO: Get all methods and controls and check if they are in the graph. If they are not, then add
-        //  standalone vertices for each of them.
-
-        for (Control control : uiControls.getControls()) {
-            Vertex v = new ControlVertex(control);
-            if (!graph.containsVertex(v)) {
-                logger.error("Adding left out control: " + v);
-                graph.addVertex(v);
-            }
-        }
-
-        for (SootClass clazz : Scene.v().getClasses()) {
-            if (Filter.isValidClass(clazz)) {
-                for (SootMethod method : clazz.getMethods()) {
-                    if (!searchVertices(graph, method)) {
-                        Vertex v = new MethodVertex(method);
-                        logger.error("Adding left out method: " + v);
-                        graph.addVertex(v);
-                    }
-                }
-            }
-        }
-
+        // TODO: Should missing methods be added to graph or has FlowDroid left them out for a reason?
+        verifyGraphContents(graph);
         return graph;
     }
 
-    private boolean searchVertices(Graph<Vertex, DefaultEdge> graph, SootMethod method) {
-        for (Vertex v : graph.vertexSet()) {
-            if (v instanceof MethodVertex) {
-                if (((MethodVertex) v).getMethod().equals(method)) {
-                    return true;
-                }
+    private void verifyGraphContents(Graph<Vertex, DefaultEdge> graph) {
+        Objects.requireNonNull(graph);
+
+        Collection<Control> missingControls = new HashSet<>();
+        for (Control control : droidControls.getControls()) {
+            if (!graph.containsVertex(new ControlVertex(control))) {
+                missingControls.add(control);
             }
         }
-        return false;
+
+        if (!missingControls.isEmpty()) {
+            logger.error(String.format("Found %s controls that are not in the CFG.", missingControls.size()));
+        }
+
+        Collection<SootMethod> missingMethods = new HashSet<>();
+        Scene.v().getClasses().stream().filter(Filter::isValidClass)
+                .forEach(clazz -> clazz.getMethods().forEach(method -> {
+                    Vertex vertex = createMethodVertex(method);
+                    if (!graph.containsVertex(vertex)) {
+                        missingMethods.add(method);
+                    }
+                }));
+
+        if (!missingMethods.isEmpty()) {
+            logger.error(String.format("Found %s methods that are not in the graph.", missingMethods.size()));
+        }
     }
 }

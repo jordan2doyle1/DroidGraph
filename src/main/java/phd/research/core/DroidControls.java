@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
  * @author Jordan Doyle
  */
 
-public class UiControls {
+public class DroidControls {
 
-    private static final Logger logger = LoggerFactory.getLogger(UiControls.class);
+    private static final Logger logger = LoggerFactory.getLogger(DroidControls.class);
 
     @NotNull
     private final File callbacksFile;
@@ -38,7 +38,7 @@ public class UiControls {
     private final ARSCFileParser resources;
     private final Collection<Control> controls;
 
-    public UiControls(File callbacksFile, File apk) throws XmlPullParserException, IOException {
+    public DroidControls(File callbacksFile, File apk) throws XmlPullParserException, IOException {
         this.callbacksFile = Objects.requireNonNull(callbacksFile);
         this.apk = Objects.requireNonNull(apk);
         this.resources = FlowDroidUtils.getResources(this.apk);
@@ -121,7 +121,7 @@ public class UiControls {
 
             Collection<SootMethod> listeners = new ArrayList<>();
             if (control.getClickListener() != null) {
-                listeners = UiControls.searchForCallbackMethods(this.callbacksFile, control.getClickListener());
+                listeners = DroidControls.searchForCallbackMethods(this.callbacksFile, control.getClickListener());
                 if (listeners.size() > 1) {
                     logger.warn(String.format("Found multiple listeners with control id %s.", control.getID()));
                 }

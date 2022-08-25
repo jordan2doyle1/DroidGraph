@@ -104,7 +104,8 @@ public class Filter {
     }
 
     public static boolean isValidClass(SootClass clazz) {
-        return Filter.isValidClass(Collections.singletonList("androidx"), Arrays.asList("R$", "dummyMainClass", "androidx"),
+        return Filter.isValidClass(Arrays.asList("androidx", "android"), Arrays.asList("R$", "dummyMainClass",
+                        "androidx"),
                 clazz);
     }
 
@@ -133,7 +134,7 @@ public class Filter {
     }
 
     public static boolean isValidMethod(SootMethod method) {
-        return Filter.isValidMethod(null, null, method);
+        return Filter.isValidClass(method.getDeclaringClass());
     }
 
     public static boolean isValidMethod(Collection<String> packageBlacklist, Collection<String> classBlacklist,

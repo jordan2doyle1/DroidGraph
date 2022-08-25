@@ -6,7 +6,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.StringTable;
 import phd.research.core.FlowDroidUtils;
-import phd.research.core.UiControls;
+import phd.research.core.DroidControls;
 import phd.research.vertices.Vertex;
 import soot.Scene;
 import soot.SootClass;
@@ -28,7 +28,7 @@ public class Viewer {
     @NotNull
     private final File collectedCallbacksFile;
     @NotNull
-    private final UiControls uiControls;
+    private final DroidControls droidControls;
 
     private Collection<SootClass> filteredClasses;
     private Collection<SootMethod> filteredMethods;
@@ -37,9 +37,9 @@ public class Viewer {
     private Collection<SootMethod> possibleListenerMethods;
     private Collection<SootMethod> otherCallbackMethods;
 
-    public Viewer(File collectedCallbacksFile, UiControls uiControls) {
+    public Viewer(File collectedCallbacksFile, DroidControls droidControls) {
         this.collectedCallbacksFile = Objects.requireNonNull(collectedCallbacksFile);
-        this.uiControls = Objects.requireNonNull(uiControls);
+        this.droidControls = Objects.requireNonNull(droidControls);
     }
 
     public static void outputCGDetails(File directory, Graph<Vertex, DefaultEdge> graph) throws IOException {
@@ -115,7 +115,7 @@ public class Viewer {
     }
 
     public String getCallbackTable() {
-        List<Control> controls = new ArrayList<>(this.uiControls.getControls());
+        List<Control> controls = new ArrayList<>(this.droidControls.getControls());
         String[][] data = new String[controls.size() + 1][];
         data[0] = new String[]{"WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD"};
         for (int i = 0; i < controls.size(); i++) {
@@ -167,7 +167,7 @@ public class Viewer {
         Writer.writeCollection(directory, "other_callbacks", this.getOtherCallbackMethods());
         Writer.writeCollection(directory, "filtered_classes", this.getFilteredClasses());
         Writer.writeCollection(directory, "filtered_methods", this.getFilteredMethods());
-        Writer.writeCollection(directory, "app_controls", this.uiControls.getControls());
+        Writer.writeCollection(directory, "app_controls", this.droidControls.getControls());
         Writer.writeString(directory, "control_callbacks", this.getCallbackTable());
         Writer.writeString(directory, "unassigned_callbacks", this.getUnassignedCallbackTable());
     }

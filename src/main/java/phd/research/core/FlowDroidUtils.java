@@ -123,7 +123,7 @@ public class FlowDroidUtils {
         Options.v().set_ignore_resolution_errors(true);
         Options.v().set_output_dir(outputDirectory.getAbsolutePath());
 
-        // Removed android.*, androidx.* exclusions because they cause errors and bugs with androidx fragment classes.
+        // "androidx.*" "android.*"
         List<String> excludeList = new LinkedList<>(
                 Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*", "org.eclipse.*", "soot.*"));
         Options.v().set_exclude(excludeList);
