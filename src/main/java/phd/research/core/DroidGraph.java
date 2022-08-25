@@ -108,8 +108,7 @@ public class DroidGraph {
     public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> vertices) {
         return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
                 .filter(v -> v.getControl().getControlActivity().equals(activity) &&
-                        v.getControl().getControlResource().getResourceID() == controlId).findFirst().orElse
-                        (null);
+                        v.getControl().getControlResource().getResourceID() == controlId).findFirst().orElse(null);
     }
 
     public static Pair<Float, Float> calculateGraphCoverage(Graph<Vertex, DefaultEdge> graph) {
@@ -274,20 +273,21 @@ public class DroidGraph {
                 unitGraph.getRoots().forEach(root -> graph.addEdge(vertex, root));
 
                 // TODO: Fix - jimpleCFG.getCalleesOfCallAt(caller) produces error method is referenced but has no body
-                jimpleCFG.getCallsFromWithin(method).forEach(caller -> jimpleCFG.getCalleesOfCallAt(caller).stream()
-                        .filter(Filter::isValidMethod).forEach(callee -> {
-                            Vertex callerVertex = getUnitVertex(caller, graph.vertexSet());
-                            if (callerVertex == null) {
-                                logger.error(String.format("Caller %s not found in the graph.", caller));
-                            }
-                            Vertex calleeVertex = getMethodVertex(callee, graph.vertexSet());
-                            if (calleeVertex == null) {
-                                logger.error(String.format("Callee %s not found in the graph.", callee));
-                            }
-                            if (callerVertex != null && calleeVertex != null) {
-                                graph.addEdge(callerVertex, calleeVertex);
-                            }
-                }));
+                jimpleCFG.getCallsFromWithin(method).forEach(
+                        caller -> jimpleCFG.getCalleesOfCallAt(caller).stream().filter(Filter::isValidMethod)
+                                .forEach(callee -> {
+                                    Vertex callerVertex = getUnitVertex(caller, graph.vertexSet());
+                                    if (callerVertex == null) {
+                                        logger.error(String.format("Caller %s not found in the graph.", caller));
+                                    }
+                                    Vertex calleeVertex = getMethodVertex(callee, graph.vertexSet());
+                                    if (calleeVertex == null) {
+                                        logger.error(String.format("Callee %s not found in the graph.", callee));
+                                    }
+                                    if (callerVertex != null && calleeVertex != null) {
+                                        graph.addEdge(callerVertex, calleeVertex);
+                                    }
+                                }));
                 //TODO: Link method return unit back to the calling unit.
             }
         });

@@ -18,7 +18,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @author Jordan Doyle
@@ -94,9 +97,8 @@ public class Filter {
     public static boolean isBlackListedResource(String layout) {
         List<String> blackListedLayouts;
         try {
-            blackListedLayouts = Files.readAllLines(Paths.get(
-                    System.getProperty("user.dir") + File.separator + "LayoutBlacklist.txt")
-                                                   );
+            blackListedLayouts = Files.readAllLines(
+                    Paths.get(System.getProperty("user.dir") + File.separator + "LayoutBlacklist.txt"));
         } catch (IOException e) {
             blackListedLayouts = new ArrayList<>();
         }
@@ -104,9 +106,9 @@ public class Filter {
     }
 
     public static boolean isValidClass(SootClass clazz) {
-        return Filter.isValidClass(Arrays.asList("androidx", "android"), Arrays.asList("R$", "dummyMainClass",
-                        "androidx"),
-                clazz);
+        return Filter.isValidClass(Arrays.asList("androidx", "android"),
+                Arrays.asList("R$", "dummyMainClass", "androidx"), clazz
+                                  );
     }
 
     public static boolean isValidClass(Collection<String> packageBlacklist, Collection<String> classBlacklist,

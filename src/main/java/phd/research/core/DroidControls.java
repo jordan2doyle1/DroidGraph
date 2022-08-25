@@ -188,8 +188,10 @@ public class DroidControls {
                 }
             }
         }
-        throw new RuntimeException(String.format("Could not find class linked with layout resource %s (%s).",
-                layout.getResourceID(), layout.getResourceName()));
+        throw new RuntimeException(
+                String.format("Could not find class linked with layout resource %s (%s).", layout.getResourceID(),
+                        layout.getResourceName()
+                             ));
     }
 
     private SootClass recursiveClassSearch(SootClass clazz, int id) {

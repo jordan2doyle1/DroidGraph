@@ -57,13 +57,14 @@ public class Control {
         StringBuilder builder = new StringBuilder("[");
         this.clickListeners.forEach(l -> builder.append(l.getName()).append(","));
         if (builder.charAt(builder.length() - 1) != '[') {
-            builder.replace(builder.length() -1, builder.length(), "]");
+            builder.replace(builder.length() - 1, builder.length(), "]");
         } else {
             builder.append("]");
         }
 
         return String.format("%s{control=%s, layout=%s, activity=%s, clickListener=%s}", getClass().getSimpleName(),
-                this.control.getResourceName(), this.layout.getResourceName(), this.activity.getShortName(), builder);
+                this.control.getResourceName(), this.layout.getResourceName(), this.activity.getShortName(), builder
+                            );
     }
 
     @Override
