@@ -104,20 +104,13 @@ public class DroidGraph {
                 .orElse(null);
     }
 
-    //    public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> vertices) {
-    //        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
-    //                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
-    //                        v.getControl().getControlResource().getResourceID() == controlId).findFirst().orElse
-    //                        (null);
-    //    }
-    //
-    //    public static Collection<Vertex> getControlVertices(SootClass activity, Collection<Integer> controlIds,
-    //            Collection<Vertex> vertices) {
-    //        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
-    //                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
-    //                        controlIds.contains(v.getControl().getControlResource().getResourceID()))
-    //                .collect(Collectors.toSet());
-    //    }
+    @API
+    public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> vertices) {
+        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
+                .filter(v -> v.getControl().getControlActivity().equals(activity) &&
+                        v.getControl().getControlResource().getResourceID() == controlId).findFirst().orElse
+                        (null);
+    }
 
     public static Pair<Float, Float> calculateGraphCoverage(Graph<Vertex, DefaultEdge> graph) {
         float interfaceCoverage, interfaceTotal, methodCoverage, methodTotal;
@@ -200,22 +193,23 @@ public class DroidGraph {
         return false;
     }
 
-    //    public Type getMethodType(SootMethod method) throws RuntimeException {
-    //        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
-    //            return Type.dummy;
-    //        } else if (Filter.isLifecycleMethod(method)) {
-    //            return Type.lifecycle;
-    //        } else if (Filter.isListenerMethod(this.collectedCallbacks, method) ||
-    //                Filter.isPossibleListenerMethod(this.collectedCallbacks, method)) {
-    //            return Type.listener;
-    //        } else if (Filter.isOtherCallbackMethod(collectedCallbacks, method)) {
-    //            return Type.other;
-    //        } else if (Filter.isValidMethod(method)) {
-    //            return Type.method;
-    //        } else {
-    //            throw new RuntimeException("Found method with unknown type.");
-    //        }
-    //    }
+    @API
+    public Type getMethodType(SootMethod method) throws RuntimeException {
+        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
+            return Type.dummy;
+        } else if (Filter.isLifecycleMethod(method)) {
+            return Type.lifecycle;
+        } else if (Filter.isListenerMethod(this.collectedCallbacks, method) ||
+                Filter.isPossibleListenerMethod(this.collectedCallbacks, method)) {
+            return Type.listener;
+        } else if (Filter.isOtherCallbackMethod(collectedCallbacks, method)) {
+            return Type.other;
+        } else if (Filter.isValidMethod(method)) {
+            return Type.method;
+        } else {
+            throw new RuntimeException(String.format("Found method %s with unknown type.", method));
+        }
+    }
 
     public MethodVertex createMethodVertex(SootMethod method) {
         if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
@@ -233,17 +227,6 @@ public class DroidGraph {
             throw new RuntimeException(String.format("Found method %s with an unknown type.", method));
         }
     }
-
-    //    private Collection<ControlVertex> getControlsForListener(ListenerVertex vertex) {
-    //        Collection<ControlVertex> vertices = new HashSet<>();
-    //        Collection<Control> controls = this.droidControls.getControlsWithListener(vertex.getMethod());
-    //
-    //        for (Control control : controls) {
-    //            vertices.add(new ControlVertex(control));
-    //        }
-    //
-    //        return vertices;
-    //    }
 
     private Graph<Vertex, DefaultEdge> generateCallGraph(CallGraph sootCallGraph) {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
