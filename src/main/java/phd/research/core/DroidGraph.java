@@ -53,18 +53,32 @@ public class DroidGraph {
 
     @API
     public DroidGraph(File collectedCallbacksFile, File apk) throws XmlPullParserException, IOException {
-        this(collectedCallbacksFile, new DroidControls(collectedCallbacksFile, apk));
+        this(collectedCallbacksFile, new DroidControls(collectedCallbacksFile, apk), true);
     }
 
     public DroidGraph(File collectedCallbacksFile, DroidControls droidControls) throws FileNotFoundException {
+        this(collectedCallbacksFile, droidControls, true);
+    }
+
+    public DroidGraph(File collectedCallbacksFile, DroidControls droidControls, boolean addMissingComponents)
+            throws FileNotFoundException {
         this.collectedCallbacks = CollectedCallbacksSerializer.deserialize(collectedCallbacksFile).getCallbackMethods();
         this.droidControls = Objects.requireNonNull(droidControls);
-        this.callGraph = generateCallGraph(Scene.v().getCallGraph());
-        this.controlFlowGraph = generateCFGraph(this.callGraph);
+        this.callGraph = generateGraph(Scene.v().getCallGraph());
+        this.controlFlowGraph = generateGraph(this.callGraph, addMissingComponents);
+    }
+
+    public static Collection<Vertex> getControlsVisited(Collection<Vertex> vertices) {
+        return vertices.stream().filter(v -> v instanceof ControlVertex && v.hasVisit()).collect(Collectors.toSet());
     }
 
     public static Collection<Vertex> getControlsNotVisited(Collection<Vertex> vertices) {
         return vertices.stream().filter(v -> v instanceof ControlVertex && !v.hasVisit()).collect(Collectors.toSet());
+    }
+
+    public static Collection<Vertex> getMethodsVisited(Collection<Vertex> vertices) {
+        return vertices.stream().filter(v -> v instanceof MethodVertex && v.getType() != Type.dummy && v.hasVisit())
+                .collect(Collectors.toSet());
     }
 
     public static Collection<Vertex> getMethodsNotVisited(Collection<Vertex> vertices) {
@@ -149,9 +163,19 @@ public class DroidGraph {
     }
 
     @API
-    public void generateGraphs() {
-        this.callGraph = generateCallGraph(Scene.v().getCallGraph());
-        this.controlFlowGraph = generateCFGraph(this.callGraph);
+    public void generateGraphs(boolean addMissingVertices) {
+        this.callGraph = generateGraph(Scene.v().getCallGraph());
+        this.controlFlowGraph = generateGraph(this.callGraph, addMissingVertices);
+    }
+
+    @API
+    public Collection<Vertex> getCFGControlsVisited() {
+        return DroidGraph.getControlsVisited(this.getControlFlowGraph().vertexSet());
+    }
+
+    @API
+    public Collection<Vertex> getCFGMethodsVisited() {
+        return DroidGraph.getMethodsVisited(this.getControlFlowGraph().vertexSet());
     }
 
     @API
@@ -227,7 +251,7 @@ public class DroidGraph {
         }
     }
 
-    private Graph<Vertex, DefaultEdge> generateCallGraph(CallGraph sootCallGraph) {
+    private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         sootCallGraph.forEach(edge -> {
@@ -245,7 +269,7 @@ public class DroidGraph {
         return graph;
     }
 
-    private Graph<Vertex, DefaultEdge> generateCFGraph(Graph<Vertex, DefaultEdge> callGraph) {
+    private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph, boolean addMissingVertices) {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Graphs.addGraph(graph, callGraph);
 
@@ -293,11 +317,10 @@ public class DroidGraph {
         });
 
         // TODO: Should missing methods be added to graph or has FlowDroid left them out for a reason?
-        verifyGraphContents(graph);
-        return graph;
+        return verifyGraphContents(graph, addMissingVertices);
     }
 
-    private void verifyGraphContents(Graph<Vertex, DefaultEdge> graph) {
+    private Graph<Vertex, DefaultEdge> verifyGraphContents(Graph<Vertex, DefaultEdge> graph, boolean addVertices) {
         Objects.requireNonNull(graph);
 
         Collection<Control> missingControls = new HashSet<>();
@@ -308,7 +331,11 @@ public class DroidGraph {
         }
 
         if (!missingControls.isEmpty()) {
-            logger.error(String.format("Found %s controls that are not in the CFG.", missingControls.size()));
+            logger.error(String.format("Found %s controls that are not in the graph.", missingControls.size()));
+            if (addVertices) {
+                logger.info(String.format("Adding %s controls into the graph.", missingControls.size()));
+                missingControls.forEach(control -> graph.addVertex(new ControlVertex(control)));
+            }
         }
 
         Collection<SootMethod> missingMethods = new HashSet<>();
@@ -322,6 +349,12 @@ public class DroidGraph {
 
         if (!missingMethods.isEmpty()) {
             logger.error(String.format("Found %s methods that are not in the graph.", missingMethods.size()));
+            if (addVertices) {
+                logger.info(String.format("Adding %s methods into the graph.", missingMethods.size()));
+                missingMethods.forEach(method -> graph.addVertex(createMethodVertex(method)));
+            }
         }
+
+        return graph;
     }
 }
