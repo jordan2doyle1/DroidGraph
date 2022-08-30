@@ -207,8 +207,8 @@ public class DroidGraph {
     public boolean visitCFGMethodVertex(SootMethod method) {
         for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
             if ((vertex.getType() == Type.method || vertex.getType() == Type.lifecycle ||
-                    vertex.getType() == Type.listener || vertex.getType() == Type.dummy) &&
-                    ((MethodVertex) vertex).getMethod().equals(method)) {
+                    vertex.getType() == Type.listener || vertex.getType() == Type.dummy ||
+                    vertex.getType() == Type.other) && ((MethodVertex) vertex).getMethod().equals(method)) {
                 vertex.visit();
                 return true;
             }
