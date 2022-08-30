@@ -307,6 +307,10 @@ public class DroidGraph {
                                     Vertex calleeVertex = getMethodVertex(callee, graph.vertexSet());
                                     if (calleeVertex == null) {
                                         logger.error(String.format("Callee %s not found in the graph.", callee));
+                                        if (addMissingVertices) {
+                                            logger.info(String.format("Adding %s method into the graph.", callee));
+                                            graph.addVertex(createMethodVertex(callee));
+                                        }
                                     }
                                     if (callerVertex != null && calleeVertex != null) {
                                         graph.addEdge(callerVertex, calleeVertex);
