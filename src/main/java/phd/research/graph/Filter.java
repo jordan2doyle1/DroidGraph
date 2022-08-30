@@ -13,15 +13,12 @@ import soot.jimple.infoflow.android.entryPointCreators.AndroidEntryPointUtils;
 import soot.jimple.infoflow.util.SystemClassHandler;
 import soot.util.MultiMap;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Jordan Doyle
@@ -96,12 +93,15 @@ public class Filter {
 
     public static boolean isBlackListedResource(String layout) {
         List<String> blackListedLayouts;
-        try {
-            blackListedLayouts = Files.readAllLines(
-                    Paths.get(System.getProperty("user.dir") + File.separator + "LayoutBlacklist.txt"));
-        } catch (IOException e) {
+
+        InputStream resourceStream = Filter.class.getClassLoader().getResourceAsStream("LayoutBlacklist.txt");
+        if (resourceStream != null) {
+            blackListedLayouts =
+                    new BufferedReader(new InputStreamReader(resourceStream)).lines().collect(Collectors.toList());
+        } else {
             blackListedLayouts = new ArrayList<>();
         }
+
         return blackListedLayouts.contains(layout);
     }
 
