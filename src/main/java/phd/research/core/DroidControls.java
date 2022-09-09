@@ -215,6 +215,7 @@ public class DroidControls {
 
     private boolean searchMethodInvokeExprForId(SootMethod method, int id) {
         PatchingChain<Unit> units = method.getActiveBody().getUnits();
+        Map<Value, List<String>> variableDeclarations = new HashMap<>();
         for (Iterator<Unit> iterator = units.snapshotIterator(); iterator.hasNext(); ) {
             Unit unit = iterator.next();
 
@@ -228,6 +229,22 @@ public class DroidControls {
                             expr.getMethod().getName().equals("inflate")) {
                         if (expr.getArgCount() > 0 && expr.getArg(0).toString().equals(String.valueOf(id))) {
                             searchStatus[0] = true;
+                        }
+                    } else if (expr.getMethod().getName().equals("<init>") && expr.getMethod().getDeclaringClass().getShortName().equals("RemoteViews")) {
+                        if (expr.getArgCount() > 0) {
+                            if (expr.getArg(1) instanceof Constant && expr.getArg(1).toString().equals(String.valueOf(id))) {
+                                searchStatus[0] = true;
+                            } else if (variableDeclarations.containsKey(expr.getArg(1))) {
+                                List<String> assignmentValues = variableDeclarations.get(expr.getArg(1));
+                                for (String value : assignmentValues) {
+                                    if (value.equals(String.valueOf(id))) {
+                                        searchStatus[0] = true;
+                                        break;
+                                    }
+                                }
+                            } else if (findVariableValue(expr.getArg(1)).equals(String.valueOf(id))) {
+                                searchStatus[0] = true;
+                            }
                         }
                     }
                 }
@@ -244,6 +261,20 @@ public class DroidControls {
                             }
                         }
                     }
+
+                    if (stmt.getRightOpBox().getValue() instanceof Constant) {
+                        if (variableDeclarations.containsKey(stmt.getLeftOp())) {
+                            List<String> assignmentValues = variableDeclarations.get(stmt.getLeftOp());
+                            assignmentValues.add(stmt.getRightOpBox().getValue().toString());
+                            variableDeclarations.put(stmt.getLeftOp(), assignmentValues);
+                        } else {
+                            variableDeclarations.put(stmt.getLeftOp(),
+                                    new ArrayList<>(
+                                            Collections.singletonList(stmt.getRightOpBox().getValue().toString())
+                                    )
+                                                    );
+                        }
+                    }
                 }
             });
 
@@ -252,5 +283,9 @@ public class DroidControls {
             }
         }
         return false;
+    }
+
+    private String findVariableValue(Value variable) {
+        return variable.toString();
     }
 }
