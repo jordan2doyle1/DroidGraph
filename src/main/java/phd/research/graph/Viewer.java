@@ -32,6 +32,7 @@ public class Viewer {
 
     private Collection<SootClass> filteredClasses;
     private Collection<SootMethod> filteredMethods;
+    private Collection<SootMethod> standardMethods;
     private Collection<SootMethod> lifecycleMethods;
     private Collection<SootMethod> listenerMethods;
     private Collection<SootMethod> possibleListenerMethods;
@@ -157,14 +158,13 @@ public class Viewer {
     }
 
     public void writeAnalysisToFile(File directory, File apk) throws XmlPullParserException, IOException {
-        //TODO: Verify file contents for ActivityLifecycle, MoClock and VolumeControl.
-        //TODO: Make sure method list does not include other method types. No duplicates.
         Writer.writeCollection(directory, "entry_points", FlowDroidUtils.getEntryPointClasses(apk));
         Writer.writeCollection(directory, "launch_activities", FlowDroidUtils.getLaunchActivities(apk));
         Writer.writeCollection(directory, "lifecycle_methods", this.getLifecycleMethods());
         Writer.writeCollection(directory, "listener_methods", this.getListenerMethods());
         Writer.writeCollection(directory, "possible_callbacks", this.getPossibleListenerMethods());
         Writer.writeCollection(directory, "other_callbacks", this.getOtherCallbackMethods());
+        Writer.writeCollection(directory, "standardMethods", this.getStandardMethods());
         Writer.writeCollection(directory, "filtered_classes", this.getFilteredClasses());
         Writer.writeCollection(directory, "filtered_methods", this.getFilteredMethods());
         Writer.writeCollection(directory, "app_controls", this.droidControls.getControls());
@@ -186,6 +186,14 @@ public class Viewer {
         }
 
         return this.filteredMethods;
+    }
+
+    public Collection<SootMethod> getStandardMethods() throws FileNotFoundException {
+        if (this.standardMethods == null) {
+            this.standardMethods = filterStandardMethods(this.collectedCallbacksFile);
+        }
+
+        return this.standardMethods;
     }
 
     public Collection<SootMethod> getLifecycleMethods() {
@@ -218,6 +226,24 @@ public class Viewer {
         }
 
         return this.possibleListenerMethods;
+    }
+
+    private Collection<SootMethod> filterStandardMethods(File callbacksFile) throws FileNotFoundException {
+        if (this.filteredMethods == null) {
+            this.filteredMethods = Viewer.filterMethods();
+        }
+
+        Collection<SootMethod> standardMethods = new HashSet<>();
+        for (SootMethod method : this.filteredMethods) {
+            if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacksFile, method) &&
+                    !Filter.isPossibleListenerMethod(callbacksFile, method) &&
+                    !Filter.isOtherCallbackMethod(callbacksFile, method)) {
+                standardMethods.add(method);
+            }
+        }
+
+        this.standardMethods = standardMethods;
+        return standardMethods;
     }
 
     private Collection<SootMethod> filterLifecycleMethods() {
