@@ -36,6 +36,8 @@ public class FrameworkMain {
                 .desc("Directory for output files.").build());
         options.addOption(Option.builder("f").longOpt("output-format").hasArg().numberOfArgs(1).argName("FORMAT")
                 .desc("Graph output format ('DOT','JSON','ALL').").build());
+        options.addOption(Option.builder("i").longOpt("import-graph").hasArg().numberOfArgs(1).argName("FILE")
+                .desc("File containing CFG for import.").build());
         options.addOption(Option.builder("c").longOpt("clean-directory").desc("Clean output directory.").build());
         options.addOption(Option.builder("s").longOpt("output-analysis").desc("Output soot content files.").build());
         options.addOption(Option.builder("g").longOpt("generate-graph").desc("Generate control-flow graph.").build());

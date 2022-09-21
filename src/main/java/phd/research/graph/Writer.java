@@ -3,7 +3,9 @@ package phd.research.graph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.nio.dot.DOTExporter;
+import org.jgrapht.nio.dot.DOTImporter;
 import org.jgrapht.nio.json.JSONExporter;
+import org.jgrapht.nio.json.JSONImporter;
 import phd.research.enums.Format;
 import phd.research.vertices.Vertex;
 import soot.Body;
@@ -113,5 +115,19 @@ public class Writer {
         exporter.exportGraph(graph, writer);
 
         writer.close();
+    }
+
+    private static void importDOT(File directory, String fileName, Graph<Vertex, DefaultEdge> graph) {
+        File file = new File(directory + File.separator + "JSON" + File.separator + fileName + ".json");
+
+        DOTImporter<Vertex, DefaultEdge> importer = new DOTImporter<>();
+        importer.importGraph(graph, file);
+    }
+
+    private static void importJSON(File directory, String fileName, Graph<Vertex, DefaultEdge> graph) {
+        File file = new File(directory + File.separator + "JSON" + File.separator + fileName + ".json");
+
+        JSONImporter<Vertex, DefaultEdge> importer = new JSONImporter<>();
+        importer.importGraph(graph, file);
     }
 }
