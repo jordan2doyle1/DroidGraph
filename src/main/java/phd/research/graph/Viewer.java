@@ -30,7 +30,9 @@ public class Viewer {
     @NotNull
     private final DroidControls droidControls;
 
+    private Collection<SootClass> allClasses;
     private Collection<SootClass> filteredClasses;
+    private Collection<SootMethod> allMethods;
     private Collection<SootMethod> filteredMethods;
     private Collection<SootMethod> standardMethods;
     private Collection<SootMethod> lifecycleMethods;
@@ -102,6 +104,17 @@ public class Viewer {
         return filteredMethods;
     }
 
+    private static Collection<SootMethod> allMethods() {
+        Chain<SootClass> classes = Scene.v().getClasses();
+        Collection<SootMethod> methods = new HashSet<>();
+
+        for (SootClass sootClass : classes) {
+            methods.addAll(sootClass.getMethods());
+        }
+
+        return methods;
+    }
+
     private static Collection<SootClass> filterClasses() {
         Chain<SootClass> allClasses = Scene.v().getClasses();
         Collection<SootClass> filteredClasses = new HashSet<>();
@@ -160,16 +173,26 @@ public class Viewer {
     public void writeAnalysisToFile(File directory, File apk) throws XmlPullParserException, IOException {
         Writer.writeCollection(directory, "entry_points", FlowDroidUtils.getEntryPointClasses(apk));
         Writer.writeCollection(directory, "launch_activities", FlowDroidUtils.getLaunchActivities(apk));
+        Writer.writeCollection(directory, "filtered_classes", this.getFilteredClasses());
+        Writer.writeCollection(directory, "all_classes", this.getAllClasses());
         Writer.writeCollection(directory, "lifecycle_methods", this.getLifecycleMethods());
         Writer.writeCollection(directory, "listener_methods", this.getListenerMethods());
         Writer.writeCollection(directory, "possible_callbacks", this.getPossibleListenerMethods());
         Writer.writeCollection(directory, "other_callbacks", this.getOtherCallbackMethods());
         Writer.writeCollection(directory, "standardMethods", this.getStandardMethods());
-        Writer.writeCollection(directory, "filtered_classes", this.getFilteredClasses());
+        Writer.writeCollection(directory,"all_methods", this.getAllMethods());
         Writer.writeCollection(directory, "filtered_methods", this.getFilteredMethods());
         Writer.writeCollection(directory, "app_controls", this.droidControls.getControls());
         Writer.writeString(directory, "control_callbacks", this.getCallbackTable());
         Writer.writeString(directory, "unassigned_callbacks", this.getUnassignedCallbackTable());
+    }
+
+    public Collection<SootClass> getAllClasses() {
+        if (this.allClasses == null) {
+            this.allClasses = Scene.v().getClasses();
+        }
+
+        return this.allClasses;
     }
 
     public Collection<SootClass> getFilteredClasses() {
@@ -178,6 +201,14 @@ public class Viewer {
         }
 
         return this.filteredClasses;
+    }
+
+    public Collection<SootMethod> getAllMethods() {
+        if (this.allMethods == null) {
+            this.allMethods = Viewer.allMethods();
+        }
+
+        return this.allMethods;
     }
 
     public Collection<SootMethod> getFilteredMethods() {
