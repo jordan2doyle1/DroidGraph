@@ -234,6 +234,25 @@ public class DroidGraph {
         }
     }
 
+    // TODO: Duplicate method. Fix.
+    public static MethodVertex createMethodVertex(File collectedCallbacks, SootMethod method)
+            throws FileNotFoundException {
+        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
+            return new DummyVertex(method);
+        } else if (Filter.isLifecycleMethod(method)) {
+            return new LifecycleVertex(method);
+        } else if (Filter.isListenerMethod(collectedCallbacks, method) ||
+                Filter.isPossibleListenerMethod(collectedCallbacks, method)) {
+            return new ListenerVertex(method);
+        } else if (Filter.isOtherCallbackMethod(collectedCallbacks, method)) {
+            return new MethodVertex(Type.other, method);
+        } else if (Filter.isValidMethod(method)) {
+            return new MethodVertex(method);
+        } else {
+            throw new RuntimeException(String.format("Found method %s with an unknown type.", method));
+        }
+    }
+
     public MethodVertex createMethodVertex(SootMethod method) {
         if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
             return new DummyVertex(method);

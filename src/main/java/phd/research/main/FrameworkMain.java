@@ -36,15 +36,20 @@ public class FrameworkMain {
                 .desc("Directory for output files.").build());
         options.addOption(Option.builder("f").longOpt("output-format").hasArg().numberOfArgs(1).argName("FORMAT")
                 .desc("Graph output format ('DOT','JSON','ALL').").build());
-        options.addOption(Option.builder("i").longOpt("import-graph").hasArg().numberOfArgs(1).argName("FILE")
-                .desc("File containing CFG for import.").build());
+
         options.addOption(Option.builder("c").longOpt("clean-directory").desc("Clean output directory.").build());
         options.addOption(Option.builder("s").longOpt("output-analysis").desc("Output soot content files.").build());
-        options.addOption(Option.builder("g").longOpt("generate-graph").desc("Generate control-flow graph.").build());
+
         options.addOption(Option.builder("ug").longOpt("unit-graph").desc("Output Unit Graphs.").build());
         options.addOption(Option.builder("cg").longOpt("call-graph").desc("Output Call Graph.").build());
         options.addOption(Option.builder("cf").longOpt("control-flow-graph").desc("Output CFG.").build());
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
+
+        OptionGroup optionGroup = new OptionGroup();
+        optionGroup.addOption(Option.builder("i").longOpt("import-graph").hasArg().numberOfArgs(1).argName("FILE")
+                .desc("File containing CFG for import.").build());
+        optionGroup.addOption(Option.builder("g").longOpt("generate-graph").desc("Generate control-flow graph.").build());
+        options.addOptionGroup(optionGroup);
 
         CommandLine cmd = null;
         try {
