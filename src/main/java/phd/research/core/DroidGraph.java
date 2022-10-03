@@ -5,6 +5,9 @@ import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.nio.Attribute;
+import org.jgrapht.nio.gml.GmlImporter;
+import org.jgrapht.util.SupplierUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
@@ -29,10 +32,9 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -46,26 +48,24 @@ public class DroidGraph {
     private final DroidControls droidControls;
     @NotNull
     private final MultiMap<SootClass, AndroidCallbackDefinition> collectedCallbacks;
-    @NotNull
     private Graph<Vertex, DefaultEdge> callGraph;
-    @NotNull
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
 
     @API
-    public DroidGraph(File collectedCallbacksFile, File apk) throws XmlPullParserException, IOException {
-        this(collectedCallbacksFile, new DroidControls(collectedCallbacksFile, apk), true);
+    public DroidGraph(File collectedCallbacksFile, File apk, File gmlFile) throws XmlPullParserException, IOException {
+        this(collectedCallbacksFile, new DroidControls(collectedCallbacksFile, apk), gmlFile, true);
     }
 
-    public DroidGraph(File collectedCallbacksFile, DroidControls droidControls) throws FileNotFoundException {
-        this(collectedCallbacksFile, droidControls, true);
+    public DroidGraph(File collectedCallbacksFile, DroidControls droidControls, File gmlFile) throws IOException {
+        this(collectedCallbacksFile, droidControls, gmlFile, true);
     }
 
-    public DroidGraph(File collectedCallbacksFile, DroidControls droidControls, boolean addMissingComponents)
-            throws FileNotFoundException {
+    public DroidGraph(File collectedCallbacksFile, DroidControls droidControls,
+            File gmlFile, boolean addMissingComponents)
+            throws IOException {
         this.collectedCallbacks = CollectedCallbacksSerializer.deserialize(collectedCallbacksFile).getCallbackMethods();
         this.droidControls = Objects.requireNonNull(droidControls);
-        this.callGraph = generateGraph(Scene.v().getCallGraph());
-        this.controlFlowGraph = generateGraph(this.callGraph, addMissingComponents);
+        this.generateGraphs(gmlFile, addMissingComponents);
     }
 
     public static Collection<Vertex> getControlsVisited(Collection<Vertex> vertices) {
@@ -163,8 +163,12 @@ public class DroidGraph {
     }
 
     @API
-    public void generateGraphs(boolean addMissingVertices) {
-        this.callGraph = generateGraph(Scene.v().getCallGraph());
+    public void generateGraphs(boolean addMissingVertices) throws IOException {
+        this.generateGraphs(null, addMissingVertices);
+    }
+
+    public void generateGraphs(File gmlGraph, boolean addMissingVertices) throws IOException {
+        this.callGraph = generateGraph(gmlGraph);
         this.controlFlowGraph = generateGraph(this.callGraph, addMissingVertices);
     }
 
@@ -234,25 +238,6 @@ public class DroidGraph {
         }
     }
 
-    // TODO: Duplicate method. Fix.
-    public static MethodVertex createMethodVertex(File collectedCallbacks, SootMethod method)
-            throws FileNotFoundException {
-        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
-            return new DummyVertex(method);
-        } else if (Filter.isLifecycleMethod(method)) {
-            return new LifecycleVertex(method);
-        } else if (Filter.isListenerMethod(collectedCallbacks, method) ||
-                Filter.isPossibleListenerMethod(collectedCallbacks, method)) {
-            return new ListenerVertex(method);
-        } else if (Filter.isOtherCallbackMethod(collectedCallbacks, method)) {
-            return new MethodVertex(Type.other, method);
-        } else if (Filter.isValidMethod(method)) {
-            return new MethodVertex(method);
-        } else {
-            throw new RuntimeException(String.format("Found method %s with an unknown type.", method));
-        }
-    }
-
     public MethodVertex createMethodVertex(SootMethod method) {
         if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
             return new DummyVertex(method);
@@ -270,6 +255,8 @@ public class DroidGraph {
         }
     }
 
+    @SuppressWarnings("unused")
+    @Deprecated
     private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
@@ -286,6 +273,143 @@ public class DroidGraph {
         });
 
         return graph;
+    }
+
+    private Graph<Vertex, DefaultEdge> generateGraph(File gmlGraph) {
+        return importGMLGraph(gmlGraph);
+    }
+
+//    private Graph<Vertex, DefaultEdge> generateGraph() throws IOException {
+//        File gmlGraphFile = new File("");
+//        if (!gmlGraphFile.exists()) {
+//            throw new IOException("");
+//        }
+//        return importGMLGraph(gmlGraphFile);
+//    }
+
+    private Graph<Vertex, DefaultEdge> importGMLGraph(File gmlFile) {
+        Graph<String, DefaultEdge> tempGraph =
+                new DefaultDirectedGraph<>(SupplierUtil.createStringSupplier(), SupplierUtil.DEFAULT_EDGE_SUPPLIER,
+                        false
+                );
+
+        GmlImporter<String, DefaultEdge> importer = new GmlImporter<>();
+        Map<String, Map<String, Attribute>> attrs = new HashMap<>();
+        importer.addVertexAttributeConsumer((p, a) -> {
+            Map<String, Attribute> map = attrs.computeIfAbsent(p.getFirst(), k -> new HashMap<>());
+            map.put(p.getSecond(), a);
+        });
+        importer.importGraph(tempGraph, gmlFile);
+
+        Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        tempGraph.vertexSet().forEach(v -> {
+            try {
+                Vertex vertex = createVertexForLabel(attrs.get(v).get("label").getValue());
+                if (vertex != null) {
+                    graph.addVertex();
+                }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        tempGraph.edgeSet().forEach(
+                e -> {
+                    try {
+                        Vertex src =
+                                createVertexForLabel(attrs.get(tempGraph.getEdgeSource(e)).get("label").getValue());
+                        Vertex tgt = createVertexForLabel(attrs.get(tempGraph.getEdgeTarget(e)).get("label").getValue());
+                        if (src != null && tgt != null) {
+                            graph.addEdge(src, tgt);
+                        }
+                    } catch (FileNotFoundException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+
+        // TODO: Verify graph contents.
+        return graph;
+    }
+
+    private Vertex createVertexForLabel(String label) throws FileNotFoundException {
+        Pattern pattern = Pattern.compile("L(.+);->(.+)\\((.*)\\)(.+;|\\[?\\[?.) ?(\\[.+])?");
+        Matcher matcher = pattern.matcher(label);
+
+        if (matcher.find()) {
+            String className = matcher.group(1).trim().replace("/", ".");
+            String methodName = matcher.group(2).trim();
+            String parameters = matcher.group(3).trim();
+            List<String> paramList = new ArrayList<>(
+                    parameters.equals("") ? Collections.emptyList() : Arrays.asList(parameters.split(" ")));
+            paramList.replaceAll(this::convertBytecodeTypeToJimple);
+            String methodReturn = convertBytecodeTypeToJimple(matcher.group(4).trim());
+
+            String methodSignature = buildMethodSignature(className, methodName, methodReturn, paramList);
+            SootMethod method = Scene.v().grabMethod(methodSignature);
+
+            if (method == null) {
+                logger.error("Failed to find method: " + methodSignature);
+                return null;
+            }
+
+            SootClass clazz = Scene.v().getSootClassUnsafe(Scene.signatureToClass(methodSignature));
+            if (clazz == null) {
+                logger.error("");
+                return null;
+            }
+
+            if (Filter.isValidClass(clazz)) {
+                this.createMethodVertex(method);
+            }
+        }
+
+        return null;
+    }
+
+    private String buildMethodSignature(String clazz, String method, String returnType, Collection<String> parameters) {
+        StringBuilder builder = new StringBuilder("<");
+        builder.append(clazz).append(": ").append(returnType).append(" ").append(method).append("(");
+
+        parameters.forEach(parameter-> builder.append(parameter).append(","));
+        if (builder.charAt(builder.length() - 1) == ',') {
+            builder.deleteCharAt(builder.length() - 1);
+        }
+
+        return builder.append(")>").toString();
+    }
+
+    private String convertBytecodeTypeToJimple(String type) {
+        if (type.startsWith("[")) {
+            return convertBytecodeTypeToJimple(type.substring(1)) + "[]";
+        } else if (type.startsWith("L")) {
+            return type.substring(1, type.length() - 1).replace("/", ".");
+        } else {
+            return convertBytecodePrimitiveToJimple(type);
+        }
+    }
+
+    private String convertBytecodePrimitiveToJimple(String primitiveType) {
+        switch (primitiveType) {
+            case "V":
+                return "void";
+            case "Z":
+                return "boolean";
+            case "B":
+                return "byte";
+            case "C":
+                return "char";
+            case "S":
+                return "short";
+            case "I":
+                return "int";
+            case "J":
+                return "long";
+            case "F":
+                return "float";
+            case "D":
+                return "double";
+            default:
+                throw new RuntimeException("Primitive type provided not recognised: " + primitiveType);
+        }
     }
 
     private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph, boolean addMissingVertices) {

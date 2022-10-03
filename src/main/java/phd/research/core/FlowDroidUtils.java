@@ -147,7 +147,6 @@ public class FlowDroidUtils {
         InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
         config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
         config.setCodeEliminationMode(InfoflowConfiguration.CodeEliminationMode.NoCodeElimination);
-        // config.setCallgraphAlgorithm(InfoflowConfiguration.CallgraphAlgorithm.SPARK);
         config.setMergeDexFiles(true);
         config.getAnalysisFileConfig().setAndroidPlatformDir(platform.getAbsolutePath());
         String sourceAndSinkFileName = System.getProperty("user.dir") + File.separator + "SourcesAndSinks.txt";

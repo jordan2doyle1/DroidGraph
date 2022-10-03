@@ -177,21 +177,21 @@ public class AndroGuardMain {
             logger.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
         }
 
-        logger.info("Running graph import... (" + cTimer.start(true) + ")");
-        AndroGuard androGuard = new AndroGuard(androGuardCallGraph);
-        logger.info("(" + cTimer.end() + ") Graph import took " + cTimer.secondsDuration() + " second(s).");
+//        logger.info("Running graph import... (" + cTimer.start(true) + ")");
+//        AndroGuard androGuard = new AndroGuard(androGuardCallGraph, callbackFile);
+//        logger.info("(" + cTimer.end() + ") Graph import took " + cTimer.secondsDuration() + " second(s).");
 
-        logger.info("Starting graph output... (" + cTimer.start(true) + ")");
-        androGuard.outputGMLGraph(outputDirectory);
-        logger.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
-
-        if (outputAnalysis) {
-            try {
-                Viewer.outputCGDetails(outputDirectory, androGuard.getCallGraph());
-            } catch (IOException e) {
-                logger.error("Failed to write graph composition details to output file: " + e.getMessage());
-            }
-        }
+//        logger.info("Starting graph output... (" + cTimer.start(true) + ")");
+//        androGuard.outputGMLGraph(outputDirectory);
+//        logger.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
+//
+//        if (outputAnalysis) {
+//            try {
+//                Viewer.outputCGDetails(outputDirectory, androGuard.getCallGraph(callbackFile));
+//            } catch (IOException e) {
+//                logger.error("Failed to write graph composition details to output file: " + e.getMessage());
+//            }
+//        }
 
         logger.info("End time: " + timer.end());
         logger.info("Execution time: " + timer.secondsDuration() + " second(s).");
