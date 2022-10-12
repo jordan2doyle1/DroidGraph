@@ -23,7 +23,7 @@ public class ControlVertex extends Vertex implements Serializable {
     private final Control control;
 
     public ControlVertex(Control control) {
-        super(Type.control);
+        super(Type.CONTROL);
         this.control = Objects.requireNonNull(control);
         super.setLabel("Control{control=" + control.getControlResource().getResourceName() + "(" +
                 control.getControlResource().getResourceID() + ")}");
@@ -35,15 +35,15 @@ public class ControlVertex extends Vertex implements Serializable {
     }
 
     public Color getColor() {
-        return Color.red;
+        return Color.RED;
     }
 
     public Shape getShape() {
-        return Shape.circle;
+        return Shape.CIRCLE;
     }
 
     public Style getStyle() {
-        return Style.filled;
+        return Style.FILLED;
     }
 
     public Map<String, Attribute> getAttributes() {

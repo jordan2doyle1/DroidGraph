@@ -28,22 +28,22 @@ public class Composition {
 
         for (Vertex vertex : vertices) {
             switch (vertex.getType()) {
-                case method:
+                case METHOD:
                     this.method++;
                     break;
-                case listener:
+                case LISTENER:
                     this.listener++;
                     break;
-                case callback:
+                case CALLBACK:
                     this.callback++;
                     break;
-                case lifecycle:
+                case LIFECYCLE:
                     this.lifecycle++;
                     break;
-                case dummy:
+                case DUMMY:
                     this.dummy++;
                     break;
-                case control:
+                case CONTROL:
                     this.control++;
                     break;
             }

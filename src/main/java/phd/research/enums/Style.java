@@ -5,5 +5,5 @@ package phd.research.enums;
  */
 
 public enum Style {
-    solid, dashed, dotted, bold, invisible, filled, diagonals, rounded
+    SOLID, DASHED, DOTTED, BOLD, INVISIBLE, FILLED, DIAGONALS, ROUNDED
 }

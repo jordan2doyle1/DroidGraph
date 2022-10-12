@@ -23,19 +23,19 @@ public class VertexTest {
 
     @Before
     public void setUp() {
-        this.v = new Vertex(Type.unknown, LABEL);
+        this.v = new Vertex(Type.UNKNOWN, LABEL);
     }
 
     @Test
     public void testSimpleConstructor() {
-        Vertex s = new Vertex(Type.unknown);
-        assertEquals("Wrong type returned.", Type.unknown, s.getType());
+        Vertex s = new Vertex(Type.UNKNOWN);
+        assertEquals("Wrong type returned.", Type.UNKNOWN, s.getType());
         assertEquals("Wrong label returned.", LABEL, s.getLabel());
     }
 
     @Test
     public void testBaseConstructor() {
-        assertEquals("Wrong type returned.", Type.unknown, this.v.getType());
+        assertEquals("Wrong type returned.", Type.UNKNOWN, this.v.getType());
         assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
     }
 
@@ -46,7 +46,7 @@ public class VertexTest {
 
     @Test(expected = NullPointerException.class)
     public void testLabelNullException() {
-        new Vertex(Type.unknown, null);
+        new Vertex(Type.UNKNOWN, null);
     }
 
     @Test

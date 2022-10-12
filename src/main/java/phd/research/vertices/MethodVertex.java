@@ -24,7 +24,7 @@ public class MethodVertex extends Vertex implements Serializable {
     private final SootMethod method;
 
     public MethodVertex(SootMethod method) {
-        this(Type.method, method);
+        this(Type.METHOD, method);
     }
 
     public MethodVertex(Type type, SootMethod method) {
@@ -35,15 +35,15 @@ public class MethodVertex extends Vertex implements Serializable {
 
     public static MethodVertex createMethodVertex(SootMethod method) throws RuntimeException {
         switch (Type.getMethodType(method)) {
-            case dummy:
+            case DUMMY:
                 return new DummyVertex(method);
-            case lifecycle:
+            case LIFECYCLE:
                 return new LifecycleVertex(method);
-            case listener:
+            case LISTENER:
                 return new ListenerVertex(method);
-            case callback:
+            case CALLBACK:
                 return new CallbackVertex(method);
-            case method:
+            case METHOD:
                 return new MethodVertex(method);
             default:
                 throw new RuntimeException(String.format("Method %s has unknown type.", method));
@@ -62,15 +62,15 @@ public class MethodVertex extends Vertex implements Serializable {
     }
 
     public Color getColor() {
-        return Color.green;
+        return Color.GREEN;
     }
 
     public Shape getShape() {
-        return Shape.ellipse;
+        return Shape.ELLIPSE;
     }
 
     public Style getStyle() {
-        return Style.filled;
+        return Style.FILLED;
     }
 
     private String createLabel(SootMethod method) {

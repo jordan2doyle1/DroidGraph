@@ -5,6 +5,6 @@ package phd.research.enums;
  */
 
 public enum Shape {
-    box, polygon, ellipse, oval, circle, point, egg, triangle, plaintext, plain, diamond, trapezium, parallelogram,
-    house, pentagon, hexagon, octagon, rect, rectangle
+    BOX, POLYGON, ELLIPSE, OVAL, CIRCLE, POINT, EGG, TRIANGLE, PLAINTEXT, PLAIN, DIAMOND, TRAPEZIUM, PARALLELOGRAM,
+    HOUSE, PENTAGON, HEXAGON, OCTAGON, RECT, RECTANGLE
 }

@@ -44,7 +44,7 @@ public class ControlVertexTest {
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'control'.", Type.control, this.v.getType());
+        assertEquals("Type should be 'control'.", Type.CONTROL, this.v.getType());
         assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
         assertEquals("Wrong resource returned.", RESOURCE_NAME,
                 this.v.getControl().getControlResource().getResourceName()

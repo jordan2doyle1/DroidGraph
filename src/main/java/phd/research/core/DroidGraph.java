@@ -67,12 +67,12 @@ public class DroidGraph {
     }
 
     public static Collection<Vertex> getMethodsVisited(Collection<Vertex> vertices) {
-        return vertices.stream().filter(v -> v instanceof MethodVertex && v.getType() != Type.dummy && v.hasVisit())
+        return vertices.stream().filter(v -> v instanceof MethodVertex && v.getType() != Type.DUMMY && v.hasVisit())
                 .collect(Collectors.toSet());
     }
 
     public static Collection<Vertex> getMethodsNotVisited(Collection<Vertex> vertices) {
-        return vertices.stream().filter(v -> v instanceof MethodVertex && v.getType() != Type.dummy && !v.hasVisit())
+        return vertices.stream().filter(v -> v instanceof MethodVertex && v.getType() != Type.DUMMY && !v.hasVisit())
                 .collect(Collectors.toSet());
     }
 
@@ -89,20 +89,20 @@ public class DroidGraph {
     }
 
     public static Vertex getUnitVertex(Unit unit, Set<Vertex> vertices) {
-        return vertices.stream().filter(v -> v.getType() == Type.unit && ((UnitVertex) v).getUnit().equals(unit))
+        return vertices.stream().filter(v -> v.getType() == Type.UNIT && ((UnitVertex) v).getUnit().equals(unit))
                 .findFirst().orElse(null);
     }
 
     public static Vertex getMethodVertex(SootMethod method, Set<Vertex> vertices) {
         return vertices.stream().filter(v ->
-                        (v.getType() == Type.listener || v.getType() == Type.lifecycle || v.getType() == Type.dummy ||
-                                v.getType() == Type.method) && ((MethodVertex) v).getMethod().equals(method)).findFirst()
+                        (v.getType() == Type.LISTENER || v.getType() == Type.LIFECYCLE || v.getType() == Type.DUMMY ||
+                                v.getType() == Type.METHOD) && ((MethodVertex) v).getMethod().equals(method)).findFirst()
                 .orElse(null);
     }
 
     @API
     public static Vertex getControlVertex(SootClass activity, String controlName, Set<Vertex> vertices) {
-        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
+        return vertices.stream().filter(v -> v.getType() == Type.CONTROL).map(v -> (ControlVertex) v)
                 .filter(v -> v.getControl().getControlActivity().equals(activity) &&
                         v.getControl().getControlResource().getResourceName().equals(controlName)).findFirst()
                 .orElse(null);
@@ -110,7 +110,7 @@ public class DroidGraph {
 
     @API
     public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> vertices) {
-        return vertices.stream().filter(v -> v.getType() == Type.control).map(v -> (ControlVertex) v)
+        return vertices.stream().filter(v -> v.getType() == Type.CONTROL).map(v -> (ControlVertex) v)
                 .filter(v -> v.getControl().getControlActivity().equals(activity) &&
                         v.getControl().getControlResource().getResourceID() == controlId).findFirst().orElse(null);
     }
@@ -121,15 +121,15 @@ public class DroidGraph {
 
         for (Vertex vertex : graph.vertexSet()) {
             switch (vertex.getType()) {
-                case control:
+                case CONTROL:
                     interfaceTotal += 1;
                     if (vertex.hasVisit()) {
                         interfaceCoverage += 1;
                     }
                     break;
-                case method:
-                case listener:
-                case lifecycle:
+                case METHOD:
+                case LISTENER:
+                case LIFECYCLE:
                     methodTotal += 1;
                     if (vertex.hasVisit()) {
                         methodCoverage += 1;
@@ -201,9 +201,9 @@ public class DroidGraph {
     @API
     public boolean visitCFGMethodVertex(SootMethod method) {
         for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
-            if ((vertex.getType() == Type.method || vertex.getType() == Type.lifecycle ||
-                    vertex.getType() == Type.listener || vertex.getType() == Type.dummy ||
-                    vertex.getType() == Type.callback) && ((MethodVertex) vertex).getMethod().equals(method)) {
+            if ((vertex.getType() == Type.METHOD || vertex.getType() == Type.LIFECYCLE ||
+                    vertex.getType() == Type.LISTENER || vertex.getType() == Type.DUMMY ||
+                    vertex.getType() == Type.CALLBACK) && ((MethodVertex) vertex).getMethod().equals(method)) {
                 vertex.visit();
                 return true;
             }
@@ -239,7 +239,7 @@ public class DroidGraph {
         } else if (Filter.isListenerMethod(method) || Filter.isPossibleListenerMethod(method)) {
             return new ListenerVertex(method);
         } else if (Filter.isOtherCallbackMethod(method)) {
-            return new MethodVertex(Type.callback, method);
+            return new MethodVertex(Type.CALLBACK, method);
         } else if (Filter.isValidMethod(method)) {
             return new MethodVertex(method);
         } else {
@@ -337,7 +337,7 @@ public class DroidGraph {
 
         JimpleBasedInterproceduralCFG jimpleCFG = new JimpleBasedInterproceduralCFG();
         Set<Vertex> graphVertices = new HashSet<>(graph.vertexSet());
-        graphVertices.stream().filter(vertex -> vertex.getType() != Type.control).forEach(vertex -> {
+        graphVertices.stream().filter(vertex -> vertex.getType() != Type.CONTROL).forEach(vertex -> {
             SootMethod method = ((MethodVertex) vertex).getMethod();
             if (method.hasActiveBody()) {
                 UnitGraph unitGraph = new UnitGraph(method.getActiveBody());

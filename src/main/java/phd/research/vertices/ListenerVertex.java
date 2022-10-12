@@ -14,17 +14,17 @@ import java.io.Serializable;
 public class ListenerVertex extends MethodVertex implements Serializable {
 
     public ListenerVertex(SootMethod method) {
-        super(Type.listener, method);
+        super(Type.LISTENER, method);
     }
 
     @Override
     public Color getColor() {
-        return Color.orange;
+        return Color.ORANGE;
     }
 
     @Override
     public Shape getShape() {
-        return Shape.octagon;
+        return Shape.OCTAGON;
     }
 
     @Override

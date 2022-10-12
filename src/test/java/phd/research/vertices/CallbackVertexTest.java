@@ -51,7 +51,7 @@ public class CallbackVertexTest {
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'callback'.", Type.callback, this.v.getType());
+        assertEquals("Type should be 'callback'.", Type.CALLBACK, this.v.getType());
         assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
         assertEquals("Wrong method returned.", METHOD_NAME, this.v.getMethod().getName());
     }

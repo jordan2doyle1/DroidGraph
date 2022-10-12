@@ -5,5 +5,5 @@ package phd.research.enums;
  */
 
 public enum Format {
-    all, dot, json, gml
+    ALL, DOT, JSON, GML
 }

@@ -27,16 +27,16 @@ public class Writer {
     public static void writeGraph(File directory, String fileName, Format format, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
         switch (format) {
-            case dot:
+            case DOT:
                 exportDOT(directory, fileName, graph);
                 break;
-            case json:
+            case JSON:
                 exportJSON(directory, fileName, graph);
                 break;
-            case gml:
+            case GML:
                 exportGML(directory, fileName, graph);
                 break;
-            case all:
+            case ALL:
                 exportDOT(directory, fileName, graph);
                 exportJSON(directory, fileName, graph);
                 exportGML(directory, fileName, graph);

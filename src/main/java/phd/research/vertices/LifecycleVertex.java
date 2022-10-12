@@ -14,17 +14,17 @@ import java.io.Serializable;
 public class LifecycleVertex extends MethodVertex implements Serializable {
 
     public LifecycleVertex(SootMethod method) {
-        super(Type.lifecycle, method);
+        super(Type.LIFECYCLE, method);
     }
 
     @Override
     public Color getColor() {
-        return Color.blue;
+        return Color.BLUE;
     }
 
     @Override
     public Shape getShape() {
-        return Shape.diamond;
+        return Shape.DIAMOND;
     }
 
     @Override

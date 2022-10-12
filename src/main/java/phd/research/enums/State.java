@@ -5,5 +5,5 @@ package phd.research.enums;
  */
 
 public enum State {
-    created, started, resumed, paused, stopped, restarted, destroyed
+    CREATED, STARTED, RESUMED, PAUSED, STOPPED, RESTARTED, DESTROYED
 }

@@ -121,11 +121,11 @@ public class FlowDroidUtils {
     public static Format stringToFormat(String format) throws RuntimeException {
         switch (format) {
             case "DOT":
-                return Format.dot;
+                return Format.DOT;
             case "JSON":
-                return Format.json;
+                return Format.JSON;
             case "ALL":
-                return Format.all;
+                return Format.ALL;
             default:
                 throw new RuntimeException("Unrecognised Graph Output Format.");
         }

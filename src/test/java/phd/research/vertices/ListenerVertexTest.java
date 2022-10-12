@@ -55,7 +55,7 @@ public class ListenerVertexTest {
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'listener'.", Type.listener, this.v.getType());
+        assertEquals("Type should be 'listener'.", Type.LISTENER, this.v.getType());
         assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
         assertEquals("Wrong method returned.", METHOD_NAME, this.v.getMethod().getName());
     }

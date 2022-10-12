@@ -14,17 +14,17 @@ import java.io.Serializable;
 public class CallbackVertex extends MethodVertex implements Serializable {
 
     public CallbackVertex(SootMethod method) {
-        super(Type.callback, method);
+        super(Type.CALLBACK, method);
     }
 
     @Override
     public Color getColor() {
-        return Color.purple;
+        return Color.PURPLE;
     }
 
     @Override
     public Shape getShape() {
-        return Shape.hexagon;
+        return Shape.HEXAGON;
     }
 
     @Override

@@ -109,10 +109,10 @@ public class FrameworkMain {
 
         Format outputFormat;
         try {
-            outputFormat = (cmd.hasOption("f") ? FlowDroidUtils.stringToFormat(cmd.getOptionValue("f")) : Format.json);
+            outputFormat = (cmd.hasOption("f") ? FlowDroidUtils.stringToFormat(cmd.getOptionValue("f")) : Format.JSON);
         } catch (RuntimeException e) {
             logger.warn(e.getMessage() + " Using default format instead.");
-            outputFormat = Format.json;
+            outputFormat = Format.JSON;
         }
 
         Timer cTimer = new Timer();

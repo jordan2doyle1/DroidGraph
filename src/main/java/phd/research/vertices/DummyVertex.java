@@ -14,17 +14,17 @@ import java.io.Serializable;
 public class DummyVertex extends MethodVertex implements Serializable {
 
     public DummyVertex(SootMethod method) {
-        super(Type.dummy, method);
+        super(Type.DUMMY, method);
     }
 
     @Override
     public Color getColor() {
-        return Color.black;
+        return Color.BLACK;
     }
 
     @Override
     public Shape getShape() {
-        return Shape.parallelogram;
+        return Shape.PARALLELOGRAM;
     }
 
     @Override

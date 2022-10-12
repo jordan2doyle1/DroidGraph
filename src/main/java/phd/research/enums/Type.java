@@ -8,23 +8,23 @@ import soot.SootMethod;
  */
 
 public enum Type {
-    unit, method, callback, listener, lifecycle, control, dummy, unknown;
+    UNIT, METHOD, CALLBACK, LISTENER, LIFECYCLE, CONTROL, DUMMY, UNKNOWN;
 
     public static Type getMethodType(SootMethod method) throws RuntimeException {
         if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
-            return Type.dummy;
+            return Type.DUMMY;
         }
         if (Filter.isLifecycleMethod(method)) {
-            return Type.lifecycle;
+            return Type.LIFECYCLE;
         }
         if (Filter.isListenerMethod(method) || Filter.isPossibleListenerMethod(method)) {
-            return Type.listener;
+            return Type.LISTENER;
         }
         if (Filter.isOtherCallbackMethod(method)) {
-            return Type.callback;
+            return Type.CALLBACK;
         }
         if (Filter.isValidMethod(method)) {
-            return Type.method;
+            return Type.METHOD;
         }
         throw new RuntimeException(String.format("Found method %s with unknown type.", method));
     }

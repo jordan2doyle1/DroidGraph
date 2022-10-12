@@ -31,7 +31,7 @@ public class UnitVertexTest {
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'unit'.", Type.unit, this.v.getType());
+        assertEquals("Type should be 'unit'.", Type.UNIT, this.v.getType());
         assertTrue("Wrong label returned.", this.v.getLabel().matches(LABEL_REGEX));
     }
 

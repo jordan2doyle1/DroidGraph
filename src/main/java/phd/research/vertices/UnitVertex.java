@@ -23,7 +23,7 @@ public class UnitVertex extends Vertex implements Serializable {
     private final Unit unit;
 
     public UnitVertex(Unit unit) {
-        super(Type.unit);
+        super(Type.UNIT);
         this.unit = Objects.requireNonNull(unit);
         super.setLabel(String.format("Unit{unit=%s}", unit));
     }
@@ -34,15 +34,15 @@ public class UnitVertex extends Vertex implements Serializable {
     }
 
     public Color getColor() {
-        return Color.yellow;
+        return Color.YELLOW;
     }
 
     public Shape getShape() {
-        return Shape.box;
+        return Shape.BOX;
     }
 
     public Style getStyle() {
-        return Style.filled;
+        return Style.FILLED;
     }
 
     @Override

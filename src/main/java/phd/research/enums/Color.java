@@ -5,5 +5,5 @@ package phd.research.enums;
  */
 
 public enum Color {
-    red, orange, yellow, green, blue, purple, brown, grey, black
+    RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, BROWN, GREY, BLACK
 }
