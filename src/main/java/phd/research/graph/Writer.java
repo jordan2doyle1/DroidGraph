@@ -3,9 +3,8 @@ package phd.research.graph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.nio.dot.DOTExporter;
-import org.jgrapht.nio.dot.DOTImporter;
+import org.jgrapht.nio.gml.GmlExporter;
 import org.jgrapht.nio.json.JSONExporter;
-import org.jgrapht.nio.json.JSONImporter;
 import phd.research.enums.Format;
 import phd.research.vertices.Vertex;
 import soot.Body;
@@ -25,7 +24,7 @@ import java.util.Collection;
 
 public class Writer {
 
-    public static void writeGraph(Format format, File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
+    public static void writeGraph(File directory, String fileName, Format format, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
         switch (format) {
             case dot:
@@ -34,9 +33,13 @@ public class Writer {
             case json:
                 exportJSON(directory, fileName, graph);
                 break;
+            case gml:
+                exportGML(directory, fileName, graph);
+                break;
             case all:
                 exportDOT(directory, fileName, graph);
                 exportJSON(directory, fileName, graph);
+                exportGML(directory, fileName, graph);
                 break;
         }
     }
@@ -70,7 +73,7 @@ public class Writer {
                         UnitGraph unitGraph = new UnitGraph(body);
 
                         String fileName = clazz.getShortName() + "_" + method.getName();
-                        Writer.writeGraph(format, directory, fileName, unitGraph.getGraph());
+                        Writer.writeGraph(directory, fileName, format, unitGraph.getGraph());
                     }
                 }
             }
@@ -97,7 +100,7 @@ public class Writer {
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
-        DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(v -> String.valueOf(v.hashCode()));
+        DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(Vertex::toString);
         exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
 
@@ -110,24 +113,23 @@ public class Writer {
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
-        JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(v -> String.valueOf(v.hashCode()));
+        JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(Vertex::toString);
         exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
 
         writer.close();
     }
 
-    private static void importDOT(File directory, String fileName, Graph<Vertex, DefaultEdge> graph) {
-        File file = new File(directory + File.separator + "JSON" + File.separator + fileName + ".json");
+    private static void exportGML(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
+            throws IOException {
+        File file = new File(directory + File.separator + "GML" + File.separator + fileName + ".gml");
+        createFile(file);
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
-        DOTImporter<Vertex, DefaultEdge> importer = new DOTImporter<>();
-        importer.importGraph(graph, file);
-    }
+        GmlExporter<Vertex, DefaultEdge> exporter = new GmlExporter<>(Vertex::toString);
+        exporter.setVertexAttributeProvider(Vertex::getAttributes);
+        exporter.exportGraph(graph, writer);
 
-    private static void importJSON(File directory, String fileName, Graph<Vertex, DefaultEdge> graph) {
-        File file = new File(directory + File.separator + "JSON" + File.separator + fileName + ".json");
-
-        JSONImporter<Vertex, DefaultEdge> importer = new JSONImporter<>();
-        importer.importGraph(graph, file);
+        writer.close();
     }
 }

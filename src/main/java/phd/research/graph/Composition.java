@@ -13,10 +13,10 @@ import java.util.Set;
 
 public class Composition {
 
-    private int edge, vertex, other, listener, lifecycle, method, dummy, control;
+    private int edge, vertex, callback, listener, lifecycle, method, dummy, control;
 
     public Composition(Graph<Vertex, DefaultEdge> graph) {
-        this.other = this.listener = this.lifecycle = this.method = this.dummy = this.control = 0;
+        this.callback = this.listener = this.lifecycle = this.method = this.dummy = this.control = 0;
         readComposition(graph);
     }
 
@@ -34,8 +34,8 @@ public class Composition {
                 case listener:
                     this.listener++;
                     break;
-                case other:
-                    this.other++;
+                case callback:
+                    this.callback++;
                     break;
                 case lifecycle:
                     this.lifecycle++;
@@ -53,7 +53,7 @@ public class Composition {
     public String toTableString() {
         String[][] data = new String[][]{{"TYPE", "COUNT"}, {"Vertex", String.valueOf(this.vertex)},
                 {"Edge", String.valueOf(this.edge)}, {"Lifecycle", String.valueOf(this.lifecycle)},
-                {"Listener", String.valueOf(this.listener)}, {"Other", String.valueOf(this.other)},
+                {"Listener", String.valueOf(this.listener)}, {"Callback", String.valueOf(this.callback)},
                 {"Dummy", String.valueOf(this.dummy)}, {"Method", String.valueOf(this.method)},
                 {"Interface", String.valueOf(this.control)}};
 
@@ -63,8 +63,8 @@ public class Composition {
     @Override
     public String toString() {
         return String.format(
-                "%s{edge=%s, vertex=%s, other=%s, listener=%s, lifecycle=%s, method=%s, dummy=%s, control=%s}",
-                getClass().getSimpleName(), this.edge, this.vertex, this.other, this.listener, this.lifecycle,
+                "%s{edge=%s, vertex=%s, callback=%s, listener=%s, lifecycle=%s, method=%s, dummy=%s, control=%s}",
+                getClass().getSimpleName(), this.edge, this.vertex, this.callback, this.listener, this.lifecycle,
                 this.method, this.dummy, this.control
                             );
     }
@@ -86,7 +86,7 @@ public class Composition {
         if (vertex != that.vertex) {
             return false;
         }
-        if (other != that.other) {
+        if (callback != that.callback) {
             return false;
         }
         if (listener != that.listener) {
@@ -108,7 +108,7 @@ public class Composition {
     public int hashCode() {
         int result = edge;
         result = 31 * result + vertex;
-        result = 31 * result + other;
+        result = 31 * result + callback;
         result = 31 * result + listener;
         result = 31 * result + lifecycle;
         result = 31 * result + method;

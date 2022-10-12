@@ -5,6 +5,7 @@ import soot.SootMethod;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -12,7 +13,7 @@ import java.util.Objects;
  * @author Jordan Doyle
  */
 
-public class Control {
+public class Control implements Serializable {
 
     @Nonnull
     private final ARSCFileParser.AbstractResource control;

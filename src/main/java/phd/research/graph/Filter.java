@@ -5,18 +5,14 @@ import phd.research.core.FlowDroidUtils;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
-import soot.Type;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
 import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.entryPointCreators.AndroidEntryPointUtils;
 import soot.jimple.infoflow.util.SystemClassHandler;
-import soot.util.MultiMap;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +21,11 @@ import java.util.stream.Collectors;
  */
 
 public class Filter {
+
+    private static final List<String> packageBlacklist = Filter.loadBlacklist("package_blacklist");
+    private static final List<String> classBlacklist = Filter.loadBlacklist("class_blacklist");
+    private static final List<String> layoutBlacklist = Filter.loadBlacklist("layout_blacklist");
+    private static final CollectedCallbacks flowDroidCallbacks = Filter.deserializeCallbacks();
 
     public static boolean isEntryPointClass(File apk, SootClass clazz) throws XmlPullParserException, IOException {
         return FlowDroidUtils.getEntryPointClasses(apk).stream().anyMatch(e -> e.equals(clazz));
@@ -35,15 +36,9 @@ public class Filter {
         return entryPointUtils.isEntryPointMethod(method);
     }
 
-    public static boolean isListenerMethod(File callbackFile, SootMethod method) throws FileNotFoundException {
-        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbackFile);
-        return Filter.isListenerMethod(callbacks.getCallbackMethods(), method);
-    }
-
-    public static boolean isListenerMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks,
-            SootMethod method) {
+    public static boolean isListenerMethod(SootMethod method) {
         SootClass parentClass = getParentClass(method);
-        for (AndroidCallbackDefinition callbackDefinition : callbacks.get(parentClass)) {
+        for (AndroidCallbackDefinition callbackDefinition : flowDroidCallbacks.getCallbackMethods().get(parentClass)) {
             if (callbackDefinition.getTargetMethod().equals(method) &&
                     callbackDefinition.getCallbackType() == AndroidCallbackDefinition.CallbackType.Widget) {
                 return true;
@@ -52,16 +47,10 @@ public class Filter {
         return false;
     }
 
-    public static boolean isOtherCallbackMethod(File callbackFile, SootMethod method) throws FileNotFoundException {
-        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbackFile);
-        return Filter.isOtherCallbackMethod(callbacks.getCallbackMethods(), method);
-    }
-
-    public static boolean isOtherCallbackMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks,
-            SootMethod method) {
-        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks, method)) {
-            SootClass methodClass = Filter.getParentClass(method);
-            for (AndroidCallbackDefinition callbackDefinition : callbacks.get(methodClass)) {
+    public static boolean isOtherCallbackMethod(SootMethod method) {
+        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(method)) {
+            SootClass clazz = Filter.getParentClass(method);
+            for (AndroidCallbackDefinition callbackDefinition : flowDroidCallbacks.getCallbackMethods().get(clazz)) {
                 if (callbackDefinition.getTargetMethod().equals(method)) {
                     return true;
                 }
@@ -70,102 +59,56 @@ public class Filter {
         return false;
     }
 
-    public static boolean isPossibleListenerMethod(File callbackFile, SootMethod method) throws FileNotFoundException {
-        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbackFile);
-        return Filter.isPossibleListenerMethod(callbacks.getCallbackMethods(), method);
-    }
-
-    public static boolean isPossibleListenerMethod(MultiMap<SootClass, AndroidCallbackDefinition> callbacks,
-            SootMethod method) {
-        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacks, method) &&
-                !Filter.isOtherCallbackMethod(callbacks, method)) {
-            if ((!method.toString().startsWith("<androidx"))) {
-                for (Type paramType : method.getParameterTypes()) {
-                    if (paramType.toString().equals("android.view.View")) {
-                        return true;
-                    }
-                }
-            }
+    public static boolean isPossibleListenerMethod(SootMethod method) {
+        if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(method) &&
+                !Filter.isOtherCallbackMethod(method) && Filter.isValidMethod(method)) {
+            return method.getParameterTypes().stream().anyMatch(type -> type.toString().equals("android.view.View"));
         }
-
         return false;
     }
 
-    public static boolean isBlackListedResource(String layout) {
-        List<String> blackListedLayouts;
-
-        InputStream resourceStream = Filter.class.getClassLoader().getResourceAsStream("LayoutBlacklist.txt");
-        if (resourceStream != null) {
-            blackListedLayouts =
-                    new BufferedReader(new InputStreamReader(resourceStream)).lines().collect(Collectors.toList());
-        } else {
-            blackListedLayouts = new ArrayList<>();
-        }
-
-        return blackListedLayouts.contains(layout);
-    }
-
-    public static boolean isValidClass(SootClass clazz) {
-        return Filter.isValidClass(Arrays.asList("androidx", "android"),
-                Arrays.asList("R$", "dummyMainClass", "androidx"), clazz
-                                  );
-    }
-
-    public static boolean isValidClass(Collection<String> packageBlacklist, Collection<String> classBlacklist,
-            SootClass clazz) {
-        if (SystemClassHandler.v().isClassInSystemPackage(clazz) || clazz.isJavaLibraryClass() ||
-                clazz.isLibraryClass() || clazz.isPhantomClass() || Scene.v().isExcluded(clazz)) {
-            return false;
-        }
-
-        if (packageBlacklist != null) {
-            if (!isValidPackage(packageBlacklist, clazz.getPackageName())) {
-                return false;
-            }
-        }
-
-        if (classBlacklist != null) {
-            for (String blacklistClass : classBlacklist) {
-                if (clazz.getShortName().contains(blacklistClass)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+    public static boolean isValidLayout(String layout) {
+        return !layoutBlacklist.contains(layout);
     }
 
     public static boolean isValidMethod(SootMethod method) {
         return Filter.isValidClass(method.getDeclaringClass());
     }
 
-    public static boolean isValidMethod(Collection<String> packageBlacklist, Collection<String> classBlacklist,
-            SootMethod method) {
-        return Filter.isValidClass(packageBlacklist, classBlacklist, method.getDeclaringClass());
+    public static boolean isValidClass(SootClass clazz) {
+        if (SystemClassHandler.v().isClassInSystemPackage(clazz) || clazz.isJavaLibraryClass() ||
+                clazz.isLibraryClass() || clazz.isPhantomClass() || Scene.v().isExcluded(clazz) ||
+                !isValidPackage(clazz.getPackageName())) {
+            return false;
+        }
+
+        return classBlacklist.stream().noneMatch(blacklistedClass -> clazz.getShortName().contains(blacklistedClass));
     }
 
-    private static boolean isValidPackage(Collection<String> blacklist, String packageName) {
-        if (blacklist == null) {
-            return true;
-        }
+    private static boolean isValidPackage(String packageName) {
+        return packageBlacklist.stream().noneMatch(
+                blacklistedPackage -> blacklistedPackage.startsWith(".") ? packageName.contains(blacklistedPackage) :
+                        packageName.startsWith(blacklistedPackage));
+    }
 
-        for (String blacklistPackage : blacklist) {
-            if (blacklistPackage.startsWith(".")) {
-                if (packageName.contains(blacklistPackage)) {
-                    return false;
-                }
-            } else {
-                if (packageName.startsWith(blacklistPackage)) {
-                    return false;
-                }
-            }
-        }
+    private static List<String> loadBlacklist(String fileName) {
+        InputStream resourceStream = Filter.class.getClassLoader().getResourceAsStream(fileName);
+        return resourceStream != null ?
+                new BufferedReader(new InputStreamReader(resourceStream)).lines().collect(Collectors.toList()) :
+                new ArrayList<>();
+    }
 
-        return true;
+    private static CollectedCallbacks deserializeCallbacks() throws RuntimeException {
+        File callbacksFile = new File(System.getProperty("user.dir") + File.separator + "FlowDroidCallbacks");
+        try {
+            return CollectedCallbacksSerializer.deserialize(callbacksFile);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static SootClass getParentClass(SootMethod method) {
         SootClass clazz = method.getDeclaringClass();
-        return (clazz.hasOuterClass() ? clazz.getOuterClass() : clazz);
+        return clazz.hasOuterClass() ? clazz.getOuterClass() : clazz;
     }
 }

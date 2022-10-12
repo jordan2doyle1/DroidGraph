@@ -14,8 +14,8 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.util.Chain;
 
+import javax.annotation.Nonnull;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
@@ -26,22 +26,13 @@ import java.util.*;
 public class Viewer {
 
     @NotNull
-    private final File collectedCallbacksFile;
-    @NotNull
     private final DroidControls droidControls;
 
-    private Collection<SootClass> allClasses;
-    private Collection<SootClass> filteredClasses;
-    private Collection<SootMethod> allMethods;
-    private Collection<SootMethod> filteredMethods;
-    private Collection<SootMethod> standardMethods;
-    private Collection<SootMethod> lifecycleMethods;
-    private Collection<SootMethod> listenerMethods;
-    private Collection<SootMethod> possibleListenerMethods;
-    private Collection<SootMethod> otherCallbackMethods;
+    private Collection<SootClass> allClasses, filteredClasses;
+    private Collection<SootMethod> allMethods, filteredMethods, standardMethods, lifecycleMethods, listenerMethods,
+            possibleListenerMethods, otherCallbackMethods;
 
-    public Viewer(File collectedCallbacksFile, DroidControls droidControls) {
-        this.collectedCallbacksFile = Objects.requireNonNull(collectedCallbacksFile);
+    public Viewer(DroidControls droidControls) {
         this.droidControls = Objects.requireNonNull(droidControls);
     }
 
@@ -128,6 +119,11 @@ public class Viewer {
         return filteredClasses;
     }
 
+    @Nonnull
+    public DroidControls getDroidControls() {
+        return this.droidControls;
+    }
+
     public String getCallbackTable() {
         List<Control> controls = new ArrayList<>(this.droidControls.getControls());
         String[][] data = new String[controls.size() + 1][];
@@ -150,7 +146,7 @@ public class Viewer {
         return StringTable.tableWithLines(data, true);
     }
 
-    public String getUnassignedCallbackTable() throws FileNotFoundException {
+    public String getUnassignedCallbackTable() {
         // TODO: Where am I filtering the assigned callbacks here? Don't think I am.
         List<SootMethod> listenerMethods = new ArrayList<>(this.getListenerMethods());
         List<SootMethod> possibleListeners = new ArrayList<>(this.getPossibleListenerMethods());
@@ -180,9 +176,9 @@ public class Viewer {
         Writer.writeCollection(directory, "possible_callbacks", this.getPossibleListenerMethods());
         Writer.writeCollection(directory, "other_callbacks", this.getOtherCallbackMethods());
         Writer.writeCollection(directory, "standardMethods", this.getStandardMethods());
-        Writer.writeCollection(directory,"all_methods", this.getAllMethods());
+        Writer.writeCollection(directory, "all_methods", this.getAllMethods());
         Writer.writeCollection(directory, "filtered_methods", this.getFilteredMethods());
-        Writer.writeCollection(directory, "app_controls", this.droidControls.getControls());
+        Writer.writeCollection(directory, "app_controls", this.getDroidControls().getControls());
         Writer.writeString(directory, "control_callbacks", this.getCallbackTable());
         Writer.writeString(directory, "unassigned_callbacks", this.getUnassignedCallbackTable());
     }
@@ -219,9 +215,9 @@ public class Viewer {
         return this.filteredMethods;
     }
 
-    public Collection<SootMethod> getStandardMethods() throws FileNotFoundException {
+    public Collection<SootMethod> getStandardMethods() {
         if (this.standardMethods == null) {
-            this.standardMethods = filterStandardMethods(this.collectedCallbacksFile);
+            this.standardMethods = filterStandardMethods();
         }
 
         return this.standardMethods;
@@ -235,40 +231,39 @@ public class Viewer {
         return this.lifecycleMethods;
     }
 
-    public Collection<SootMethod> getListenerMethods() throws FileNotFoundException {
+    public Collection<SootMethod> getListenerMethods() {
         if (this.listenerMethods == null) {
-            this.listenerMethods = filterListenerMethods(this.collectedCallbacksFile);
+            this.listenerMethods = filterListenerMethods();
         }
 
         return this.listenerMethods;
     }
 
-    public Collection<SootMethod> getOtherCallbackMethods() throws FileNotFoundException {
+    public Collection<SootMethod> getOtherCallbackMethods() {
         if (this.otherCallbackMethods == null) {
-            this.otherCallbackMethods = filterOtherCallbackMethods(this.collectedCallbacksFile);
+            this.otherCallbackMethods = filterOtherCallbackMethods();
         }
 
         return this.otherCallbackMethods;
     }
 
-    public Collection<SootMethod> getPossibleListenerMethods() throws FileNotFoundException {
+    public Collection<SootMethod> getPossibleListenerMethods() {
         if (this.possibleListenerMethods == null) {
-            this.possibleListenerMethods = filterPossibleListenerMethods(this.collectedCallbacksFile);
+            this.possibleListenerMethods = filterPossibleListenerMethods();
         }
 
         return this.possibleListenerMethods;
     }
 
-    private Collection<SootMethod> filterStandardMethods(File callbacksFile) throws FileNotFoundException {
+    private Collection<SootMethod> filterStandardMethods() {
         if (this.filteredMethods == null) {
             this.filteredMethods = Viewer.filterMethods();
         }
 
         Collection<SootMethod> standardMethods = new HashSet<>();
         for (SootMethod method : this.filteredMethods) {
-            if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(callbacksFile, method) &&
-                    !Filter.isPossibleListenerMethod(callbacksFile, method) &&
-                    !Filter.isOtherCallbackMethod(callbacksFile, method)) {
+            if (!Filter.isLifecycleMethod(method) && !Filter.isListenerMethod(method) &&
+                    !Filter.isPossibleListenerMethod(method) && !Filter.isOtherCallbackMethod(method)) {
                 standardMethods.add(method);
             }
         }
@@ -293,14 +288,14 @@ public class Viewer {
         return lifecycleMethods;
     }
 
-    private Collection<SootMethod> filterListenerMethods(File callbacksFile) throws FileNotFoundException {
+    private Collection<SootMethod> filterListenerMethods() {
         if (this.filteredMethods == null) {
             this.filteredMethods = Viewer.filterMethods();
         }
 
         Collection<SootMethod> methods = new HashSet<>();
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isListenerMethod(callbacksFile, method)) {
+            if (Filter.isListenerMethod(method)) {
                 methods.add(method);
             }
         }
@@ -309,14 +304,14 @@ public class Viewer {
         return methods;
     }
 
-    private Collection<SootMethod> filterOtherCallbackMethods(File callbacksFile) throws FileNotFoundException {
+    private Collection<SootMethod> filterOtherCallbackMethods() {
         if (this.filteredMethods == null) {
             this.filteredMethods = Viewer.filterMethods();
         }
 
         Collection<SootMethod> methods = new HashSet<>();
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isOtherCallbackMethod(callbacksFile, method)) {
+            if (Filter.isOtherCallbackMethod(method)) {
                 methods.add(method);
             }
         }
@@ -325,14 +320,14 @@ public class Viewer {
         return methods;
     }
 
-    private Collection<SootMethod> filterPossibleListenerMethods(File callbacksFile) throws FileNotFoundException {
+    private Collection<SootMethod> filterPossibleListenerMethods() {
         if (this.filteredMethods == null) {
             this.filteredMethods = Viewer.filterMethods();
         }
 
         Collection<SootMethod> methods = new HashSet<>();
         for (SootMethod method : this.filteredMethods) {
-            if (Filter.isPossibleListenerMethod(callbacksFile, method)) {
+            if (Filter.isPossibleListenerMethod(method)) {
                 methods.add(method);
             }
         }
