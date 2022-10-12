@@ -11,8 +11,9 @@ import java.util.Objects;
 
 public class CustomResource extends ARSCFileParser.AbstractResource {
 
-    @NotNull String overrideResourceName;
-    int overrideResourceID;
+    @NotNull
+    private final String overrideResourceName;
+    private final int overrideResourceID;
 
     @API
     public CustomResource(String resourceName, int resourceId) {
