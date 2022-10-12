@@ -5,19 +5,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ProcessRunner {
-
-    // private static final Logger logger = LoggerFactory.getLogger(ProcessRunner.class);
+public class PythonRunner {
 
     private File virtualEnvDirectory;
 
-    public ProcessRunner() {
+    public PythonRunner() {
 
     }
 
-    public ProcessRunner(File directory) throws IOException {
-        if (ProcessRunner.confirmVirtualEnvironment(directory)) {
-            this.virtualEnvDirectory = directory;
+    @API
+    public PythonRunner(File virtualEnvDirectory) throws IOException {
+        if (PythonRunner.confirmVirtualEnvironment(virtualEnvDirectory)) {
+            this.virtualEnvDirectory = virtualEnvDirectory;
         }
     }
 
@@ -30,21 +29,22 @@ public class ProcessRunner {
         }
     }
 
-    private static boolean runCommand(String[] command, String expectedOutputRegex) throws IOException,
-            InterruptedException {
-        List<String> results = ProcessRunner.runCommand(command);
+    private static boolean runCommand(String[] command, String expectedOutputRegex)
+            throws IOException, InterruptedException, RuntimeException {
+        List<String> results = PythonRunner.runCommand(command);
         return results.size() == 1 && results.get(0).matches(expectedOutputRegex);
     }
 
-    private static List<String> runCommand(String[] command) throws IOException, InterruptedException {
+    private static List<String> runCommand(String[] command)
+            throws IOException, InterruptedException, RuntimeException {
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
 
         Process process = processBuilder.start();
-        List<String> results = ProcessRunner.readProcessOutput(process.getInputStream());
+        List<String> results = PythonRunner.readProcessOutput(process.getInputStream());
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            logger.error("Error occurred while executing command: " + Arrays.toString(command));
+            throw new RuntimeException("Error occurred while executing command: " + Arrays.toString(command));
         }
 
         return results;
@@ -64,64 +64,60 @@ public class ProcessRunner {
     }
 
     public void setVirtualEnvDirectory(File directory) throws IOException {
-        if (ProcessRunner.confirmVirtualEnvironment(directory)) {
+        if (PythonRunner.confirmVirtualEnvironment(directory)) {
             this.virtualEnvDirectory = directory;
         }
     }
 
-    public boolean isPythonInstalled(String baseVersion, boolean virtual) throws IOException, InterruptedException {
+    public boolean isPythonInstalled(String baseVersion, boolean virtual)
+            throws IOException, InterruptedException, RuntimeException {
         String resultRegex = "^Python " + baseVersion + "(?:(?:\\.\\d{1,2}\\.?)+)?$";
         String[] command = {"python3", "--version"};
 
         if (virtual) {
-            ProcessRunner.confirmVirtualEnvironment(this.virtualEnvDirectory);
+            PythonRunner.confirmVirtualEnvironment(this.virtualEnvDirectory);
             String pythonPath = this.virtualEnvDirectory + File.separator + "bin" + File.separator + "python3";
             command = new String[]{pythonPath, "--version"};
         }
 
-        return ProcessRunner.runCommand(command, resultRegex);
+        return PythonRunner.runCommand(command, resultRegex);
     }
 
-    public boolean isAndroGuardInstalled(String baseVersion, boolean virtual) throws IOException, InterruptedException {
+    public boolean isAndroGuardInstalled(String baseVersion, boolean virtual)
+            throws IOException, InterruptedException, RuntimeException {
         String resultRegex = "^androguard, version " + baseVersion + "(?:(?:\\.\\d{1,2}\\.?)+)?$";
         String[] command = {"androguard", "--version"};
 
         if (virtual) {
-            ProcessRunner.confirmVirtualEnvironment(this.virtualEnvDirectory);
+            PythonRunner.confirmVirtualEnvironment(this.virtualEnvDirectory);
             String androguardPath = this.virtualEnvDirectory + File.separator + "bin" + File.separator + "androguard";
             command = new String[]{androguardPath, "--version"};
         }
 
-        return ProcessRunner.runCommand(command, resultRegex);
+        return PythonRunner.runCommand(command, resultRegex);
     }
 
-    private List<String> runAndroGuardCg(File apk, File outputDirectory, boolean virtual) throws IOException,
-            InterruptedException {
+    public List<String> runAndroGuard(File apk, File outputDirectory, boolean virtual)
+            throws IOException, InterruptedException, RuntimeException {
+        boolean pythonInstalled = this.isPythonInstalled("3.8", virtual);
+        boolean androguardInstalled = this.isAndroGuardInstalled("3.3.5", virtual);
+        if (pythonInstalled && androguardInstalled) {
+            return this.runAndroGuardCallGraph(apk, outputDirectory, virtual);
+        }
+        throw new RuntimeException("Python or AndroGuard not installed.");
+    }
+
+    private List<String> runAndroGuardCallGraph(File apk, File outputDirectory, boolean virtual)
+            throws IOException, InterruptedException, RuntimeException {
         String[] command = {"androguard", "cg", apk.getAbsolutePath(), outputDirectory.getAbsolutePath()};
 
         if (virtual) {
-            ProcessRunner.confirmVirtualEnvironment(this.virtualEnvDirectory);
+            PythonRunner.confirmVirtualEnvironment(this.virtualEnvDirectory);
             String androguardPath = this.virtualEnvDirectory + File.separator + "bin" + File.separator + "androguard";
             String graphOutputFileName = outputDirectory.getAbsolutePath() + File.separator + "AndroGuardCG.gml";
             command = new String[]{androguardPath, "cg", "-o", graphOutputFileName, apk.getAbsolutePath()};
         }
 
-        return ProcessRunner.runCommand(command);
-    }
-
-    public void runAndroGuard(File apk, File outputDirectory, boolean virtual) {
-        if (virtual) {
-            
-        }
-
-        try {
-            boolean pythonInstalled = this.isPythonInstalled("3.8", virtual);
-            boolean androguardInstalled = this.isAndroGuardInstalled("3.3.5", virtual);
-            if (pythonInstalled && androguardInstalled) {
-                this.runAndroGuardCg(apk, outputDirectory, virtual);
-            }
-        } catch (IOException | InterruptedException e) {
-            logger.error("Error occurred while checking python environment and running AndroGuard.");
-        }
+        return PythonRunner.runCommand(command);
     }
 }
