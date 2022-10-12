@@ -33,10 +33,28 @@ public class MethodVertex extends Vertex implements Serializable {
         super.setLabel(createLabel(method));
     }
 
+    public static MethodVertex createMethodVertex(SootMethod method) throws RuntimeException {
+        switch (Type.getMethodType(method)) {
+            case dummy:
+                return new DummyVertex(method);
+            case lifecycle:
+                return new LifecycleVertex(method);
+            case listener:
+                return new ListenerVertex(method);
+            case callback:
+                return new CallbackVertex(method);
+            case method:
+                return new MethodVertex(method);
+            default:
+                throw new RuntimeException(String.format("Method %s has unknown type.", method));
+        }
+    }
+
     private static String removePackageName(String name) {
         int index = (name.toLowerCase().contains("dummymainmethod") ? name.lastIndexOf("_") : name.lastIndexOf("."));
         return (index != -1 ? name.replace(name.substring(0, index + 1), "") : name);
     }
+
 
     @NotNull
     public SootMethod getMethod() {

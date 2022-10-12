@@ -17,25 +17,25 @@ import static org.junit.Assert.*;
 
 public class VertexTest {
 
-    private final String LABEL = "Vertex{type=other}";
+    private final String LABEL = "Vertex{type=unknown}";
 
     private Vertex v;
 
     @Before
     public void setUp() {
-        this.v = new Vertex(Type.other, LABEL);
+        this.v = new Vertex(Type.unknown, LABEL);
     }
 
     @Test
     public void testSimpleConstructor() {
-        Vertex s = new Vertex(Type.other);
-        assertEquals("Wrong type returned.", Type.other, s.getType());
+        Vertex s = new Vertex(Type.unknown);
+        assertEquals("Wrong type returned.", Type.unknown, s.getType());
         assertEquals("Wrong label returned.", LABEL, s.getLabel());
     }
 
     @Test
     public void testBaseConstructor() {
-        assertEquals("Wrong type returned.", Type.other, this.v.getType());
+        assertEquals("Wrong type returned.", Type.unknown, this.v.getType());
         assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
     }
 
@@ -46,13 +46,13 @@ public class VertexTest {
 
     @Test(expected = NullPointerException.class)
     public void testLabelNullException() {
-        new Vertex(Type.other, null);
+        new Vertex(Type.unknown, null);
     }
 
     @Test
     public void testSetLabel() {
-        this.v.setLabel("Other{}");
-        assertEquals("Wrong label returned.", "Other{}", this.v.getLabel());
+        this.v.setLabel("Vertex{}");
+        assertEquals("Wrong label returned.", "Vertex{}", this.v.getLabel());
     }
 
     @Test
@@ -75,14 +75,15 @@ public class VertexTest {
     public void getAttributes() {
         Map<String, Attribute> attributes = this.v.getAttributes();
         assertEquals("Should be exactly 2 attributes.", 2, attributes.size());
-        assertEquals("Wrong type attribute returned.", "other", attributes.get("type").getValue());
+        assertEquals("Wrong type attribute returned.", "unknown", attributes.get("type").getValue());
         assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
     }
 
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                String.format("Vertex{type=other, label='%s', visit=false, localVisit=false}", LABEL), this.v.toString()
+                String.format("Vertex{type=unknown, label='%s', visit=false, localVisit=false}", LABEL),
+                this.v.toString()
                     );
     }
 
