@@ -14,6 +14,7 @@ import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
+import soot.jimple.toolkits.ide.exampleproblems.IFDSReachingDefinitions;
 import soot.util.MultiMap;
 
 import java.io.File;
@@ -141,14 +142,12 @@ public class DroidControls {
         for (String layoutFileName : layoutControls.keySet()) {
             ARSCFileParser.AbstractResource layoutResource =
                     this.resources.findResourceByName("layout", getResourceName(layoutFileName));
-            if (Filter.isBlackListedResource(layoutResource.getResourceName())) {
-                continue;
-            }
-
-            try {
-                controls.addAll(processResourceControls(layoutFileName, layoutResource, layoutControls));
-            } catch (RuntimeException e) {
-                logger.error(e.getMessage());
+            if (Filter.isValidLayout(layoutResource.getResourceName())) {
+                try {
+                    controls.addAll(processResourceControls(layoutFileName, layoutResource, layoutControls));
+                } catch (RuntimeException e) {
+                    logger.error(e.getMessage());
+                }
             }
         }
 
@@ -161,7 +160,7 @@ public class DroidControls {
             ARSCFileParser.AbstractResource layoutResource;
             try {
                 layoutResource = findLayoutWithMenuId(layoutControls, menuResource.getResourceID());
-                if (Filter.isBlackListedResource(layoutResource.getResourceName())) {
+                if (Filter.isValidLayout(layoutResource.getResourceName())) {
                     continue;
                 }
             } catch (RuntimeException e) {

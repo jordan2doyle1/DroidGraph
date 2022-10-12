@@ -6,17 +6,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.Timer;
-import phd.research.androguard.ProcessRunner;
 import phd.research.core.DroidControls;
 import phd.research.core.DroidGraph;
 import phd.research.core.FlowDroidUtils;
 import phd.research.enums.Format;
 import phd.research.graph.Viewer;
 import phd.research.graph.Writer;
+import phd.research.helper.PythonRunner;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * @author Jordan Doyle
@@ -119,9 +120,9 @@ public class FrameworkMain {
         FlowDroidUtils.runFlowDroid(apk, androidPlatform, outputDirectory);
         logger.info("(" + cTimer.end() + ") FlowDroid took " + cTimer.secondsDuration() + " second(s).");
 
-        File callbackFile = new File(outputDirectory + File.separator + FlowDroidUtils.CALLBACK_FILE_NAME);
+        File callbackFile = new File(System.getProperty("user.dir") + File.separator + "FlowDroidCallbacks");
         if (!callbackFile.exists()) {
-            logger.error("Collected callbacks file does not exist.");
+            logger.error("FlowDroid callbacks file does not exist.");
             System.exit(50);
         }
 
@@ -137,7 +138,7 @@ public class FrameworkMain {
         boolean outputAnalysis = cmd.hasOption("s");
         if (outputAnalysis) {
             logger.info("Starting file output... (" + cTimer.start(true) + ")");
-            Viewer viewer = new Viewer(callbackFile, droidControls);
+            Viewer viewer = new Viewer(droidControls);
             try {
                 viewer.writeAnalysisToFile(outputDirectory, apk);
             } catch (IOException | XmlPullParserException e) {
@@ -155,16 +156,18 @@ public class FrameworkMain {
                     if (!androGuardCallGraph.exists()) {
                         throw new IOException("AndroGuard graph file does not exist (" + androGuardCallGraph + ").");
                     }
-                    droidGraph = new DroidGraph(callbackFile, droidControls, androGuardCallGraph);
+                    droidGraph = new DroidGraph(droidControls, androGuardCallGraph);
                     droidGraph.generateGraphs(androGuardCallGraph, true);
                 } else {
-
-                    runAndroGuard(cmd.hasOption("v"), cmd.getOptionValue("v"), apk, outputDirectory);
-                    droidGraph = new DroidGraph(callbackFile, droidControls, new File(outputDirectory +
-                            "/AndroGuardCG.gml"));
+                    PythonRunner pythonRunner = new PythonRunner();
+                    if (cmd.hasOption("v")) {
+                        pythonRunner.setVirtualEnvDirectory(new File(cmd.getOptionValue("v")));
+                    }
+                    List<String> output = pythonRunner.runAndroGuard(apk, outputDirectory, cmd.hasOption("v"));
+                    droidGraph = new DroidGraph(droidControls, new File(outputDirectory + "/AndroGuardCG.gml"));
                     droidGraph.generateGraphs(new File(outputDirectory + "/AndroGuardCG.gml"), true);
                 }
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 logger.error("Failure while generating Call Graph and Control Flow Graph: " + e.getMessage());
                 e.printStackTrace(System.err);
                 System.exit(60);
@@ -188,7 +191,7 @@ public class FrameworkMain {
 
                 if (outputCallGraph) {
                     try {
-                        Writer.writeGraph(outputFormat, outputDirectory, "APP-CG", droidGraph.getCallGraph());
+                        Writer.writeGraph(outputDirectory, "APP-CG", outputFormat, droidGraph.getCallGraph());
                     } catch (Exception e) {
                         logger.error("Problem writing call graph to output file: " + e.getMessage());
                     }
@@ -196,7 +199,7 @@ public class FrameworkMain {
 
                 if (outputControlFlowGraph) {
                     try {
-                        Writer.writeGraph(outputFormat, outputDirectory, "APP-CFG", droidGraph.getControlFlowGraph());
+                        Writer.writeGraph(outputDirectory, "APP-CFG", outputFormat, droidGraph.getControlFlowGraph());
                     } catch (Exception e) {
                         logger.error("Problem writing CFG to output file: " + e.getMessage());
                     }
@@ -217,31 +220,5 @@ public class FrameworkMain {
 
         logger.info("End time: " + timer.end());
         logger.info("Execution time: " + timer.secondsDuration() + " second(s).");
-    }
-
-    private static void runAndroGuard(boolean useVirtualEnvironment, String virtualEnvironment, File apk,
-            File outputDirectory) {
-        File pythonVirtualEnvironment = new File((useVirtualEnvironment ? virtualEnvironment : ""));
-
-        ProcessRunner processRunner = new ProcessRunner();
-        if (useVirtualEnvironment) {
-            try {
-                processRunner.setVirtualEnvironmentDirectory(pythonVirtualEnvironment);
-            } catch (IOException e) {
-                logger.error("Failed to set virtual environment directory: " + e.getMessage());
-                useVirtualEnvironment = false;
-            }
-        }
-
-        try {
-            boolean pythonInstalled = processRunner.isPythonInstalled("3.8", useVirtualEnvironment);
-            boolean androguardInstalled = processRunner.isAndroGuardInstalled("3.3.5", useVirtualEnvironment);
-            if (pythonInstalled && androguardInstalled) {
-                processRunner.runAndroGuardCg(apk, outputDirectory, useVirtualEnvironment);
-            }
-        } catch (IOException | InterruptedException e) {
-            logger.error("Error occurred while checking python environment and running AndroGuard.");
-            System.exit(50);
-        }
     }
 }
