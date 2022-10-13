@@ -44,7 +44,8 @@ public class PythonRunner {
         List<String> results = PythonRunner.readProcessOutput(process.getInputStream());
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            throw new RuntimeException("Error occurred while executing command: " + Arrays.toString(command));
+            throw new RuntimeException("Error (exit code: " + exitCode + ") occurred while executing command: " +
+                    Arrays.toString(command));
         }
 
         return results;
