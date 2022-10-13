@@ -2,17 +2,20 @@ package phd.research.main;
 
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import phd.research.Timer;
 import phd.research.core.DroidControls;
 import phd.research.core.DroidGraph;
-import phd.research.core.FlowDroidUtils;
+import phd.research.core.FlowDroidAnalysis;
 import phd.research.enums.Format;
-import phd.research.graph.Viewer;
+import phd.research.graph.Importer;
 import phd.research.graph.Writer;
 import phd.research.helper.PythonRunner;
+import phd.research.vertices.Vertex;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +27,8 @@ import java.util.List;
  */
 
 public class FrameworkMain {
-    private static final Logger logger = LoggerFactory.getLogger(FrameworkMain.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FrameworkMain.class);
 
     public static void main(String[] args) {
         Options options = new Options();
@@ -70,18 +74,18 @@ public class FrameworkMain {
         }
 
         Timer timer = new Timer();
-        logger.info("Start time: " + timer.start());
+        LOGGER.info("Start time: " + timer.start());
 
         File apk = new File(cmd.getOptionValue("a"));
         if (!apk.exists()) {
-            logger.error("APK file does not exist (" + apk + ").");
+            LOGGER.error("APK file does not exist (" + apk + ").");
             System.exit(10);
         }
 
         File androidPlatform = new File((cmd.hasOption("p") ? cmd.getOptionValue("p") :
                 System.getenv("ANDROID_HOME") + File.separator + "platforms"));
         if (!androidPlatform.isDirectory()) {
-            logger.error("Android platform directory does not exist (" + androidPlatform + ").");
+            LOGGER.error("Android platform directory does not exist (" + androidPlatform + ").");
             System.exit(20);
         }
 
@@ -91,10 +95,10 @@ public class FrameworkMain {
             outputDirectory = defaultOutput;
             if (outputDirectory.mkdir()) {
                 if (cmd.hasOption("o")) {
-                    logger.warn("Output directory doesn't exist, using default directory instead.");
+                    LOGGER.warn("Output directory doesn't exist, using default directory instead.");
                 }
             } else {
-                logger.error("Output directory does not exist.");
+                LOGGER.error("Output directory does not exist.");
                 System.exit(30);
             }
         }
@@ -103,52 +107,60 @@ public class FrameworkMain {
             try {
                 FileUtils.cleanDirectory(outputDirectory);
             } catch (IOException e) {
-                logger.error("Problem cleaning output directory: " + e.getMessage());
+                LOGGER.error("Problem cleaning output directory: " + e.getMessage());
             }
         }
 
         Format outputFormat;
         try {
-            outputFormat = (cmd.hasOption("f") ? FlowDroidUtils.stringToFormat(cmd.getOptionValue("f")) : Format.JSON);
+            outputFormat = (cmd.hasOption("f") ? Format.valueOf(cmd.getOptionValue("f")) : Format.JSON);
         } catch (RuntimeException e) {
-            logger.warn(e.getMessage() + " Using default format instead.");
+            LOGGER.warn(e.getMessage() + " Using default format instead.");
             outputFormat = Format.JSON;
         }
 
         Timer cTimer = new Timer();
-        logger.info("Running FlowDroid... (" + cTimer.start(true) + ")");
-        FlowDroidUtils.runFlowDroid(apk, androidPlatform, outputDirectory);
-        logger.info("(" + cTimer.end() + ") FlowDroid took " + cTimer.secondsDuration() + " second(s).");
+        LOGGER.info("Running FlowDroid... (" + cTimer.start(true) + ")");
+        FlowDroidAnalysis flowDroidAnalysis;
+        try {
+            flowDroidAnalysis = new FlowDroidAnalysis(apk, androidPlatform, outputDirectory);
+            flowDroidAnalysis.runFlowDroid();
+        } catch (XmlPullParserException | IOException e) {
+            throw new RuntimeException("Error occurred while running FlowDroid: " + e.getMessage());
+        }
+        LOGGER.info("(" + cTimer.end() + ") FlowDroid took " + cTimer.secondsDuration() + " second(s).");
 
         File callbackFile = new File(System.getProperty("user.dir") + File.separator + "FlowDroidCallbacks");
         if (!callbackFile.exists()) {
-            logger.error("FlowDroid callbacks file does not exist.");
+            LOGGER.error("FlowDroid callbacks file does not exist.");
             System.exit(50);
         }
 
-        logger.info("Processing UI Controls... (" + cTimer.start(true) + ")");
+        LOGGER.info("Processing UI Controls... (" + cTimer.start(true) + ")");
         DroidControls droidControls = null;
         try {
-            droidControls = new DroidControls(callbackFile, apk);
+            droidControls = new DroidControls(flowDroidAnalysis);
         } catch (XmlPullParserException | IOException e) {
-            logger.error("Failure while parsing app interface: " + e.getMessage());
+            LOGGER.error("Failure while parsing app interface: " + e.getMessage());
         }
-        logger.info("(" + cTimer.end() + ") UI control processing took " + cTimer.secondsDuration() + " second(s).");
+        LOGGER.info("(" + cTimer.end() + ") UI control processing took " + cTimer.secondsDuration() + " second(s).");
 
         boolean outputAnalysis = cmd.hasOption("s");
         if (outputAnalysis) {
-            logger.info("Starting file output... (" + cTimer.start(true) + ")");
-            Viewer viewer = new Viewer(droidControls);
+            LOGGER.info("Starting file output... (" + cTimer.start(true) + ")");
             try {
-                viewer.writeAnalysisToFile(outputDirectory, apk);
-            } catch (IOException | XmlPullParserException e) {
-                logger.error("Failed to write app analysis to output file: " + e.getMessage());
+                if (droidControls != null) {
+                    droidControls.writeControlsToFile(outputDirectory);
+                }
+                flowDroidAnalysis.writeAnalysisToFile(outputDirectory);
+            } catch (IOException e) {
+                LOGGER.error("Failed to write app analysis to output file: " + e.getMessage());
             }
-            logger.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
+            LOGGER.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
         }
 
         if (cmd.hasOption("g")) {
-            logger.info("Running graph generation... (" + cTimer.start(true) + ")");
+            LOGGER.info("Running graph generation... (" + cTimer.start(true) + ")");
             DroidGraph droidGraph = null;
             try {
                 if (cmd.hasOption("i")) {
@@ -168,24 +180,24 @@ public class FrameworkMain {
                     droidGraph.generateGraphs(new File(outputDirectory + "/AndroGuardCG.gml"), true);
                 }
             } catch (IOException | InterruptedException e) {
-                logger.error("Failure while generating Call Graph and Control Flow Graph: " + e.getMessage());
+                LOGGER.error("Failure while generating Call Graph and Control Flow Graph: " + e.getMessage());
                 e.printStackTrace(System.err);
                 System.exit(60);
             }
-            logger.info("(" + cTimer.end() + ") Graph generation took " + cTimer.secondsDuration() + " second(s).");
+            LOGGER.info("(" + cTimer.end() + ") Graph generation took " + cTimer.secondsDuration() + " second(s).");
 
             boolean outputUnitGraphs = cmd.hasOption("ug");
             boolean outputCallGraph = cmd.hasOption("cg");
             boolean outputControlFlowGraph = cmd.hasOption("cf");
 
             if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph) {
-                logger.info("Starting graph output... (" + cTimer.start(true) + ")");
+                LOGGER.info("Starting graph output... (" + cTimer.start(true) + ")");
 
                 if (outputUnitGraphs) {
                     try {
                         Writer.outputMethods(outputDirectory, outputFormat);
                     } catch (Exception e) {
-                        logger.error("Problem writing methods to output file: " + e.getMessage());
+                        LOGGER.error("Problem writing methods to output file: " + e.getMessage());
                     }
                 }
 
@@ -193,7 +205,7 @@ public class FrameworkMain {
                     try {
                         Writer.writeGraph(outputDirectory, "APP-CG", outputFormat, droidGraph.getCallGraph());
                     } catch (Exception e) {
-                        logger.error("Problem writing call graph to output file: " + e.getMessage());
+                        LOGGER.error("Problem writing call graph to output file: " + e.getMessage());
                     }
                 }
 
@@ -201,24 +213,69 @@ public class FrameworkMain {
                     try {
                         Writer.writeGraph(outputDirectory, "APP-CFG", outputFormat, droidGraph.getControlFlowGraph());
                     } catch (Exception e) {
-                        logger.error("Problem writing CFG to output file: " + e.getMessage());
+                        LOGGER.error("Problem writing CFG to output file: " + e.getMessage());
                     }
                 }
 
-                logger.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
+                LOGGER.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
             }
 
             if (outputAnalysis) {
                 try {
-                    Viewer.outputCGDetails(outputDirectory, droidGraph.getCallGraph());
-                    Viewer.outputCFGDetails(outputDirectory, droidGraph.getControlFlowGraph());
+                    DroidGraph.outputCGDetails(outputDirectory, droidGraph.getCallGraph());
+                    DroidGraph.outputCFGDetails(outputDirectory, droidGraph.getControlFlowGraph());
                 } catch (IOException e) {
-                    logger.error("Failed to write graph composition details to output file: " + e.getMessage());
+                    LOGGER.error("Failed to write graph composition details to output file: " + e.getMessage());
                 }
             }
+
+            LOGGER.info("Running graph export... (" + cTimer.start(true) + ")");
+            try {
+                Writer.writeGraph(outputDirectory, "exportTest", Format.ALL, droidGraph.getControlFlowGraph());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to export graph: " + e.getMessage() + e);
+            }
+            LOGGER.info("(" + cTimer.end() + ") Graph export took " + cTimer.secondsDuration() + " second(s).");
+
+            LOGGER.info("Running graph import... (" + cTimer.start(true) + ")");
+            Graph<Vertex, DefaultEdge> jsonImport =
+                    Importer.importDroidGraph(Format.JSON, new File(outputDirectory + "/JSON/exportTest.json"));
+
+            //            Graph<Vertex, DefaultEdge> dotImport = Importer.importDroidGraph(Format.DOT, new File
+            //            (outputDirectory +
+            //                    "/DOT/exportTest.dot"));
+            //            Graph<Vertex, DefaultEdge> gmlImport = Importer.importDroidGraph(Format.GML, new File
+            //            (outputDirectory +
+            //                    "/GML/exportTest.gml"));
+            //
+            //            if (dotImport.vertexSet().size() == jsonImport.vertexSet().size() && dotImport.vertexSet()
+            //            .size() ==
+            //                    gmlImport.vertexSet().size()) {
+            //                System.out.println("All vertex imports match.");
+            //            } else {
+            //                System.out.println("Vertex imports DO NOT match.");
+            //            }
+            //
+            //            if (dotImport.edgeSet().size() == jsonImport.edgeSet().size() && dotImport.edgeSet().size() ==
+            //                    gmlImport.edgeSet().size()) {
+            //                System.out.println("All edge imports match.");
+            //            } else {
+            //                System.out.println("Edge imports DO NOT match.");
+            //            }
+
+            if (jsonImport.vertexSet().size() == droidGraph.getControlFlowGraph().vertexSet().size() &&
+                    jsonImport.edgeSet().size() == droidGraph.getControlFlowGraph().edgeSet().size()) {
+                System.out.println("Import matches export.");
+            } else {
+                System.out.println("JSON Vertex Set: " + jsonImport.vertexSet().size());
+                System.out.println("Droid Vertex Set: " + droidGraph.getControlFlowGraph().vertexSet().size());
+                System.out.println("JSON Edge Set: " + jsonImport.edgeSet().size());
+                System.out.println("Droid Edge Set: " + droidGraph.getControlFlowGraph().edgeSet().size());
+            }
+            LOGGER.info("(" + cTimer.end() + ") Graph import took " + cTimer.secondsDuration() + " second(s).");
         }
 
-        logger.info("End time: " + timer.end());
-        logger.info("Execution time: " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("End time: " + timer.end());
+        LOGGER.info("Execution time: " + timer.secondsDuration() + " second(s).");
     }
 }

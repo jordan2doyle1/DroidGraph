@@ -4,24 +4,21 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
+import phd.research.StringTable;
 import phd.research.graph.Control;
 import phd.research.graph.Filter;
+import phd.research.graph.Writer;
 import phd.research.helper.MenuFileParser;
 import soot.*;
 import soot.jimple.*;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacks;
-import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
-import soot.jimple.toolkits.ide.exampleproblems.IFDSReachingDefinitions;
 import soot.util.MultiMap;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author Jordan Doyle
@@ -29,20 +26,15 @@ import java.util.stream.Collectors;
 
 public class DroidControls {
 
-    private static final Logger logger = LoggerFactory.getLogger(DroidControls.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DroidControls.class);
 
     @NotNull
-    private final File callbacksFile;
-    @NotNull
-    private final File apk;
+    private final FlowDroidAnalysis flowDroidAnalysis;
 
-    private final ARSCFileParser resources;
     private final Collection<Control> controls;
 
-    public DroidControls(File callbacksFile, File apk) throws XmlPullParserException, IOException {
-        this.callbacksFile = Objects.requireNonNull(callbacksFile);
-        this.apk = Objects.requireNonNull(apk);
-        this.resources = FlowDroidUtils.getResources(this.apk);
+    public DroidControls(FlowDroidAnalysis flowDroidAnalysis) throws XmlPullParserException, IOException {
+        this.flowDroidAnalysis = Objects.requireNonNull(flowDroidAnalysis);
         this.controls = processFlowDroidControls();
     }
 
@@ -52,29 +44,39 @@ public class DroidControls {
         return name.contains(".xml") ? name.replace(".xml", "") : name;
     }
 
-    private static Collection<SootMethod> searchForCallbackMethods(File callbacksFile, String methodName)
-            throws FileNotFoundException {
-        // Warning: if method name is not specific enough, false positives may be returned. e.g. methodName = onClick()
-        CollectedCallbacks callbacks = CollectedCallbacksSerializer.deserialize(callbacksFile);
-        Collection<SootMethod> methods = new ArrayList<>();
-        callbacks.getCallbackMethods().keySet().forEach(clazz -> callbacks.getCallbackMethods().get(clazz).stream()
-                .filter(definition -> definition.getTargetMethod().getName().equals(methodName))
-                .forEach(callback -> methods.add(callback.getTargetMethod())));
-        return methods;
-    }
-
     public Collection<Control> getControls() {
         return this.controls;
     }
 
-    public Collection<Control> getControlsWithListener(SootMethod listener) {
-        return this.getControls().stream()
-                .filter(c -> !c.getClickListeners().isEmpty() && c.getClickListeners().contains(listener))
-                .collect(Collectors.toList());
+    public void writeControlsToFile(File directory) throws IOException {
+        Writer.writeCollection(directory, "app_controls", this.getControls());
+        Writer.writeString(directory, "control_callbacks", this.getControlCallbackTableString());
+    }
+
+    public String getControlCallbackTableString() {
+        List<Control> controls = new ArrayList<>(this.getControls());
+        String[][] data = new String[controls.size() + 1][];
+        data[0] = new String[]{"WIDGET ID", "WIDGET TEXT ID", "LISTENER CLASS", "LISTENER METHOD"};
+        for (int i = 0; i < controls.size(); i++) {
+            Control control = controls.get(i);
+
+            StringBuilder builder = new StringBuilder("[");
+            control.getClickListeners().forEach(l -> builder.append(l.getName()).append(","));
+            if (builder.charAt(builder.length() - 1) != '[') {
+                builder.replace(builder.length() - 1, builder.length(), "]");
+            } else {
+                builder.append("]");
+            }
+
+            data[i + 1] = new String[]{String.valueOf(control.getControlResource().getResourceID()),
+                    control.getControlResource().getResourceName(), control.getControlActivity().getName(),
+                    builder.toString()};
+        }
+        return StringTable.tableWithLines(data, true);
     }
 
     private List<ARSCFileParser.AbstractResource> getResourcesWithId(int resourceId) {
-        ARSCFileParser.ResType resType = this.resources.findResourceType(resourceId);
+        ARSCFileParser.ResType resType = this.flowDroidAnalysis.getResources().findResourceType(resourceId);
         return resType != null ? resType.getAllResources(resourceId) : new ArrayList<>();
     }
 
@@ -89,7 +91,8 @@ public class DroidControls {
                 for (String attributeKey : control.getAdditionalAttributes().keySet()) {
                     if (attributeKey.equals("menu")) {
                         if ((int) control.getAdditionalAttributes().get(attributeKey) == id) {
-                            return resources.findResourceByName("layout", getResourceName(resourceFileName));
+                            return this.flowDroidAnalysis.getResources()
+                                    .findResourceByName("layout", getResourceName(resourceFileName));
                         }
                     }
                 }
@@ -100,7 +103,7 @@ public class DroidControls {
     }
 
     private Collection<Control> processResourceControls(String fileName, ARSCFileParser.AbstractResource layoutResource,
-            MultiMap<String, AndroidLayoutControl> flowDroidControls) throws FileNotFoundException, RuntimeException {
+            MultiMap<String, AndroidLayoutControl> flowDroidControls) throws RuntimeException {
 
         Collection<Control> controls = new HashSet<>();
         SootClass layoutClass = this.findClassLinkedWithLayout(layoutResource);
@@ -112,19 +115,19 @@ public class DroidControls {
 
             List<ARSCFileParser.AbstractResource> controlResources = getResourcesWithId(control.getID());
             if (controlResources.isEmpty()) {
-                logger.error(String.format("Could not find control with id %s.", control.getID()));
+                LOGGER.error(String.format("Could not find control with id %s.", control.getID()));
                 continue;
             } else if (controlResources.size() > 1) {
-                logger.warn(String.format("Found multiple controls with id %s, returning first.", control.getID()));
+                LOGGER.warn(String.format("Found multiple controls with id %s, returning first.", control.getID()));
             }
             // TODO: Should loop through returned resources to retrieve the correct control rather than just the first?
             ARSCFileParser.AbstractResource controlResource = controlResources.get(0);
 
             Collection<SootMethod> listeners = new ArrayList<>();
             if (control.getClickListener() != null) {
-                listeners = DroidControls.searchForCallbackMethods(this.callbacksFile, control.getClickListener());
+                listeners = Filter.findCallbackMethods(control.getClickListener());
                 if (listeners.size() > 1) {
-                    logger.warn(String.format("Found multiple listeners with control id %s.", control.getID()));
+                    LOGGER.warn(String.format("Found multiple listeners with control id %s.", control.getID()));
                 }
             }
 
@@ -134,29 +137,29 @@ public class DroidControls {
         return controls;
     }
 
-    private Collection<Control> processFlowDroidControls() throws XmlPullParserException, IOException {
-        LayoutFileParser layoutParser = FlowDroidUtils.getLayoutFileParser(this.apk);
+    private Collection<Control> processFlowDroidControls() {
+        LayoutFileParser layoutParser = this.flowDroidAnalysis.getLayoutFileParser();
         MultiMap<String, AndroidLayoutControl> layoutControls = layoutParser.getUserControls();
         Collection<Control> controls = new HashSet<>();
 
         for (String layoutFileName : layoutControls.keySet()) {
             ARSCFileParser.AbstractResource layoutResource =
-                    this.resources.findResourceByName("layout", getResourceName(layoutFileName));
+                    this.flowDroidAnalysis.getResources().findResourceByName("layout", getResourceName(layoutFileName));
             if (Filter.isValidLayout(layoutResource.getResourceName())) {
                 try {
                     controls.addAll(processResourceControls(layoutFileName, layoutResource, layoutControls));
                 } catch (RuntimeException e) {
-                    logger.error(e.getMessage());
+                    LOGGER.error(e.getMessage());
                 }
             }
         }
 
-        MenuFileParser menuParser = FlowDroidUtils.getMenuFileParser(this.apk);
+        MenuFileParser menuParser = this.flowDroidAnalysis.getMenuFileParser();
         MultiMap<String, AndroidLayoutControl> menuControls = menuParser.getUserControls();
 
         for (String menuFileName : menuControls.keySet()) {
             ARSCFileParser.AbstractResource menuResource =
-                    this.resources.findResourceByName("menu", getResourceName(menuFileName));
+                    this.flowDroidAnalysis.getResources().findResourceByName("menu", getResourceName(menuFileName));
             ARSCFileParser.AbstractResource layoutResource;
             try {
                 layoutResource = findLayoutWithMenuId(layoutControls, menuResource.getResourceID());
@@ -164,14 +167,14 @@ public class DroidControls {
                     continue;
                 }
             } catch (RuntimeException e) {
-                logger.error(e.getMessage());
+                LOGGER.error(e.getMessage());
                 continue;
             }
 
             try {
                 controls.addAll(processResourceControls(menuFileName, layoutResource, menuControls));
             } catch (RuntimeException e) {
-                logger.error(e.getMessage());
+                LOGGER.error(e.getMessage());
             }
         }
 
@@ -229,9 +232,11 @@ public class DroidControls {
                         if (expr.getArgCount() > 0 && expr.getArg(0).toString().equals(String.valueOf(id))) {
                             searchStatus[0] = true;
                         }
-                    } else if (expr.getMethod().getName().equals("<init>") && expr.getMethod().getDeclaringClass().getShortName().equals("RemoteViews")) {
+                    } else if (expr.getMethod().getName().equals("<init>") &&
+                            expr.getMethod().getDeclaringClass().getShortName().equals("RemoteViews")) {
                         if (expr.getArgCount() > 0) {
-                            if (expr.getArg(1) instanceof Constant && expr.getArg(1).toString().equals(String.valueOf(id))) {
+                            if (expr.getArg(1) instanceof Constant &&
+                                    expr.getArg(1).toString().equals(String.valueOf(id))) {
                                 searchStatus[0] = true;
                             } else if (variableDeclarations.containsKey(expr.getArg(1))) {
                                 List<String> assignmentValues = variableDeclarations.get(expr.getArg(1));
@@ -267,11 +272,8 @@ public class DroidControls {
                             assignmentValues.add(stmt.getRightOpBox().getValue().toString());
                             variableDeclarations.put(stmt.getLeftOp(), assignmentValues);
                         } else {
-                            variableDeclarations.put(stmt.getLeftOp(),
-                                    new ArrayList<>(
-                                            Collections.singletonList(stmt.getRightOpBox().getValue().toString())
-                                    )
-                                                    );
+                            variableDeclarations.put(stmt.getLeftOp(), new ArrayList<>(
+                                    Collections.singletonList(stmt.getRightOpBox().getValue().toString())));
                         }
                     }
                 }

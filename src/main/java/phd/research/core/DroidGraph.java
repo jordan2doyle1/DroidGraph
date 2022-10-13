@@ -7,15 +7,14 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xmlpull.v1.XmlPullParserException;
 import phd.research.Pair;
 import phd.research.enums.Type;
-import phd.research.graph.Control;
-import phd.research.graph.Filter;
-import phd.research.graph.Importer;
-import phd.research.graph.UnitGraph;
+import phd.research.graph.*;
 import phd.research.helper.API;
-import phd.research.vertices.*;
+import phd.research.vertices.ControlVertex;
+import phd.research.vertices.MethodVertex;
+import phd.research.vertices.UnitVertex;
+import phd.research.vertices.Vertex;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -38,24 +37,30 @@ import java.util.stream.Collectors;
 
 public class DroidGraph {
 
-    private static final Logger logger = LoggerFactory.getLogger(DroidGraph.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DroidGraph.class);
+
     @NotNull
     private final DroidControls droidControls;
+
     private Graph<Vertex, DefaultEdge> callGraph;
     private Graph<Vertex, DefaultEdge> controlFlowGraph;
 
-    @API
-    public DroidGraph(File collectedCallbacksFile, File apk, File gmlFile) throws XmlPullParserException, IOException {
-        this(new DroidControls(collectedCallbacksFile, apk), gmlFile, true);
+    public DroidGraph(DroidControls droidControls, File callGraphFile) throws IOException {
+        this(droidControls, callGraphFile, true);
     }
 
-    public DroidGraph(DroidControls droidControls, File gmlFile) throws IOException {
-        this(droidControls, gmlFile, true);
-    }
-
-    public DroidGraph(DroidControls droidControls, File gmlFile, boolean addMissingComponents) throws IOException {
+    public DroidGraph(DroidControls droidControls, File callGraphFile, boolean addMissingComponents)
+            throws IOException {
         this.droidControls = Objects.requireNonNull(droidControls);
-        this.generateGraphs(gmlFile, addMissingComponents);
+        this.generateGraphs(callGraphFile, addMissingComponents);
+    }
+
+    public static void outputCGDetails(File directory, Graph<Vertex, DefaultEdge> graph) throws IOException {
+        Writer.writeString(directory, "CG_Composition", new Composition(graph).toTableString());
+    }
+
+    public static void outputCFGDetails(File directory, Graph<Vertex, DefaultEdge> graph) throws IOException {
+        Writer.writeString(directory, "CFG_Composition", new Composition(graph).toTableString());
     }
 
     public static Collection<Vertex> getControlsVisited(Collection<Vertex> vertices) {
@@ -152,13 +157,8 @@ public class DroidGraph {
         return this.controlFlowGraph;
     }
 
-    @API
-    public void generateGraphs(boolean addMissingVertices) throws IOException {
-        this.generateGraphs(null, addMissingVertices);
-    }
-
-    public void generateGraphs(File gmlGraph, boolean addMissingVertices) throws IOException {
-        this.callGraph = generateGraph(gmlGraph);
+    public void generateGraphs(File callGraphFile, boolean addMissingVertices) throws IOException {
+        this.callGraph = Importer.importAndroGuardCallGraph(callGraphFile);
         this.controlFlowGraph = generateGraph(this.callGraph, addMissingVertices);
     }
 
@@ -197,9 +197,9 @@ public class DroidGraph {
         return calculateGraphCoverage(this.getControlFlowGraph());
     }
 
-    // TODO: Should this be replaced with a find method and then .visit method?
-    @API
+    @Deprecated
     public boolean visitCFGMethodVertex(SootMethod method) {
+        // TODO: Should this be replaced with a find method and then .visit method call?
         for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
             if ((vertex.getType() == Type.METHOD || vertex.getType() == Type.LIFECYCLE ||
                     vertex.getType() == Type.LISTENER || vertex.getType() == Type.DUMMY ||
@@ -211,42 +211,6 @@ public class DroidGraph {
         return false;
     }
 
-//    //TODO: Should this be in a different class?
-//    @API
-//    public Type getMethodType(SootMethod method) throws RuntimeException {
-//        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
-//            return Type.dummy;
-//        } else if (Filter.isLifecycleMethod(method)) {
-//            return Type.lifecycle;
-//        } else if (Filter.isListenerMethod(this.collectedCallbacks, method) ||
-//                Filter.isPossibleListenerMethod(this.collectedCallbacks, method)) {
-//            return Type.listener;
-//        } else if (Filter.isOtherCallbackMethod(collectedCallbacks, method)) {
-//            return Type.other;
-//        } else if (Filter.isValidMethod(method)) {
-//            return Type.method;
-//        } else {
-//            throw new RuntimeException(String.format("Found method %s with unknown type.", method));
-//        }
-//    }
-
-    // TODO: Should this be a static method in Vertex?
-    public MethodVertex createMethodVertex(SootMethod method) {
-        if (method.getDeclaringClass().getName().equals("dummyMainClass")) {
-            return new DummyVertex(method);
-        } else if (Filter.isLifecycleMethod(method)) {
-            return new LifecycleVertex(method);
-        } else if (Filter.isListenerMethod(method) || Filter.isPossibleListenerMethod(method)) {
-            return new ListenerVertex(method);
-        } else if (Filter.isOtherCallbackMethod(method)) {
-            return new MethodVertex(Type.CALLBACK, method);
-        } else if (Filter.isValidMethod(method)) {
-            return new MethodVertex(method);
-        } else {
-            throw new RuntimeException(String.format("Found method %s with an unknown type.", method));
-        }
-    }
-
     @SuppressWarnings("unused")
     @Deprecated
     private Graph<Vertex, DefaultEdge> generateGraph(CallGraph sootCallGraph) {
@@ -256,9 +220,9 @@ public class DroidGraph {
             String dummyMain = "dummyMainClass";
             if ((Filter.isValidMethod(edge.src()) || edge.src().getDeclaringClass().getName().equals(dummyMain)) &&
                     (Filter.isValidMethod(edge.tgt()) || edge.tgt().getDeclaringClass().getName().equals(dummyMain))) {
-                Vertex srcVertex = createMethodVertex(edge.src());
+                Vertex srcVertex = MethodVertex.createMethodVertex(edge.src());
                 graph.addVertex(srcVertex);
-                Vertex tgtVertex = createMethodVertex(edge.tgt());
+                Vertex tgtVertex = MethodVertex.createMethodVertex(edge.tgt());
                 graph.addVertex(tgtVertex);
                 graph.addEdge(srcVertex, tgtVertex);
             }
@@ -266,57 +230,6 @@ public class DroidGraph {
 
         return graph;
     }
-
-    private Graph<Vertex, DefaultEdge> generateGraph(File gmlGraph) {
-        return Importer.importAndroGuardCallGraph(gmlGraph);
-    }
-
-//    private Vertex createVertexForLabel(String label) throws FileNotFoundException {
-//        Pattern pattern = Pattern.compile("L(.+);->(.+)\\((.*)\\)(.+;|\\[?\\[?.) ?(\\[.+])?");
-//        Matcher matcher = pattern.matcher(label);
-//
-//        if (matcher.find()) {
-//            String className = matcher.group(1).trim().replace("/", ".");
-//            String methodName = matcher.group(2).trim();
-//            String parameters = matcher.group(3).trim();
-//            List<String> paramList = new ArrayList<>(
-//                    parameters.equals("") ? Collections.emptyList() : Arrays.asList(parameters.split(" ")));
-//            paramList.replaceAll(this::convertBytecodeTypeToJimple);
-//            String methodReturn = convertBytecodeTypeToJimple(matcher.group(4).trim());
-//
-//            String methodSignature = buildMethodSignature(className, methodName, methodReturn, paramList);
-//            SootMethod method = Scene.v().grabMethod(methodSignature);
-//
-//            if (method == null) {
-//                logger.error("Failed to find method: " + methodSignature);
-//                return null;
-//            }
-//
-//            SootClass clazz = Scene.v().getSootClassUnsafe(Scene.signatureToClass(methodSignature));
-//            if (clazz == null) {
-//                logger.error("");
-//                return null;
-//            }
-//
-//            if (Filter.isValidClass(clazz)) {
-//                this.createMethodVertex(method);
-//            }
-//        }
-//
-//        return null;
-//    }
-
-//    private String buildMethodSignature(String clazz, String method, String returnType, Collection<String> parameters) {
-//        StringBuilder builder = new StringBuilder("<");
-//        builder.append(clazz).append(": ").append(returnType).append(" ").append(method).append("(");
-//
-//        parameters.forEach(parameter-> builder.append(parameter).append(","));
-//        if (builder.charAt(builder.length() - 1) == ',') {
-//            builder.deleteCharAt(builder.length() - 1);
-//        }
-//
-//        return builder.append(")>").toString();
-//    }
 
     private Graph<Vertex, DefaultEdge> generateGraph(Graph<Vertex, DefaultEdge> callGraph, boolean addMissingVertices) {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
@@ -330,7 +243,7 @@ public class DroidGraph {
                 if (listenerVertex != null) {
                     graph.addEdge(controlVertex, listenerVertex);
                 } else {
-                    logger.error(String.format("Listener method %s not found in the graph.", method));
+                    LOGGER.error(String.format("Listener method %s not found in the graph.", method));
                 }
             });
         });
@@ -351,14 +264,14 @@ public class DroidGraph {
                                 .forEach(callee -> {
                                     Vertex callerVertex = getUnitVertex(caller, graph.vertexSet());
                                     if (callerVertex == null) {
-                                        logger.error(String.format("Caller %s not found in the graph.", caller));
+                                        LOGGER.error(String.format("Caller %s not found in the graph.", caller));
                                     }
                                     Vertex calleeVertex = getMethodVertex(callee, graph.vertexSet());
                                     if (calleeVertex == null) {
-                                        logger.error(String.format("Callee %s not found in the graph.", callee));
+                                        LOGGER.error(String.format("Callee %s not found in the graph.", callee));
                                         if (addMissingVertices) {
-                                            logger.info(String.format("Adding %s method into the graph.", callee));
-                                            graph.addVertex(createMethodVertex(callee));
+                                            LOGGER.info(String.format("Adding %s method into the graph.", callee));
+                                            graph.addVertex(MethodVertex.createMethodVertex(callee));
                                         }
                                     }
                                     if (callerVertex != null && calleeVertex != null) {
@@ -373,16 +286,6 @@ public class DroidGraph {
         return verifyGraphContents(graph, addMissingVertices);
     }
 
-    public void linkControlsToCallbacks() {
-        // Loop through all methods.
-        // Loop through all statements in method.
-        // Loop if Invoke or Assign with right operand Invoke.
-        // if Invoke is setOnClick
-        // Get variable name.
-        // Search all statements for assignment.
-        // record all values for variable.
-    }
-
     private Graph<Vertex, DefaultEdge> verifyGraphContents(Graph<Vertex, DefaultEdge> graph, boolean addVertices) {
         Objects.requireNonNull(graph);
 
@@ -394,9 +297,9 @@ public class DroidGraph {
         }
 
         if (!missingControls.isEmpty()) {
-            logger.error(String.format("Found %s controls that are not in the graph.", missingControls.size()));
+            LOGGER.error(String.format("Found %s controls that are not in the graph.", missingControls.size()));
             if (addVertices) {
-                logger.info(String.format("Adding %s controls into the graph.", missingControls.size()));
+                LOGGER.info(String.format("Adding %s controls into the graph.", missingControls.size()));
                 missingControls.forEach(control -> graph.addVertex(new ControlVertex(control)));
             }
         }
@@ -404,7 +307,7 @@ public class DroidGraph {
         Collection<SootMethod> missingMethods = new HashSet<>();
         Scene.v().getClasses().stream().filter(Filter::isValidClass)
                 .forEach(clazz -> clazz.getMethods().forEach(method -> {
-                    Vertex vertex = createMethodVertex(method);
+                    Vertex vertex = MethodVertex.createMethodVertex(method);
                     if (!graph.containsVertex(vertex)) {
                         SootClass currentClass = method.getDeclaringClass();
                         boolean found = false;
@@ -423,16 +326,29 @@ public class DroidGraph {
                 }));
 
         if (!missingMethods.isEmpty()) {
-            logger.error(String.format("Found %s methods that are not in the graph.", missingMethods.size()));
+            LOGGER.error(String.format("Found %s methods that are not in the graph.", missingMethods.size()));
             if (addVertices) {
-                logger.info(String.format("Adding %s methods into the graph.", missingMethods.size()));
+                LOGGER.info(String.format("Adding %s methods into the graph.", missingMethods.size()));
                 missingMethods.forEach(method -> {
-                    graph.addVertex(createMethodVertex(method));
+                    graph.addVertex(MethodVertex.createMethodVertex(method));
                     System.out.println(method.getSignature());
                 });
             }
         }
 
         return graph;
+    }
+
+    @SuppressWarnings("unused")
+    public void linkControlsToListeners() {
+        // TODO: Write method to track variable assignments and link listener callback methods to their user controls.
+
+        // Loop through all methods found by FlowDroid.
+        //     Loop through all the statements in each method.
+        //         If statement is InvokeStatement or AssignStatement where right operand is InvokeStatement.
+        //             If frontMatter callback setter methods include InvokeStatement.
+        //                 Variable equals variable name.
+        // Search all statements in code base for assignments to variable name.
+        // Record all values for variable name.
     }
 }
