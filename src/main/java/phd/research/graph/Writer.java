@@ -100,7 +100,7 @@ public class Writer {
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
-        DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>(Vertex::toString);
+        DOTExporter<Vertex, DefaultEdge> exporter = new DOTExporter<>();
         exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
 
@@ -113,20 +113,21 @@ public class Writer {
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
-        JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>(Vertex::toString);
+        JSONExporter<Vertex, DefaultEdge> exporter = new JSONExporter<>();
         exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
 
         writer.close();
     }
 
+    // TODO: Exported GML graph does not include the attributes, only ID.
     private static void exportGML(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
         File file = new File(directory + File.separator + "GML" + File.separator + fileName + ".gml");
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
-        GmlExporter<Vertex, DefaultEdge> exporter = new GmlExporter<>(Vertex::toString);
+        GmlExporter<Vertex, DefaultEdge> exporter = new GmlExporter<>();
         exporter.setVertexAttributeProvider(Vertex::getAttributes);
         exporter.exportGraph(graph, writer);
 

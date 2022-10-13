@@ -1,7 +1,5 @@
 package phd.research.graph;
 
-import org.xmlpull.v1.XmlPullParserException;
-import phd.research.core.FlowDroidUtils;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -26,10 +24,6 @@ public class Filter {
     private static final List<String> classBlacklist = Filter.loadBlacklist("class_blacklist");
     private static final List<String> layoutBlacklist = Filter.loadBlacklist("layout_blacklist");
     private static final CollectedCallbacks flowDroidCallbacks = Filter.deserializeCallbacks();
-
-    public static boolean isEntryPointClass(File apk, SootClass clazz) throws XmlPullParserException, IOException {
-        return FlowDroidUtils.getEntryPointClasses(apk).stream().anyMatch(e -> e.equals(clazz));
-    }
 
     public static boolean isLifecycleMethod(SootMethod method) {
         AndroidEntryPointUtils entryPointUtils = new AndroidEntryPointUtils();
@@ -103,7 +97,7 @@ public class Filter {
         try {
             return CollectedCallbacksSerializer.deserialize(callbacksFile);
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("FlowDroidCallbacks file cannot be found: " + e.getMessage());
         }
     }
 
