@@ -49,7 +49,7 @@ public class ControlVertex extends Vertex implements Serializable {
     public Map<String, Attribute> getAttributes() {
         Map<String, Attribute> attributes = super.getAttributes();
 
-        attributes.put("control", DefaultAttribute.createAttribute(this.getControl().toString()));
+        attributes.put("control", DefaultAttribute.createAttribute(this.getLabel()));
         attributes.put("color", DefaultAttribute.createAttribute(this.getColor().name()));
         attributes.put("shape", DefaultAttribute.createAttribute(this.getShape().name()));
         attributes.put("style", DefaultAttribute.createAttribute(this.getStyle().name()));

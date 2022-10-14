@@ -5,6 +5,9 @@ import nl.jqno.equalsverifier.Warning;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
+import phd.research.enums.Color;
+import phd.research.enums.Shape;
+import phd.research.enums.Style;
 import phd.research.enums.Type;
 import soot.Unit;
 
@@ -48,12 +51,12 @@ public class UnitVertexTest {
     @Test
     public void testGetAttributes() {
         Map<String, Attribute> attributes = this.v.getAttributes();
-        assertEquals("Should be exactly 5 attributes.", 5, attributes.size());
-        assertEquals("Wrong type attribute returned.", "unit", attributes.get("type").getValue());
+        assertEquals("Should be exactly 5 attributes.", 6, attributes.size());
+        assertEquals("Wrong type attribute returned.", Type.UNIT.name(), attributes.get("type").getValue());
         assertTrue("Wrong label attribute returned.", attributes.get("label").getValue().matches(LABEL_REGEX));
-        assertEquals("Wrong color attribute returned.", "yellow", attributes.get("color").getValue());
-        assertEquals("Wrong shape attribute returned.", "box", attributes.get("shape").getValue());
-        assertEquals("Wrong style attribute returned.", "filled", attributes.get("style").getValue());
+        assertEquals("Wrong color attribute returned.", Color.YELLOW.name(), attributes.get("color").getValue());
+        assertEquals("Wrong shape attribute returned.", Shape.BOX.name(), attributes.get("shape").getValue());
+        assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attributes.get("style").getValue());
     }
 
     @Test

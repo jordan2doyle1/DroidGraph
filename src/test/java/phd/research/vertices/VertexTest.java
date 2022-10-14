@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 
 public class VertexTest {
 
-    private final String LABEL = "Vertex{type=unknown}";
+    private final String LABEL = "Vertex{type=UNKNOWN}";
 
     private Vertex v;
 
@@ -75,14 +75,14 @@ public class VertexTest {
     public void getAttributes() {
         Map<String, Attribute> attributes = this.v.getAttributes();
         assertEquals("Should be exactly 2 attributes.", 2, attributes.size());
-        assertEquals("Wrong type attribute returned.", "unknown", attributes.get("type").getValue());
+        assertEquals("Wrong type attribute returned.", Type.UNKNOWN.name(), attributes.get("type").getValue());
         assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
     }
 
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                String.format("Vertex{type=unknown, label='%s', visit=false, localVisit=false}", LABEL),
+                String.format("Vertex{type=UNKNOWN, label='%s', visit=false, localVisit=false}", LABEL),
                 this.v.toString()
                     );
     }

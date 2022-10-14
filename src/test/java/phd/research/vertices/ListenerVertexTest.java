@@ -3,6 +3,9 @@ package phd.research.vertices;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
+import phd.research.enums.Color;
+import phd.research.enums.Shape;
+import phd.research.enums.Style;
 import phd.research.enums.Type;
 import soot.SootClass;
 import soot.SootMethod;
@@ -68,12 +71,12 @@ public class ListenerVertexTest {
     @Test
     public void getAttributes() {
         Map<String, Attribute> attributes = this.v.getAttributes();
-        assertEquals("Should be exactly 5 attributes.", 5, attributes.size());
-        assertEquals("Wrong type attribute returned.", "listener", attributes.get("type").getValue());
+        assertEquals("Should be exactly 5 attributes.", 6, attributes.size());
+        assertEquals("Wrong type attribute returned.", Type.LISTENER.name(), attributes.get("type").getValue());
         assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
-        assertEquals("Wrong color attribute returned.", "orange", attributes.get("color").getValue());
-        assertEquals("Wrong shape attribute returned.", "octagon", attributes.get("shape").getValue());
-        assertEquals("Wrong style attribute returned.", "filled", attributes.get("style").getValue());
+        assertEquals("Wrong color attribute returned.", Color.ORANGE.name(), attributes.get("color").getValue());
+        assertEquals("Wrong shape attribute returned.", Shape.OCTAGON.name(), attributes.get("shape").getValue());
+        assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attributes.get("style").getValue());
     }
 
     @Test
