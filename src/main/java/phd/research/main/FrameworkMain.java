@@ -2,8 +2,6 @@ package phd.research.main;
 
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
@@ -12,10 +10,8 @@ import phd.research.core.DroidControls;
 import phd.research.core.DroidGraph;
 import phd.research.core.FlowDroidAnalysis;
 import phd.research.enums.Format;
-import phd.research.graph.Importer;
 import phd.research.graph.Writer;
 import phd.research.helper.PythonRunner;
-import phd.research.vertices.Vertex;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +26,7 @@ public class FrameworkMain {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameworkMain.class);
 
+    @SuppressWarnings("CommentedOutCode")
     public static void main(String[] args) {
         Options options = new Options();
         options.addOption(Option.builder("a").longOpt("apk-file").required().hasArg().numberOfArgs(1).argName("FILE")
@@ -229,18 +226,21 @@ public class FrameworkMain {
                 }
             }
 
-            LOGGER.info("Running graph export... (" + cTimer.start(true) + ")");
-            try {
-                Writer.writeGraph(outputDirectory, "exportTest", Format.ALL, droidGraph.getControlFlowGraph());
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to export graph: " + e.getMessage() + e);
-            }
-            LOGGER.info("(" + cTimer.end() + ") Graph export took " + cTimer.secondsDuration() + " second(s).");
-
-            LOGGER.info("Running graph import... (" + cTimer.start(true) + ")");
-            Graph<Vertex, DefaultEdge> jsonImport =
-                    Importer.importDroidGraph(Format.JSON, new File(outputDirectory + "/JSON/exportTest.json"));
-
+            //            LOGGER.info("Running graph export... (" + cTimer.start(true) + ")");
+            //            try {
+            //                Writer.writeGraph(outputDirectory, "exportTest", Format.ALL, droidGraph
+            //                .getControlFlowGraph());
+            //            } catch (IOException e) {
+            //                throw new RuntimeException("Failed to export graph: " + e.getMessage() + e);
+            //            }
+            //            LOGGER.info("(" + cTimer.end() + ") Graph export took " + cTimer.secondsDuration() + "
+            //            second(s).");
+            //
+            //            LOGGER.info("Running graph import... (" + cTimer.start(true) + ")");
+            //            Graph<Vertex, DefaultEdge> jsonImport =
+            //                    Importer.importDroidGraph(Format.JSON, new File(outputDirectory + "/JSON/exportTest
+            //                    .json"));
+            //
             //            Graph<Vertex, DefaultEdge> dotImport = Importer.importDroidGraph(Format.DOT, new File
             //            (outputDirectory +
             //                    "/DOT/exportTest.dot"));
@@ -262,17 +262,19 @@ public class FrameworkMain {
             //            } else {
             //                System.out.println("Edge imports DO NOT match.");
             //            }
-
-            if (jsonImport.vertexSet().size() == droidGraph.getControlFlowGraph().vertexSet().size() &&
-                    jsonImport.edgeSet().size() == droidGraph.getControlFlowGraph().edgeSet().size()) {
-                System.out.println("Import matches export.");
-            } else {
-                System.out.println("JSON Vertex Set: " + jsonImport.vertexSet().size());
-                System.out.println("Droid Vertex Set: " + droidGraph.getControlFlowGraph().vertexSet().size());
-                System.out.println("JSON Edge Set: " + jsonImport.edgeSet().size());
-                System.out.println("Droid Edge Set: " + droidGraph.getControlFlowGraph().edgeSet().size());
-            }
-            LOGGER.info("(" + cTimer.end() + ") Graph import took " + cTimer.secondsDuration() + " second(s).");
+            //
+            //            if (jsonImport.vertexSet().size() == droidGraph.getControlFlowGraph().vertexSet().size() &&
+            //                    jsonImport.edgeSet().size() == droidGraph.getControlFlowGraph().edgeSet().size()) {
+            //                System.out.println("Import matches export.");
+            //            } else {
+            //                System.out.println("JSON Vertex Set: " + jsonImport.vertexSet().size());
+            //                System.out.println("Droid Vertex Set: " + droidGraph.getControlFlowGraph().vertexSet()
+            //                .size());
+            //                System.out.println("JSON Edge Set: " + jsonImport.edgeSet().size());
+            //                System.out.println("Droid Edge Set: " + droidGraph.getControlFlowGraph().edgeSet().size
+            //                ());
+            //            }
+            //            LOGGER.info("(" + cTimer.end() + ") Graph import took " + cTimer.secondsDuration() + " second(s).");
         }
 
         LOGGER.info("End time: " + timer.end());
