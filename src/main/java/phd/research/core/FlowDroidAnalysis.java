@@ -71,6 +71,11 @@ public class FlowDroidAnalysis {
         return builder.append("**** END ****").toString();
     }
 
+    @API
+    public String getBasePackageName() {
+        return this.manifest.getPackageName();
+    }
+
     @NotNull
     public ARSCFileParser getResources() {
         return this.resources;
