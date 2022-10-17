@@ -81,6 +81,11 @@ public class FlowDroidAnalysis {
         return this.resources;
     }
 
+    @API
+    public File getApkFile() {
+        return this.apk;
+    }
+
     public Set<SootClass> getLaunchActivities() {
         Set<SootClass> launchActivities = new HashSet<>();
         for (AXmlNode activity : this.manifest.getLaunchableActivityNodes()) {
