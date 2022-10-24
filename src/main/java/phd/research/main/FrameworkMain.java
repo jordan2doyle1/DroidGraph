@@ -166,7 +166,6 @@ public class FrameworkMain {
                         throw new IOException("AndroGuard graph file does not exist (" + androGuardCallGraph + ").");
                     }
                     droidGraph = new DroidGraph(droidControls, androGuardCallGraph);
-                    droidGraph.generateGraphs(androGuardCallGraph, true);
                 } else {
                     PythonRunner pythonRunner = new PythonRunner();
                     if (cmd.hasOption("v")) {
@@ -174,7 +173,6 @@ public class FrameworkMain {
                     }
                     List<String> output = pythonRunner.runAndroGuard(apk, outputDirectory, cmd.hasOption("v"));
                     droidGraph = new DroidGraph(droidControls, new File(outputDirectory + "/AndroGuardCG.gml"));
-                    droidGraph.generateGraphs(new File(outputDirectory + "/AndroGuardCG.gml"), true);
                 }
             } catch (IOException | InterruptedException e) {
                 LOGGER.error("Failure while generating Call Graph and Control Flow Graph: " + e.getMessage());

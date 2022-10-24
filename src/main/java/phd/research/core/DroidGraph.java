@@ -42,17 +42,17 @@ public class DroidGraph {
     @NotNull
     private final DroidControls droidControls;
 
-    private Graph<Vertex, DefaultEdge> callGraph;
-    private Graph<Vertex, DefaultEdge> controlFlowGraph;
+    private final Graph<Vertex, DefaultEdge> callGraph;
+    private final Graph<Vertex, DefaultEdge> controlFlowGraph;
 
     public DroidGraph(DroidControls droidControls, File callGraphFile) throws IOException {
         this(droidControls, callGraphFile, true);
     }
 
-    public DroidGraph(DroidControls droidControls, File callGraphFile, boolean addMissingComponents)
-            throws IOException {
+    public DroidGraph(DroidControls droidControls, File callGraphFile, boolean addMissingComponents) {
         this.droidControls = Objects.requireNonNull(droidControls);
-        this.generateGraphs(callGraphFile, addMissingComponents);
+        this.callGraph = Importer.importAndroGuardCallGraph(callGraphFile);
+        this.controlFlowGraph = generateGraph(this.callGraph, addMissingComponents);
     }
 
     public static void outputCGDetails(File directory, Graph<Vertex, DefaultEdge> graph) throws IOException {
@@ -155,11 +155,6 @@ public class DroidGraph {
     @API
     public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
         return this.controlFlowGraph;
-    }
-
-    public void generateGraphs(File callGraphFile, boolean addMissingVertices) throws IOException {
-        this.callGraph = Importer.importAndroGuardCallGraph(callGraphFile);
-        this.controlFlowGraph = generateGraph(this.callGraph, addMissingVertices);
     }
 
     @API
@@ -269,6 +264,12 @@ public class DroidGraph {
                                     Vertex calleeVertex = getMethodVertex(callee, graph.vertexSet());
                                     if (calleeVertex == null) {
                                         LOGGER.error(String.format("Callee %s not found in the graph.", callee));
+                                        // TODO: Check AndroGuard CG to see if the method is external.
+                                        if (!callee.getDeclaringClass().getPackageName().startsWith(
+                                                this.droidControls.getFlowDroidAnalysis().getBasePackageName())) {
+                                            LOGGER.info(
+                                                    String.format("Callee %s is probably not a valid method.", callee));
+                                        }
                                         if (addMissingVertices) {
                                             LOGGER.info(String.format("Adding %s method into the graph.", callee));
                                             graph.addVertex(MethodVertex.createMethodVertex(callee));

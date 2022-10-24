@@ -48,6 +48,10 @@ public class DroidControls {
         return this.controls;
     }
 
+    public FlowDroidAnalysis getFlowDroidAnalysis() {
+        return this.flowDroidAnalysis;
+    }
+
     public void writeControlsToFile(File directory) throws IOException {
         Writer.writeCollection(directory, "app_controls", this.getControls());
         Writer.writeString(directory, "control_callbacks", this.getControlCallbackTableString());
