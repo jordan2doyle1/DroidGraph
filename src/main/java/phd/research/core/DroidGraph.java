@@ -46,7 +46,7 @@ public class DroidGraph {
     private final Graph<Vertex, DefaultEdge> controlFlowGraph;
 
     public DroidGraph(DroidControls droidControls, File callGraphFile) throws IOException {
-        this(droidControls, callGraphFile, true);
+        this(droidControls, callGraphFile, false);
     }
 
     public DroidGraph(DroidControls droidControls, File callGraphFile, boolean addMissingComponents) {
