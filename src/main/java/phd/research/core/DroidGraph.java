@@ -297,6 +297,7 @@ public class DroidGraph {
             }
         }
 
+        //Writer.writeCollection(outputDirectory, "missing_controls", missingControls);
         if (!missingControls.isEmpty()) {
             LOGGER.error(String.format("Found %s controls that are not in the graph.", missingControls.size()));
             if (addVertices) {
@@ -326,14 +327,12 @@ public class DroidGraph {
                     }
                 }));
 
+        //Writer.writeCollection(outputDirectory, "missing_methods", missingMethods);
         if (!missingMethods.isEmpty()) {
             LOGGER.error(String.format("Found %s methods that are not in the graph.", missingMethods.size()));
             if (addVertices) {
                 LOGGER.info(String.format("Adding %s methods into the graph.", missingMethods.size()));
-                missingMethods.forEach(method -> {
-                    graph.addVertex(MethodVertex.createMethodVertex(method));
-                    System.out.println(method.getSignature());
-                });
+                missingMethods.forEach(method -> graph.addVertex(MethodVertex.createMethodVertex(method)));
             }
         }
 
