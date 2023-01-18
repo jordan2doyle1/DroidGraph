@@ -16,7 +16,11 @@ import phd.research.helper.PythonRunner;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.List;
+
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * @author Jordan Doyle
@@ -26,7 +30,6 @@ public class FrameworkMain {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameworkMain.class);
 
-    @SuppressWarnings("CommentedOutCode")
     public static void main(String[] args) {
         Options options = new Options();
         options.addOption(Option.builder("a").longOpt("apk-file").required().hasArg().numberOfArgs(1).argName("FILE")
@@ -100,6 +103,16 @@ public class FrameworkMain {
             }
         }
 
+        File savedCallbackFile = new File(outputDirectory + File.separator + "FlowDroidCallbacks");
+        File callbackFile = new File(System.getProperty("user.dir") + File.separator + "FlowDroidCallbacks");
+        if (savedCallbackFile.exists()) {
+            try {
+                Files.move(savedCallbackFile.toPath(), callbackFile.toPath(), REPLACE_EXISTING);
+            } catch (IOException e) {
+                LOGGER.error("Problem moving saved callback file, new file will be created: " + e.getMessage());
+            }
+        }
+
         if (cmd.hasOption("c")) {
             try {
                 FileUtils.cleanDirectory(outputDirectory);
@@ -127,8 +140,13 @@ public class FrameworkMain {
         }
         LOGGER.info("(" + cTimer.end() + ") FlowDroid took " + cTimer.secondsDuration() + " second(s).");
 
-        File callbackFile = new File(System.getProperty("user.dir") + File.separator + "FlowDroidCallbacks");
-        if (!callbackFile.exists()) {
+        if (callbackFile.exists()) {
+            try {
+                Files.copy(callbackFile.toPath(), savedCallbackFile.toPath(), REPLACE_EXISTING, COPY_ATTRIBUTES);
+            } catch (IOException e) {
+                LOGGER.error("Problem saving callback file to output directory: " + e.getMessage());
+            }
+        } else {
             LOGGER.error("FlowDroid callbacks file does not exist.");
             System.exit(50);
         }
@@ -221,6 +239,14 @@ public class FrameworkMain {
                     DroidGraph.outputCFGDetails(outputDirectory, droidGraph.getControlFlowGraph());
                 } catch (IOException e) {
                     LOGGER.error("Failed to write graph composition details to output file: " + e.getMessage());
+                }
+            }
+
+            if (callbackFile.exists()) {
+                try {
+                    Files.delete(callbackFile.toPath());
+                } catch (IOException e) {
+                    LOGGER.error("Failed to delete FlowDroid callback file: " + e.getMessage());
                 }
             }
 
