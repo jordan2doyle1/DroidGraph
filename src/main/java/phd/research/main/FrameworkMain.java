@@ -61,7 +61,7 @@ public class FrameworkMain {
             final PrintWriter writer = new PrintWriter(System.out);
             formatter.printUsage(writer, 80, "DroidGraph2.0", options);
             writer.flush();
-            System.exit(0);
+            System.exit(10);
         }
 
         if (cmd.hasOption("h")) {
@@ -76,14 +76,14 @@ public class FrameworkMain {
         File apk = new File(cmd.getOptionValue("a"));
         if (!apk.exists()) {
             LOGGER.error("APK file does not exist (" + apk + ").");
-            System.exit(10);
+            System.exit(20);
         }
 
         File androidPlatform = new File((cmd.hasOption("p") ? cmd.getOptionValue("p") :
                 System.getenv("ANDROID_HOME") + File.separator + "platforms"));
         if (!androidPlatform.isDirectory()) {
             LOGGER.error("Android platform directory does not exist (" + androidPlatform + ").");
-            System.exit(20);
+            System.exit(30);
         }
 
         File defaultOutput = new File(System.getProperty("user.dir") + File.separator + "output");
@@ -96,7 +96,7 @@ public class FrameworkMain {
                 }
             } else {
                 LOGGER.error("Output directory does not exist.");
-                System.exit(30);
+                System.exit(40);
             }
         }
 
@@ -165,14 +165,14 @@ public class FrameworkMain {
                     if (!androGuardCallGraph.exists()) {
                         throw new IOException("AndroGuard graph file does not exist (" + androGuardCallGraph + ").");
                     }
-                    droidGraph = new DroidGraph(droidControls, androGuardCallGraph);
+                    droidGraph = new DroidGraph(droidControls, androGuardCallGraph, true);
                 } else {
                     PythonRunner pythonRunner = new PythonRunner();
                     if (cmd.hasOption("v")) {
                         pythonRunner.setVirtualEnvDirectory(new File(cmd.getOptionValue("v")));
                     }
                     List<String> output = pythonRunner.runAndroGuard(apk, outputDirectory, cmd.hasOption("v"));
-                    droidGraph = new DroidGraph(droidControls, new File(outputDirectory + "/AndroGuardCG.gml"));
+                    droidGraph = new DroidGraph(droidControls, new File(outputDirectory + "/AndroGuardCG.gml"), true );
                 }
             } catch (IOException | InterruptedException e) {
                 LOGGER.error("Failure while generating Call Graph and Control Flow Graph: " + e.getMessage());
