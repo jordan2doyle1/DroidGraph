@@ -41,16 +41,20 @@ public class DroidGraph {
 
     @NotNull
     private final DroidControls droidControls;
+    @NotNull
+    private final File outputDirectory;
 
     private final Graph<Vertex, DefaultEdge> callGraph;
     private final Graph<Vertex, DefaultEdge> controlFlowGraph;
 
-    public DroidGraph(DroidControls droidControls, File callGraphFile) throws IOException {
-        this(droidControls, callGraphFile, false);
+    public DroidGraph(DroidControls droidControls, File callGraphFile, File outputDirectory) throws IOException {
+        this(droidControls, callGraphFile, outputDirectory, false);
     }
 
-    public DroidGraph(DroidControls droidControls, File callGraphFile, boolean addMissingComponents) {
+    public DroidGraph(DroidControls droidControls, File callGraphFile, File outputDirectory,
+            boolean addMissingComponents) {
         this.droidControls = Objects.requireNonNull(droidControls);
+        this.outputDirectory = Objects.requireNonNull(outputDirectory);
         this.callGraph = Importer.importAndroGuardCallGraph(callGraphFile);
         this.controlFlowGraph = generateGraph(this.callGraph, addMissingComponents);
     }
@@ -297,7 +301,12 @@ public class DroidGraph {
             }
         }
 
-        //Writer.writeCollection(outputDirectory, "missing_controls", missingControls);
+        try {
+            Writer.writeCollection(outputDirectory, "missing_controls", missingControls);
+        } catch (IOException e) {
+            LOGGER.error("Error writing missing controls to output file." + e);
+        }
+
         if (!missingControls.isEmpty()) {
             LOGGER.error(String.format("Found %s controls that are not in the graph.", missingControls.size()));
             if (addVertices) {
@@ -327,7 +336,12 @@ public class DroidGraph {
                     }
                 }));
 
-        //Writer.writeCollection(outputDirectory, "missing_methods", missingMethods);
+        try {
+            Writer.writeCollection(outputDirectory, "missing_methods", missingMethods);
+        } catch (IOException e) {
+            LOGGER.error("Error writing missing methods to output file." + e);
+        }
+
         if (!missingMethods.isEmpty()) {
             LOGGER.error(String.format("Found %s methods that are not in the graph.", missingMethods.size()));
             if (addVertices) {
