@@ -25,7 +25,9 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.2.0</version>
+            <!--Future versions of Mockito will not work with Java 1.8. -->
+            <!--suppress MavenPackageUpdate -->
+            <version>4.11.0</version>
         </dependency>
         <dependency>
             <groupId>nl.jqno.equalsverifier</groupId>
