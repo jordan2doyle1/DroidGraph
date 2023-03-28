@@ -1,7 +1,6 @@
 package phd.research.vertices;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,15 +9,11 @@ import phd.research.enums.Shape;
 import phd.research.enums.Style;
 import phd.research.enums.Type;
 import phd.research.graph.Control;
-import soot.SootClass;
-import soot.SootMethod;
-import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Jordan Doyle
@@ -26,32 +21,41 @@ import static org.mockito.Mockito.when;
 
 public class ControlVertexTest {
 
-    private final String RESOURCE_NAME = "btn_click_A";
     private final int RESOURCE_ID = 123456789;
-    private final String SUMMARY = String.format("%s(%s)", RESOURCE_NAME, RESOURCE_ID);
-    private final String LABEL = String.format("Control{control=%s}", SUMMARY);
+    private final String CONTROL_NAME = "btn_click_A";
+    private final String LAYOUT_NAME = "activity_a.xml";
+    private final String ACTIVITY = "com.example.lifecycle.ActivityA";
 
-    private ControlVertex v;
+    private ControlVertex vertex;
 
     @Before
     public void setUp() {
-        ARSCFileParser.AbstractResource resource = mock(ARSCFileParser.AbstractResource.class);
-        when(resource.getResourceName()).thenReturn(RESOURCE_NAME);
-        when(resource.getResourceID()).thenReturn(RESOURCE_ID);
-
-        Control control = mock(Control.class);
-        when(control.getControlResource()).thenReturn(resource);
-
-        this.v = new ControlVertex(control);
+        DefaultVertex.resetIdSequence();
+        Control control =
+                new Control(this.RESOURCE_ID, this.CONTROL_NAME, this.RESOURCE_ID, this.LAYOUT_NAME, this.ACTIVITY,
+                        Collections.emptyList()
+                );
+        this.vertex = new ControlVertex(control);
     }
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'control'.", Type.CONTROL, this.v.getType());
-        assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
-        assertEquals("Wrong resource returned.", RESOURCE_NAME,
-                this.v.getControl().getControlResource().getResourceName()
-                    );
+        assertEquals("Wrong type returned.", Type.CONTROL, this.vertex.getType());
+        assertEquals("Wrong id returned.", 0, this.vertex.getId());
+        assertEquals("Wrong control returned.", this.CONTROL_NAME, this.vertex.getControl().getControlName());
+    }
+
+    @Test
+    public void testBaseConstructor() {
+        Control control =
+                new Control(this.RESOURCE_ID, this.CONTROL_NAME, this.RESOURCE_ID, this.LAYOUT_NAME, this.ACTIVITY,
+                        Collections.emptyList()
+                );
+        ControlVertex controlVertex = new ControlVertex(45, control);
+
+        assertEquals("Wrong type returned.", Type.CONTROL, controlVertex.getType());
+        assertEquals("Wrong id returned.", 45, controlVertex.getId());
+        assertEquals("Wrong control returned.", this.CONTROL_NAME, controlVertex.getControl().getControlName());
     }
 
     @Test(expected = NullPointerException.class)
@@ -61,28 +65,35 @@ public class ControlVertexTest {
 
     @Test
     public void getAttributes() {
-        Map<String, Attribute> attributes = this.v.getAttributes();
-        assertEquals("Should be exactly 5 attributes.", 6, attributes.size());
-        assertEquals("Wrong type attribute returned.", Type.CONTROL.name(), attributes.get("type").getValue());
-        assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
-        assertEquals("Wrong color attribute returned.", Color.RED.name(), attributes.get("color").getValue());
-        assertEquals("Wrong shape attribute returned.", Shape.CIRCLE.name(), attributes.get("shape").getValue());
-        assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attributes.get("style").getValue());
+        Map<String, Attribute> attr = this.vertex.getAttributes();
+
+        assertEquals("Wrong number of attributes returned.", 10, attr.size());
+        assertEquals("Wrong control ID returned.", String.valueOf(this.RESOURCE_ID), attr.get("controlId").getValue());
+        assertEquals("Wrong control name returned.", this.CONTROL_NAME, attr.get("control").getValue());
+        assertEquals("Wrong layout ID returned.", String.valueOf(this.RESOURCE_ID), attr.get("layoutId").getValue());
+        assertEquals("Wrong layout name returned.", this.LAYOUT_NAME, attr.get("layout").getValue());
+        assertEquals("Wrong activity returned.", this.ACTIVITY, attr.get("activity").getValue());
+        assertEquals("Wrong color attribute returned.", Color.RED.name(), attr.get("color").getValue());
+        assertEquals("Wrong shape attribute returned.", Shape.CIRCLE.name(), attr.get("shape").getValue());
+        assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attr.get("style").getValue());
+        assertEquals("Wrong listener list returned.", Collections.emptyList().toString(),
+                attr.get("listeners").getValue()
+                    );
     }
 
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                String.format("Control{label='%s', visit=false, localVisit=false, control=%s}", LABEL, SUMMARY),
-                this.v.toString()
+                "ControlVertex{id=0, type=CONTROL, control='Control{controlId=" + this.RESOURCE_ID + ", layoutId=" +
+                        this.RESOURCE_ID + ", controlName='" + this.CONTROL_NAME + "', layoutName='" +
+                        this.LAYOUT_NAME + "', activity='" + this.ACTIVITY + "', listeners=" + Collections.emptyList() +
+                        "}', visit=false, localVisit=false}", this.vertex.toString()
                     );
     }
 
     @Test
     public void testEquals() {
-        EqualsVerifier.forClass(ControlVertex.class).withRedefinedSuperclass()
-                .withPrefabValues(SootClass.class, mock(SootClass.class), mock(SootClass.class))
-                .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
-                .withIgnoredFields("visit", "localVisit").suppress(Warning.NONFINAL_FIELDS).verify();
+        EqualsVerifier.forClass(ControlVertex.class).withRedefinedSuperclass().withIgnoredFields("visit", "localVisit")
+                .verify();
     }
 }

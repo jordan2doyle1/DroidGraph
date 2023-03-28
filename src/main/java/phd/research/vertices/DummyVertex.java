@@ -3,18 +3,19 @@ package phd.research.vertices;
 import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Type;
-import soot.SootMethod;
-
-import java.io.Serializable;
 
 /**
  * @author Jordan Doyle
  */
 
-public class DummyVertex extends MethodVertex implements Serializable {
+public class DummyVertex extends MethodVertex {
 
-    public DummyVertex(SootMethod method) {
-        super(Type.DUMMY, method);
+    public DummyVertex(String methodSignature) {
+        super(Type.DUMMY, methodSignature);
+    }
+
+    public DummyVertex(int id, String methodSignature) {
+        super(id, Type.DUMMY, methodSignature);
     }
 
     @Override
@@ -29,8 +30,8 @@ public class DummyVertex extends MethodVertex implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Dummy{label='%s', visit=%s, localVisit=%s, method=%s}", super.getLabel(),
-                super.hasVisit(), super.hasLocalVisit(), this.getMethod().getSignature()
-                            );
+        return getClass().getSimpleName() + "{id=" + super.getId() + ", type=" + super.getType() +
+                ", methodSignature='" + super.getMethodSignature() + "', visit=" + super.hasVisit() + ", localVisit=" +
+                super.hasLocalVisit() + "}";
     }
 }

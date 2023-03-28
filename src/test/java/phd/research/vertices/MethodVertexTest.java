@@ -1,7 +1,6 @@
 package phd.research.vertices;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,16 +8,10 @@ import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Style;
 import phd.research.enums.Type;
-import soot.SootClass;
-import soot.SootMethod;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Jordan Doyle
@@ -26,59 +19,46 @@ import static org.mockito.Mockito.when;
 
 public class MethodVertexTest {
 
-    private final String CLASS_NAME = "com_example_android_lifecycle_DummyMainMethod";
-    private final String RETURN_TYPE = "void";
-    private final String METHOD_NAME = "dummyMainMethod";
-    private final String PARAM_TYPE = "android.view.View";
-    private final String LABEL =
-            String.format("Method{method=<DummyMainMethod: %s %s(View,View)>", RETURN_TYPE, METHOD_NAME);
-    private final String SIGNATURE =
-            String.format("<%s: %s %s(%s,%s)>", CLASS_NAME, RETURN_TYPE, METHOD_NAME, PARAM_TYPE, PARAM_TYPE);
+    public static final String SIGNATURE =
+            "<com.example.android.lifecycle.ActivityA: void onClick()(android.view.View)>";
 
-    private MethodVertex v;
+    private MethodVertex vertex;
 
     @Before
     public void setUp() {
-        SootClass clazz = mock(SootClass.class);
-        when(clazz.getName()).thenReturn(CLASS_NAME);
-
-        soot.Type returnType = mock(soot.Type.class);
-        when(returnType.toString()).thenReturn(RETURN_TYPE);
-        soot.Type paramType = mock(soot.Type.class);
-        when(paramType.toString()).thenReturn(PARAM_TYPE);
-
-        SootMethod method = mock(SootMethod.class);
-        when(method.getSignature()).thenReturn(SIGNATURE);
-        when(method.getName()).thenReturn(METHOD_NAME);
-        when(method.getDeclaringClass()).thenReturn(clazz);
-        when(method.getParameterCount()).thenReturn(2);
-        when(method.getReturnType()).thenReturn(returnType);
-
-        List<soot.Type> parameterList = Arrays.asList(paramType, paramType);
-        when(method.getParameterTypes()).thenReturn(parameterList);
-
-        this.v = new MethodVertex(method);
+        DefaultVertex.resetIdSequence();
+        this.vertex = new MethodVertex(MethodVertexTest.SIGNATURE);
     }
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'method'.", Type.METHOD, this.v.getType());
-        assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
-        assertEquals("Wrong method returned.", METHOD_NAME, this.v.getMethod().getName());
+        assertEquals("Wrong type returned.", Type.METHOD, this.vertex.getType());
+        assertEquals("Wrong id returned.", 0, this.vertex.getId());
+        assertEquals("Wrong method returned.", MethodVertexTest.SIGNATURE, this.vertex.getMethodSignature());
+    }
+
+    @Test
+    public void testBaseConstructor() {
+        MethodVertex methodVertex = new MethodVertex(45, MethodVertexTest.SIGNATURE);
+        assertEquals("Wrong type returned.", Type.METHOD, methodVertex.getType());
+        assertEquals("Wrong id returned.", 45, methodVertex.getId());
+        assertEquals("Wrong method returned.", MethodVertexTest.SIGNATURE, methodVertex.getMethodSignature());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testControlNullException() {
+    public void testMethodNullException() {
         new MethodVertex(null);
     }
 
     @Test
     public void getAttributes() {
-        Map<String, Attribute> attributes = this.v.getAttributes();
+        Map<String, Attribute> attributes = this.vertex.getAttributes();
 
-        assertEquals("Should be exactly 5 attributes.", 6, attributes.size());
+        assertEquals("Should be exactly 5 attributes.", 5, attributes.size());
         assertEquals("Wrong type attribute returned.", Type.METHOD.name(), attributes.get("type").getValue());
-        assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
+        assertEquals("Wrong method signature returned.", MethodVertexTest.SIGNATURE,
+                attributes.get("method").getValue()
+                    );
         assertEquals("Wrong color attribute returned.", Color.GREEN.name(), attributes.get("color").getValue());
         assertEquals("Wrong shape attribute returned.", Shape.ELLIPSE.name(), attributes.get("shape").getValue());
         assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attributes.get("style").getValue());
@@ -87,15 +67,14 @@ public class MethodVertexTest {
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                String.format("Method{label='%s', visit=false, localVisit=false, method=%s}", LABEL, SIGNATURE),
-                this.v.toString()
+                "MethodVertex{id=0, type=METHOD, methodSignature='" + MethodVertexTest.SIGNATURE +
+                        "', visit=false, localVisit=false}", this.vertex.toString()
                     );
     }
 
     @Test
     public void testEquals() {
-        EqualsVerifier.forClass(MethodVertex.class).withRedefinedSuperclass()
-                .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
-                .withIgnoredFields("visit", "localVisit").suppress(Warning.NONFINAL_FIELDS).verify();
+        EqualsVerifier.forClass(MethodVertex.class).withRedefinedSuperclass().withIgnoredFields("visit", "localVisit")
+                .verify();
     }
 }

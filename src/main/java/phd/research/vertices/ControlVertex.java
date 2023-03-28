@@ -5,11 +5,9 @@ import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
 import phd.research.enums.Shape;
-import phd.research.enums.Style;
 import phd.research.enums.Type;
 import phd.research.graph.Control;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
@@ -17,7 +15,7 @@ import java.util.Objects;
  * @author Jordan Doyle
  */
 
-public class ControlVertex extends Vertex implements Serializable {
+public class ControlVertex extends DefaultVertex {
 
     @NotNull
     private final Control control;
@@ -25,8 +23,11 @@ public class ControlVertex extends Vertex implements Serializable {
     public ControlVertex(Control control) {
         super(Type.CONTROL);
         this.control = Objects.requireNonNull(control);
-        super.setLabel("Control{control=" + control.getControlResource().getResourceName() + "(" +
-                control.getControlResource().getResourceID() + ")}");
+    }
+
+    public ControlVertex(int id, Control control) {
+        super(id, Type.CONTROL);
+        this.control = Objects.requireNonNull(control);
     }
 
     @NotNull
@@ -42,16 +43,17 @@ public class ControlVertex extends Vertex implements Serializable {
         return Shape.CIRCLE;
     }
 
-    public Style getStyle() {
-        return Style.FILLED;
-    }
-
     public Map<String, Attribute> getAttributes() {
         Map<String, Attribute> attributes = super.getAttributes();
 
-        attributes.put("control", DefaultAttribute.createAttribute(this.getLabel()));
+        attributes.put("controlId", DefaultAttribute.createAttribute(this.control.getControlId()));
+        attributes.put("control", DefaultAttribute.createAttribute(this.control.getControlName()));
         attributes.put("color", DefaultAttribute.createAttribute(this.getColor().name()));
+        attributes.put("layoutId", DefaultAttribute.createAttribute(this.control.getLayoutId()));
+        attributes.put("layout", DefaultAttribute.createAttribute(this.control.getLayoutName()));
         attributes.put("shape", DefaultAttribute.createAttribute(this.getShape().name()));
+        attributes.put("activity", DefaultAttribute.createAttribute(this.control.getActivity()));
+        attributes.put("listeners", DefaultAttribute.createAttribute(this.control.getListeners().toString()));
         attributes.put("style", DefaultAttribute.createAttribute(this.getStyle().name()));
 
         return attributes;
@@ -59,10 +61,8 @@ public class ControlVertex extends Vertex implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Control{label='%s', visit=%s, localVisit=%s, control=%s}", super.getLabel(),
-                super.hasVisit(), super.hasLocalVisit(), this.control.getControlResource().getResourceName() + "(" +
-                        this.control.getControlResource().getResourceID() + ")"
-                            );
+        return getClass().getSimpleName() + "{id=" + super.getId() + ", type=" + super.getType() + ", control='" +
+                this.control + "', visit=" + super.hasVisit() + ", localVisit=" + super.hasLocalVisit() + "}";
     }
 
     @Override
@@ -70,16 +70,17 @@ public class ControlVertex extends Vertex implements Serializable {
         if (this == o) {
             return true;
         }
+
         if (!(o instanceof ControlVertex)) {
             return false;
         }
+
         if (!super.equals(o)) {
             return false;
         }
 
         ControlVertex that = (ControlVertex) o;
-
-        if (!control.equals(that.control)) {
+        if (!this.control.equals(that.control)) {
             return false;
         }
 

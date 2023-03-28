@@ -1,135 +1,40 @@
 package phd.research.vertices;
 
-import org.jetbrains.annotations.NotNull;
 import org.jgrapht.nio.Attribute;
-import org.jgrapht.nio.DefaultAttribute;
+import phd.research.enums.Color;
+import phd.research.enums.Shape;
+import phd.research.enums.Style;
 import phd.research.enums.Type;
-import phd.research.helper.API;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author Jordan Doyle
  */
 
-@API
-public class Vertex implements Serializable {
+public interface Vertex {
 
-    @NotNull
-    private final Type type;
-    @NotNull
-    private String label;
+    int getId();
 
-    private boolean visit;
-    private boolean localVisit;
+    Type getType();
 
-    public Vertex(Type type) {
-        this(type, String.format("Vertex{type=%s}", type));
-    }
+    boolean hasVisit();
 
-    public Vertex(Type type, String label) {
-        this.type = Objects.requireNonNull(type);
-        this.label = Objects.requireNonNull(label);
-        this.visit = false;
-        this.localVisit = false;
-    }
+    void visit();
 
-    @API
-    @NotNull
-    public Type getType() {
-        return this.type;
-    }
+    void visitReset();
 
-    @API
-    @NotNull
-    public String getLabel() {
-        return this.label;
-    }
+    boolean hasLocalVisit();
 
-    @API
-    public void setLabel(String label) {
-        this.label = Objects.requireNonNull(label);
-    }
+    void localVisit();
 
-    @API
-    public boolean hasVisit() {
-        return this.visit;
-    }
+    void localVisitReset();
 
-    @API
-    public void visit() {
-        this.visit = true;
-    }
+    Map<String, Attribute> getAttributes();
 
-    @API
-    public void visitReset() {
-        this.visit = false;
-    }
+    Color getColor();
 
-    @API
-    public boolean hasLocalVisit() {
-        return this.localVisit;
-    }
+    Shape getShape();
 
-    @API
-    public void localVisit() {
-        this.localVisit = true;
-    }
-
-    @API
-    public void localVisitReset() {
-        this.localVisit = false;
-    }
-
-    public Map<String, Attribute> getAttributes() {
-        Map<String, Attribute> attributes = new HashMap<>();
-
-        attributes.put("type", DefaultAttribute.createAttribute(this.type.name()));
-        attributes.put("label", DefaultAttribute.createAttribute(this.label));
-
-        return attributes;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s{type=%s, label='%s', visit=%s, localVisit=%s}", getClass().getSimpleName(), this.type,
-                this.label, this.visit, this.localVisit
-                            );
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Vertex)) {
-            return false;
-        }
-
-        Vertex vertex = (Vertex) o;
-
-        if (type != vertex.type) {
-            return false;
-        }
-
-        if (!label.equals(vertex.label)) {
-            return false;
-        }
-
-        return vertex.canEqual(this);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + label.hashCode();
-        return result;
-    }
-
-    public boolean canEqual(Object o) {
-        return (o instanceof Vertex);
-    }
+    Style getStyle();
 }

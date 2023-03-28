@@ -3,18 +3,19 @@ package phd.research.vertices;
 import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Type;
-import soot.SootMethod;
-
-import java.io.Serializable;
 
 /**
  * @author Jordan Doyle
  */
 
-public class CallbackVertex extends MethodVertex implements Serializable {
+public class CallbackVertex extends MethodVertex {
 
-    public CallbackVertex(SootMethod method) {
-        super(Type.CALLBACK, method);
+    public CallbackVertex(String methodSignature) {
+        super(Type.CALLBACK, methodSignature);
+    }
+
+    public CallbackVertex(int id, String methodSignature) {
+        super(id, Type.CALLBACK, methodSignature);
     }
 
     @Override
@@ -29,8 +30,8 @@ public class CallbackVertex extends MethodVertex implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Callback{label='%s', visit=%s, localVisit=%s, method=%s}", super.getLabel(),
-                super.hasVisit(), super.hasLocalVisit(), this.getMethod().getSignature()
-                            );
+        return getClass().getSimpleName() + "{id=" + super.getId() + ", type=" + super.getType() +
+                ", methodSignature='" + super.getMethodSignature() + "', visit=" + super.hasVisit() + ", localVisit=" +
+                super.hasLocalVisit() + "}";
     }
 }

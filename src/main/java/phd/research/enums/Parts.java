@@ -6,5 +6,5 @@ package phd.research.enums;
 
 @SuppressWarnings("unused")
 public enum Parts {
-    PACKAGES, CLASSES, METHODS,
+    PACKAGES, CLASSES, METHODS
 }

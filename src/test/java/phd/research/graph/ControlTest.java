@@ -4,17 +4,13 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.Before;
 import org.junit.Test;
-import soot.SootClass;
-import soot.SootMethod;
-import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Jordan Doyle
@@ -23,78 +19,69 @@ import static org.mockito.Mockito.when;
 public class ControlTest {
 
     private final String CONTROL_NAME = "btn_click_A";
-    private final String LAYOUT_NAME = "activity_A.xml";
-    private final String ACTIVITY_NAME = ".ActivityA";
+    private final String LAYOUT_NAME = "activity_a.xml";
+    private final int RESOURCE_ID = 123456789;
+    private final String ACTIVITY = "com.example.lifecycle.ActivityA";
 
-    private Control c;
+    private Control control;
 
     @Before
     public void setUp() {
-        ARSCFileParser.AbstractResource control = mock(ARSCFileParser.AbstractResource.class);
-        when(control.getResourceName()).thenReturn(CONTROL_NAME);
-        ARSCFileParser.AbstractResource layout = mock(ARSCFileParser.AbstractResource.class);
-        when(layout.getResourceName()).thenReturn(LAYOUT_NAME);
-        SootClass activity = mock(SootClass.class);
-        when(activity.getShortName()).thenReturn(ACTIVITY_NAME);
-
-        this.c = new Control(control, layout, activity, new ArrayList<>());
+        this.control =
+                new Control(RESOURCE_ID, CONTROL_NAME, RESOURCE_ID, LAYOUT_NAME, ACTIVITY, Collections.emptyList());
     }
 
     @Test
     public void testConstructor() {
-        assertEquals("Wrong control name.", CONTROL_NAME, this.c.getControlResource().getResourceName());
-        assertEquals("Wrong layout name.", LAYOUT_NAME, this.c.getLayoutResource().getResourceName());
-        assertEquals("Wrong activity name.", ACTIVITY_NAME, this.c.getControlActivity().getShortName());
-        assertTrue("Expected listeners to be empty list.", this.c.getClickListeners().isEmpty());
+        assertEquals("Wrong control ID.", RESOURCE_ID, this.control.getControlId());
+        assertEquals("Wrong control name.", CONTROL_NAME, this.control.getControlName());
+        assertEquals("Wrong layout ID.", RESOURCE_ID, this.control.getLayoutId());
+        assertEquals("Wrong layout name.", LAYOUT_NAME, this.control.getLayoutName());
+        assertEquals("Wrong activity name.", ACTIVITY, this.control.getActivity());
+        assertTrue("Expected listeners to be empty list.", this.control.getListeners().isEmpty());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testControlNullException() {
-        new Control(null, mock(ARSCFileParser.AbstractResource.class), mock(SootClass.class), new ArrayList<>());
+    public void testControlNameNullException() {
+        new Control(RESOURCE_ID, null, RESOURCE_ID, LAYOUT_NAME, ACTIVITY, Collections.emptyList());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testLayoutNullException() {
-        new Control(mock(ARSCFileParser.AbstractResource.class), null, mock(SootClass.class), new ArrayList<>());
+    public void testLayoutNameNullException() {
+        new Control(RESOURCE_ID, CONTROL_NAME, RESOURCE_ID, null, ACTIVITY, Collections.emptyList());
     }
 
     @Test(expected = NullPointerException.class)
     public void testActivityNullException() {
-        ARSCFileParser.AbstractResource resource = mock(ARSCFileParser.AbstractResource.class);
-        new Control(resource, resource, null, new ArrayList<>());
+        new Control(RESOURCE_ID, CONTROL_NAME, RESOURCE_ID, LAYOUT_NAME, null, Collections.emptyList());
     }
 
     @Test(expected = NullPointerException.class)
     public void testListenersNullException() {
-        new Control(mock(ARSCFileParser.AbstractResource.class), mock(ARSCFileParser.AbstractResource.class),
-                mock(SootClass.class), null
-        );
+        new Control(RESOURCE_ID, CONTROL_NAME, RESOURCE_ID, LAYOUT_NAME, ACTIVITY, null);
     }
 
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned with no listeners.",
-                String.format("Control{control=%s, layout=%s, activity=%s, clickListener=[]}", CONTROL_NAME,
-                        LAYOUT_NAME, ACTIVITY_NAME
-                             ), this.c.toString()
+                "Control{controlId=" + RESOURCE_ID + ", layoutId=" + RESOURCE_ID + ", controlName='" + CONTROL_NAME +
+                        "', layoutName='" + LAYOUT_NAME + "', activity='" + ACTIVITY + "', listeners=" +
+                        Collections.emptyList() + "}", this.control.toString()
                     );
 
-        SootMethod method = mock(SootMethod.class);
-        when(method.getName()).thenReturn("onClick()");
-        this.c.setClickListeners(new ArrayList<>(Collections.singletonList(method)));
+        List<String> listeners =
+                new ArrayList<>(Collections.singletonList("com.example.lifecycle.ActivityA: void onClick()"));
+        this.control.setListeners(listeners);
 
         assertEquals("Wrong string value returned with listeners.",
-                String.format("Control{control=%s, layout=%s, activity=%s, clickListener=[onClick()]}", CONTROL_NAME,
-                        LAYOUT_NAME, ACTIVITY_NAME
-                             ), this.c.toString()
+                "Control{controlId=" + RESOURCE_ID + ", layoutId=" + RESOURCE_ID + ", controlName='" + CONTROL_NAME +
+                        "', layoutName='" + LAYOUT_NAME + "', activity='" + ACTIVITY + "', listeners=" + listeners +
+                        "}", this.control.toString()
                     );
     }
 
     @Test
     public void testEqualsContract() {
-        EqualsVerifier.forClass(Control.class)
-                .withPrefabValues(SootClass.class, mock(SootClass.class), mock(SootClass.class))
-                .withPrefabValues(SootMethod.class, mock(SootMethod.class), mock(SootMethod.class))
-                .suppress(Warning.NONFINAL_FIELDS).verify();
+        EqualsVerifier.forClass(Control.class).suppress(Warning.NONFINAL_FIELDS).verify();
     }
 }

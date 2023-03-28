@@ -7,16 +7,10 @@ import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Style;
 import phd.research.enums.Type;
-import soot.SootClass;
-import soot.SootMethod;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Jordan Doyle
@@ -24,56 +18,44 @@ import static org.mockito.Mockito.when;
 
 public class ListenerVertexTest {
 
-    private final String CLASS_NAME = "com.example.android.lifecycle.ActivityA";
-    private final String RETURN_TYPE = "void";
-    private final String METHOD_NAME = "onClick()";
-    private final String PARAM_TYPE = "android.view.View";
-    private final String LABEL = String.format("Listener{method=<ActivityA: %s %s(View)>", RETURN_TYPE, METHOD_NAME);
-    private final String SIGNATURE = String.format("<%s: %s %s(%s)>", CLASS_NAME, RETURN_TYPE, METHOD_NAME, PARAM_TYPE);
+    // private final String SIGNATURE = "<com.example.android.lifecycle.ActivityA: void onClick()(android.view.View)>";
 
-    private ListenerVertex v;
+    private ListenerVertex vertex;
 
     @Before
     public void setUp() {
-        SootClass clazz = mock(SootClass.class);
-        when(clazz.getName()).thenReturn(CLASS_NAME);
-
-        soot.Type returnType = mock(soot.Type.class);
-        when(returnType.toString()).thenReturn(RETURN_TYPE);
-        soot.Type paramType = mock(soot.Type.class);
-        when(paramType.toString()).thenReturn(PARAM_TYPE);
-
-        SootMethod method = mock(SootMethod.class);
-        when(method.getSignature()).thenReturn(SIGNATURE);
-        when(method.getName()).thenReturn(METHOD_NAME);
-        when(method.getDeclaringClass()).thenReturn(clazz);
-        when(method.getParameterCount()).thenReturn(1);
-        when(method.getReturnType()).thenReturn(returnType);
-
-        List<soot.Type> parameterList = Collections.singletonList(paramType);
-        when(method.getParameterTypes()).thenReturn(parameterList);
-
-        this.v = new ListenerVertex(method);
+        DefaultVertex.resetIdSequence();
+        this.vertex = new ListenerVertex(MethodVertexTest.SIGNATURE);
     }
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'listener'.", Type.LISTENER, this.v.getType());
-        assertEquals("Wrong label returned.", LABEL, this.v.getLabel());
-        assertEquals("Wrong method returned.", METHOD_NAME, this.v.getMethod().getName());
+        assertEquals("Wrong type returned.", Type.LISTENER, this.vertex.getType());
+        assertEquals("Wrong id returned.", 0, this.vertex.getId());
+        assertEquals("Wrong method returned.", MethodVertexTest.SIGNATURE, this.vertex.getMethodSignature());
+    }
+
+    @Test
+    public void testBaseConstructor() {
+        ListenerVertex listenerVertex = new ListenerVertex(45, MethodVertexTest.SIGNATURE);
+        assertEquals("Wrong type returned.", Type.LISTENER, listenerVertex.getType());
+        assertEquals("Wrong id returned.", 45, listenerVertex.getId());
+        assertEquals("Wrong method returned.", MethodVertexTest.SIGNATURE, listenerVertex.getMethodSignature());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testControlNullException() {
+    public void testMethodNullException() {
         new ListenerVertex(null);
     }
 
     @Test
     public void getAttributes() {
-        Map<String, Attribute> attributes = this.v.getAttributes();
-        assertEquals("Should be exactly 5 attributes.", 6, attributes.size());
+        Map<String, Attribute> attributes = this.vertex.getAttributes();
+        assertEquals("Should be exactly 5 attributes.", 5, attributes.size());
         assertEquals("Wrong type attribute returned.", Type.LISTENER.name(), attributes.get("type").getValue());
-        assertEquals("Wrong label attribute returned.", LABEL, attributes.get("label").getValue());
+        assertEquals("Wrong method signature returned.", MethodVertexTest.SIGNATURE,
+                attributes.get("method").getValue()
+                    );
         assertEquals("Wrong color attribute returned.", Color.ORANGE.name(), attributes.get("color").getValue());
         assertEquals("Wrong shape attribute returned.", Shape.OCTAGON.name(), attributes.get("shape").getValue());
         assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attributes.get("style").getValue());
@@ -82,8 +64,8 @@ public class ListenerVertexTest {
     @Test
     public void testToString() {
         assertEquals("Wrong string value returned.",
-                String.format("Listener{label='%s', visit=false, localVisit=false, method=%s}", LABEL, SIGNATURE),
-                this.v.toString()
+                "ListenerVertex{id=0, type=LISTENER, methodSignature='" + MethodVertexTest.SIGNATURE +
+                        "', visit=false, " + "localVisit=false}", this.vertex.toString()
                     );
     }
 }

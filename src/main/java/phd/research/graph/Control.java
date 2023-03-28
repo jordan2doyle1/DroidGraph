@@ -1,10 +1,7 @@
 package phd.research.graph;
 
-import soot.SootClass;
-import soot.SootMethod;
-import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Objects;
@@ -15,57 +12,66 @@ import java.util.Objects;
 
 public class Control implements Serializable {
 
-    @Nonnull
-    private final ARSCFileParser.AbstractResource control;
-    @Nonnull
-    private final ARSCFileParser.AbstractResource layout;
-    @Nonnull
-    private final SootClass activity;
-    @Nonnull
-    private Collection<SootMethod> clickListeners;
+    private final int controlId;
+    private final int layoutId;
 
-    public Control(ARSCFileParser.AbstractResource control, ARSCFileParser.AbstractResource layout, SootClass activity,
-            Collection<SootMethod> clickListeners) {
-        this.control = Objects.requireNonNull(control);
-        this.layout = Objects.requireNonNull(layout);
+    @NotNull
+    private final String controlName;
+    @NotNull
+    private final String layoutName;
+    @NotNull
+    private final String activity;
+
+    @NotNull
+    private Collection<String> listeners;
+
+    public Control(int controlId, String controlName, int layoutId, String layoutName, String activity,
+            Collection<String> listeners) {
+        this.controlId = controlId;
+        this.controlName = Objects.requireNonNull(controlName);
+        this.layoutId = layoutId;
+        this.layoutName = Objects.requireNonNull(layoutName);
         this.activity = Objects.requireNonNull(activity);
-        this.clickListeners = Objects.requireNonNull(clickListeners);
+        this.listeners = Objects.requireNonNull(listeners);
     }
 
-    public ARSCFileParser.AbstractResource getControlResource() {
-        return this.control;
+    public int getControlId() {
+        return this.controlId;
     }
 
-    public ARSCFileParser.AbstractResource getLayoutResource() {
-        return this.layout;
+    @NotNull
+    public String getControlName() {
+        return this.controlName;
     }
 
-    public SootClass getControlActivity() {
+    public int getLayoutId() {
+        return this.layoutId;
+    }
+
+    @NotNull
+    public String getLayoutName() {
+        return this.layoutName;
+    }
+
+    @NotNull
+    public String getActivity() {
         return this.activity;
     }
 
-    @Nonnull
-    public Collection<SootMethod> getClickListeners() {
-        return this.clickListeners;
+    @NotNull
+    public Collection<String> getListeners() {
+        return this.listeners;
     }
 
-    public void setClickListeners(Collection<SootMethod> listeners) {
-        this.clickListeners = Objects.requireNonNull(listeners);
+    public void setListeners(Collection<String> listeners) {
+        this.listeners = Objects.requireNonNull(listeners);
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("[");
-        this.clickListeners.forEach(l -> builder.append(l.getName()).append(","));
-        if (builder.charAt(builder.length() - 1) != '[') {
-            builder.replace(builder.length() - 1, builder.length(), "]");
-        } else {
-            builder.append("]");
-        }
-
-        return String.format("%s{control=%s, layout=%s, activity=%s, clickListener=%s}", getClass().getSimpleName(),
-                this.control.getResourceName(), this.layout.getResourceName(), this.activity.getShortName(), builder
-                            );
+        return getClass().getSimpleName() + "{controlId=" + controlId + ", layoutId=" + layoutId + ", controlName='" +
+                controlName + "', layoutName='" + layoutName + "', activity='" + activity + "', listeners=" +
+                listeners + '}';
     }
 
     @Override
@@ -73,33 +79,26 @@ public class Control implements Serializable {
         if (this == o) {
             return true;
         }
+
         if (!(o instanceof Control)) {
             return false;
         }
 
         Control that = (Control) o;
 
-        if (!this.control.getResourceName().equals(that.control.getResourceName())) {
-            return false;
-        }
-        if (this.control.getResourceID() != that.control.getResourceID()) {
-            return false;
-        }
-        if (!layout.equals(that.layout)) {
-            return false;
-        }
-        if (!activity.equals(that.activity)) {
-            return false;
-        }
-        return clickListeners.equals(that.clickListeners);
+        return this.controlId == that.controlId && this.layoutId == that.layoutId &&
+                controlName.equals(that.controlName) && layoutName.equals(that.layoutName) &&
+                activity.equals(that.activity) && listeners.equals(that.listeners);
     }
 
     @Override
     public final int hashCode() {
-        int result = control.hashCode();
-        result = 31 * result + layout.hashCode();
+        int result = controlId;
+        result = 31 * result + layoutId;
+        result = 31 * result + controlName.hashCode();
+        result = 31 * result + layoutName.hashCode();
         result = 31 * result + activity.hashCode();
-        result = 31 * result + clickListeners.hashCode();
+        result = 31 * result + listeners.hashCode();
         return result;
     }
 }

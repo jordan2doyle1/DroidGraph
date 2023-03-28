@@ -43,11 +43,11 @@ public class UnitGraph extends BriefUnitGraph {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
         super.unitChain.forEach(unit -> {
-            UnitVertex vertex = new UnitVertex(unit);
+            UnitVertex vertex = new UnitVertex(super.method.getSignature(), unit.toString());
             graph.addVertex(vertex);
 
             super.getSuccsOf(unit).forEach(nextUnit -> {
-                UnitVertex nextVertex = new UnitVertex(nextUnit);
+                UnitVertex nextVertex = new UnitVertex(super.method.getSignature(), nextUnit.toString());
                 graph.addVertex(nextVertex);
                 graph.addEdge(vertex, nextVertex);
             });

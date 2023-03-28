@@ -1,16 +1,14 @@
-package phd.research.graph;
+package phd.research.utility;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.nio.dot.DOTExporter;
 import org.jgrapht.nio.gml.GmlExporter;
 import org.jgrapht.nio.json.JSONExporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import phd.research.enums.Format;
 import phd.research.vertices.Vertex;
-import soot.Body;
-import soot.Scene;
-import soot.SootClass;
-import soot.SootMethod;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,6 +21,8 @@ import java.util.Collection;
  */
 
 public class Writer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Writer.class);
 
     public static void writeGraph(File directory, String fileName, Format format, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
@@ -64,22 +64,6 @@ public class Writer {
         writer.close();
     }
 
-    public static void outputMethods(File directory, Format format) throws IOException {
-        for (SootClass clazz : Scene.v().getClasses()) {
-            if (Filter.isValidClass(clazz)) {
-                for (SootMethod method : clazz.getMethods()) {
-                    if (method.hasActiveBody()) {
-                        Body body = method.getActiveBody();
-                        UnitGraph unitGraph = new UnitGraph(body);
-
-                        String fileName = clazz.getShortName() + "_" + method.getName();
-                        Writer.writeGraph(directory, fileName, format, unitGraph.getGraph());
-                    }
-                }
-            }
-        }
-    }
-
     private static void createFile(File file) throws IOException {
         if (!file.getParentFile().exists()) {
             if (!file.getParentFile().mkdirs()) {
@@ -92,11 +76,13 @@ public class Writer {
                 throw new IOException("Failed to create output file: " + file);
             }
         }
+
+        LOGGER.info("Created file '" + file.getAbsolutePath() + "'.");
     }
 
     private static void exportDOT(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
-        File file = new File(directory + File.separator + "DOT" + File.separator + fileName + ".dot");
+        File file = new File(directory + File.separator + fileName + ".dot");
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -109,7 +95,7 @@ public class Writer {
 
     private static void exportJSON(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
-        File file = new File(directory + File.separator + "JSON" + File.separator + fileName + ".json");
+        File file = new File(directory + File.separator + fileName + ".json");
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -120,10 +106,10 @@ public class Writer {
         writer.close();
     }
 
-    // TODO: Exported GML graph does not include the attributes, only ID.
+    //TODO: Exported GML graphs do not include the vertex attributes, only the vertex ID.
     private static void exportGML(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)
             throws IOException {
-        File file = new File(directory + File.separator + "GML" + File.separator + fileName + ".gml");
+        File file = new File(directory + File.separator + fileName + ".gml");
         createFile(file);
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 

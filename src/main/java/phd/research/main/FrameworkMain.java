@@ -4,23 +4,14 @@ import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xmlpull.v1.XmlPullParserException;
 import phd.research.Timer;
-import phd.research.core.DroidControls;
 import phd.research.core.DroidGraph;
-import phd.research.core.FlowDroidAnalysis;
 import phd.research.enums.Format;
-import phd.research.graph.Writer;
-import phd.research.helper.PythonRunner;
+import phd.research.singletons.Settings;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.util.List;
-
-import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * @author Jordan Doyle
@@ -31,28 +22,32 @@ public class FrameworkMain {
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameworkMain.class);
 
     public static void main(String[] args) {
+
+        Timer timer = new Timer();
+        LOGGER.info("Start time: " + timer.start());
+
         Options options = new Options();
         options.addOption(Option.builder("a").longOpt("apk-file").required().hasArg().numberOfArgs(1).argName("FILE")
-                .desc("APK file to analyse.").build());
+                .desc("The APK file to analyse.").build());
+        options.addOption(Option.builder("i").longOpt("import-CG").required().hasArg().numberOfArgs(1).argName("FILE")
+                .desc("Import AndroGuard call graph from the given file.").build());
+        options.addOption(Option.builder("l").longOpt("load-CFG").hasArg().numberOfArgs(1).argName("FILE")
+                .desc("Load the control flow graph from the given file.").build());
         options.addOption(Option.builder("p").longOpt("android-platform").hasArg().numberOfArgs(1).argName("DIRECTORY")
-                .desc("Android SDK platform directory.").build());
-        options.addOption(Option.builder("o").longOpt("output-directory").hasArg().numberOfArgs(1).argName("DIRECTORY")
-                .desc("Directory for output files.").build());
+                .desc("The Android SDK platform directory.").build());
         options.addOption(Option.builder("f").longOpt("output-format").hasArg().numberOfArgs(1).argName("FORMAT")
-                .desc("Graph output format ('DOT','JSON', GML, 'ALL').").build());
-
-        options.addOption(Option.builder("g").longOpt("generate-cfg").desc("Generate CFG.").build());
-        options.addOption(Option.builder("ug").longOpt("unit-graph").desc("Output Unit Graphs.").build());
-        options.addOption(Option.builder("cg").longOpt("call-graph").desc("Output Call Graph.").build());
-        options.addOption(Option.builder("cf").longOpt("control-flow-graph").desc("Output CFG.").build());
-
-        options.addOption(Option.builder("i").longOpt("import-cg").hasArg().numberOfArgs(1).argName("FILE")
-                .desc("Import AndroGuard call graph from given file.").build());
+                .desc("The graph output format ('DOT','JSON', GML, 'ALL').").build());
         options.addOption(Option.builder("v").longOpt("venv").hasArg().numberOfArgs(1).argName("DIRECTORY")
-                .desc("Directory containing Python virtual environment.").build());
+                .desc("The directory containing Python virtual environment.").build());
+        options.addOption(Option.builder("o").longOpt("output-directory").hasArg().numberOfArgs(1).argName("DIRECTORY")
+                .desc("The directory for storing output files.").build());
 
-        options.addOption(Option.builder("c").longOpt("clean-directory").desc("Clean output directory.").build());
+        options.addOption(Option.builder("ug").longOpt("output-UG").desc("Output all method Unit graphs.").build());
+        options.addOption(Option.builder("cg").longOpt("output-CG").desc("Output the call graph.").build());
+        options.addOption(Option.builder("cf").longOpt("output-CFG").desc("Output control flow graph.").build());
+
         options.addOption(Option.builder("s").longOpt("output-analysis").desc("Output soot content files.").build());
+        options.addOption(Option.builder("c").longOpt("clean-directory").desc("Clean the output directory.").build());
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
 
         CommandLine cmd = null;
@@ -73,233 +68,100 @@ public class FrameworkMain {
             System.exit(0);
         }
 
-        Timer timer = new Timer();
-        LOGGER.info("Start time: " + timer.start());
-
-        File apk = new File(cmd.getOptionValue("a"));
-        if (!apk.exists()) {
-            LOGGER.error("APK file does not exist (" + apk + ").");
+        Settings settings = Settings.v();
+        try {
+            settings.setApkFile(new File(cmd.getOptionValue("a")));
+            settings.setCallGraphFile(new File(cmd.getOptionValue("i")));
+        } catch (IOException e) {
+            LOGGER.error("Files missing: " + e.getMessage());
             System.exit(20);
         }
 
-        File androidPlatform = new File((cmd.hasOption("p") ? cmd.getOptionValue("p") :
-                System.getenv("ANDROID_HOME") + File.separator + "platforms"));
-        if (!androidPlatform.isDirectory()) {
-            LOGGER.error("Android platform directory does not exist (" + androidPlatform + ").");
-            System.exit(30);
+        if (cmd.hasOption("p")) {
+            try {
+                settings.setPlatformDirectory(new File(cmd.getOptionValue("p")));
+            } catch (IOException e) {
+                LOGGER.error("Files missing: " + e.getMessage());
+                System.exit(30);
+            }
         }
 
-        File defaultOutput = new File(System.getProperty("user.dir") + File.separator + "output");
-        File outputDirectory = (cmd.hasOption("o") ? new File(cmd.getOptionValue("o")) : defaultOutput);
-        if (!outputDirectory.isDirectory()) {
-            outputDirectory = defaultOutput;
-            if (outputDirectory.mkdir()) {
-                if (cmd.hasOption("o")) {
-                    LOGGER.warn("Output directory doesn't exist, using default directory instead.");
-                }
-            } else {
-                LOGGER.error("Output directory does not exist.");
+        if (cmd.hasOption("f")) {
+            settings.setFormat(Format.valueOf(cmd.getOptionValue("f")));
+        }
+
+        if (cmd.hasOption("o")) {
+            try {
+                settings.setOutputDirectory(new File(cmd.getOptionValue("o")));
+            } catch (IOException e) {
+                LOGGER.error("Files missing: " + e.getMessage());
                 System.exit(40);
             }
         }
 
-        File savedCallbackFile = new File(outputDirectory + File.separator + "FlowDroidCallbacks");
-        File callbackFile = new File(System.getProperty("user.dir") + File.separator + "FlowDroidCallbacks");
-        if (savedCallbackFile.exists()) {
-            try {
-                Files.move(savedCallbackFile.toPath(), callbackFile.toPath(), REPLACE_EXISTING);
-            } catch (IOException e) {
-                LOGGER.error("Problem moving saved callback file, new file will be created: " + e.getMessage());
-            }
+        try {
+            settings.validate();
+        } catch (IOException e) {
+            LOGGER.error("Files missing: " + e.getMessage());
+            System.exit(50);
         }
 
         if (cmd.hasOption("c")) {
             try {
-                FileUtils.cleanDirectory(outputDirectory);
+                FileUtils.cleanDirectory(settings.getOutputDirectory());
             } catch (IOException e) {
-                LOGGER.error("Problem cleaning output directory: " + e.getMessage());
+                LOGGER.error("Failed to clean output directory." + e.getMessage());
             }
         }
 
-        Format outputFormat;
-        try {
-            outputFormat = (cmd.hasOption("f") ? Format.valueOf(cmd.getOptionValue("f")) : Format.JSON);
-        } catch (RuntimeException e) {
-            LOGGER.warn(e.getMessage() + " Using default format instead.");
-            outputFormat = Format.JSON;
-        }
+        DroidGraph droidGraph = new DroidGraph();
+
+        boolean outputUnitGraphs = cmd.hasOption("ug");
+        boolean outputCallGraph = cmd.hasOption("cg");
+        boolean outputControlFlowGraph = cmd.hasOption("cf");
 
         Timer cTimer = new Timer();
-        LOGGER.info("Running FlowDroid... (" + cTimer.start(true) + ")");
-        FlowDroidAnalysis flowDroidAnalysis;
-        try {
-            flowDroidAnalysis = new FlowDroidAnalysis(apk, androidPlatform, outputDirectory);
-            flowDroidAnalysis.runFlowDroid();
-        } catch (XmlPullParserException | IOException e) {
-            throw new RuntimeException("Error occurred while running FlowDroid: " + e.getMessage());
-        }
-        LOGGER.info("(" + cTimer.end() + ") FlowDroid took " + cTimer.secondsDuration() + " second(s).");
+        if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph) {
+            LOGGER.info("Starting graph output... (" + cTimer.start(true) + ")");
 
-        if (callbackFile.exists()) {
-            try {
-                Files.copy(callbackFile.toPath(), savedCallbackFile.toPath(), REPLACE_EXISTING, COPY_ATTRIBUTES);
-            } catch (IOException e) {
-                LOGGER.error("Problem saving callback file to output directory: " + e.getMessage());
+            if (outputUnitGraphs) {
+                try {
+                    droidGraph.writeUnitGraphsToFile();
+                } catch (IOException e) {
+                    LOGGER.error("Problem writing methods to output file: " + e.getMessage());
+                }
             }
-        } else {
-            LOGGER.error("FlowDroid callbacks file does not exist.");
-            System.exit(50);
+
+            if (outputCallGraph) {
+                try {
+                    droidGraph.writeCallGraphToFile();
+                } catch (Exception e) {
+                    LOGGER.error("Problem writing call graph to output file: " + e.getMessage());
+                }
+            }
+
+            if (outputControlFlowGraph) {
+                try {
+                    droidGraph.writeControlFlowGraphToFile();
+                } catch (Exception e) {
+                    LOGGER.error("Problem writing CFG to output file: " + e.getMessage());
+                }
+            }
+
+            LOGGER.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
         }
 
-        LOGGER.info("Processing UI Controls... (" + cTimer.start(true) + ")");
-        DroidControls droidControls = null;
-        try {
-            droidControls = new DroidControls(flowDroidAnalysis);
-        } catch (XmlPullParserException | IOException e) {
-            LOGGER.error("Failure while parsing app interface: " + e.getMessage());
-        }
-        LOGGER.info("(" + cTimer.end() + ") UI control processing took " + cTimer.secondsDuration() + " second(s).");
-
-        boolean outputAnalysis = cmd.hasOption("s");
-        if (outputAnalysis) {
+        if (cmd.hasOption("s")) {
             LOGGER.info("Starting file output... (" + cTimer.start(true) + ")");
             try {
-                if (droidControls != null) {
-                    droidControls.writeControlsToFile(outputDirectory);
-                }
-                flowDroidAnalysis.writeAnalysisToFile(outputDirectory);
+                droidGraph.outputCGDetails();
+                droidGraph.writeFlowDroidAnalysisToFile();
+                droidGraph.writeControlsToFile();
+                droidGraph.outputCFGDetails();
             } catch (IOException e) {
-                LOGGER.error("Failed to write app analysis to output file: " + e.getMessage());
+                LOGGER.error("Failed to write app analysis to output files: " + e.getMessage());
             }
             LOGGER.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
-        }
-
-        if (cmd.hasOption("g")) {
-            LOGGER.info("Running graph generation... (" + cTimer.start(true) + ")");
-            DroidGraph droidGraph = null;
-            try {
-                if (cmd.hasOption("i")) {
-                    File androGuardCallGraph = new File(cmd.getOptionValue("i"));
-                    if (!androGuardCallGraph.exists()) {
-                        throw new IOException("AndroGuard graph file does not exist (" + androGuardCallGraph + ").");
-                    }
-                    droidGraph = new DroidGraph(droidControls, androGuardCallGraph, outputDirectory, true);
-                } else {
-                    PythonRunner pythonRunner = new PythonRunner();
-                    if (cmd.hasOption("v")) {
-                        pythonRunner.setVirtualEnvDirectory(new File(cmd.getOptionValue("v")));
-                    }
-                    List<String> output = pythonRunner.runAndroGuard(apk, outputDirectory, cmd.hasOption("v"));
-                    droidGraph = new DroidGraph(droidControls, new File(outputDirectory + "/AndroGuardCG.gml"),
-                            outputDirectory, true);
-                }
-            } catch (IOException | InterruptedException e) {
-                LOGGER.error("Failure while generating Call Graph and Control Flow Graph: " + e.getMessage());
-                e.printStackTrace(System.err);
-                System.exit(60);
-            }
-            LOGGER.info("(" + cTimer.end() + ") Graph generation took " + cTimer.secondsDuration() + " second(s).");
-
-            boolean outputUnitGraphs = cmd.hasOption("ug");
-            boolean outputCallGraph = cmd.hasOption("cg");
-            boolean outputControlFlowGraph = cmd.hasOption("cf");
-
-            if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph) {
-                LOGGER.info("Starting graph output... (" + cTimer.start(true) + ")");
-
-                if (outputUnitGraphs) {
-                    try {
-                        Writer.outputMethods(outputDirectory, outputFormat);
-                    } catch (Exception e) {
-                        LOGGER.error("Problem writing methods to output file: " + e.getMessage());
-                    }
-                }
-
-                if (outputCallGraph) {
-                    try {
-                        Writer.writeGraph(outputDirectory, "APP-CG", outputFormat, droidGraph.getCallGraph());
-                    } catch (Exception e) {
-                        LOGGER.error("Problem writing call graph to output file: " + e.getMessage());
-                    }
-                }
-
-                if (outputControlFlowGraph) {
-                    try {
-                        Writer.writeGraph(outputDirectory, "APP-CFG", outputFormat, droidGraph.getControlFlowGraph());
-                    } catch (Exception e) {
-                        LOGGER.error("Problem writing CFG to output file: " + e.getMessage());
-                    }
-                }
-
-                LOGGER.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
-            }
-
-            if (outputAnalysis) {
-                try {
-                    DroidGraph.outputCGDetails(outputDirectory, droidGraph.getCallGraph());
-                    DroidGraph.outputCFGDetails(outputDirectory, droidGraph.getControlFlowGraph());
-                } catch (IOException e) {
-                    LOGGER.error("Failed to write graph composition details to output file: " + e.getMessage());
-                }
-            }
-
-            if (callbackFile.exists()) {
-                try {
-                    Files.delete(callbackFile.toPath());
-                } catch (IOException e) {
-                    LOGGER.error("Failed to delete FlowDroid callback file: " + e.getMessage());
-                }
-            }
-
-            //            LOGGER.info("Running graph export... (" + cTimer.start(true) + ")");
-            //            try {
-            //                Writer.writeGraph(outputDirectory, "exportTest", Format.ALL, droidGraph
-            //                .getControlFlowGraph());
-            //            } catch (IOException e) {
-            //                throw new RuntimeException("Failed to export graph: " + e.getMessage() + e);
-            //            }
-            //            LOGGER.info("(" + cTimer.end() + ") Graph export took " + cTimer.secondsDuration() + "
-            //            second(s).");
-            //
-            //            LOGGER.info("Running graph import... (" + cTimer.start(true) + ")");
-            //            Graph<Vertex, DefaultEdge> jsonImport =
-            //                    Importer.importDroidGraph(Format.JSON, new File(outputDirectory + "/JSON/exportTest
-            //                    .json"));
-            //
-            //            Graph<Vertex, DefaultEdge> dotImport = Importer.importDroidGraph(Format.DOT, new File
-            //            (outputDirectory +
-            //                    "/DOT/exportTest.dot"));
-            //            Graph<Vertex, DefaultEdge> gmlImport = Importer.importDroidGraph(Format.GML, new File
-            //            (outputDirectory +
-            //                    "/GML/exportTest.gml"));
-            //
-            //            if (dotImport.vertexSet().size() == jsonImport.vertexSet().size() && dotImport.vertexSet()
-            //            .size() ==
-            //                    gmlImport.vertexSet().size()) {
-            //                System.out.println("All vertex imports match.");
-            //            } else {
-            //                System.out.println("Vertex imports DO NOT match.");
-            //            }
-            //
-            //            if (dotImport.edgeSet().size() == jsonImport.edgeSet().size() && dotImport.edgeSet().size() ==
-            //                    gmlImport.edgeSet().size()) {
-            //                System.out.println("All edge imports match.");
-            //            } else {
-            //                System.out.println("Edge imports DO NOT match.");
-            //            }
-            //
-            //            if (jsonImport.vertexSet().size() == droidGraph.getControlFlowGraph().vertexSet().size() &&
-            //                    jsonImport.edgeSet().size() == droidGraph.getControlFlowGraph().edgeSet().size()) {
-            //                System.out.println("Import matches export.");
-            //            } else {
-            //                System.out.println("JSON Vertex Set: " + jsonImport.vertexSet().size());
-            //                System.out.println("Droid Vertex Set: " + droidGraph.getControlFlowGraph().vertexSet()
-            //                .size());
-            //                System.out.println("JSON Edge Set: " + jsonImport.edgeSet().size());
-            //                System.out.println("Droid Edge Set: " + droidGraph.getControlFlowGraph().edgeSet().size
-            //                ());
-            //            }
-            //            LOGGER.info("(" + cTimer.end() + ") Graph import took " + cTimer.secondsDuration() + " second(s).");
         }
 
         LOGGER.info("End time: " + timer.end());

@@ -20,6 +20,38 @@ public class Composition {
         readComposition(graph);
     }
 
+    public int getDummy() {
+        return this.dummy;
+    }
+
+    public int getUnit() {
+        return this.unit;
+    }
+
+    public int getControl() {
+        return this.control;
+    }
+
+    public int getVertex() {
+        return this.vertex;
+    }
+
+    public int getMethod() {
+        return this.method;
+    }
+
+    public int getLifecycle() {
+        return this.lifecycle;
+    }
+
+    public int getListener() {
+        return this.listener;
+    }
+
+    public int getCallback() {
+        return this.callback;
+    }
+
     public void readComposition(Graph<Vertex, DefaultEdge> graph) {
         Set<Vertex> vertices = graph.vertexSet();
         this.vertex = vertices.size();
@@ -30,8 +62,8 @@ public class Composition {
                 case CONTROL:
                     this.control++;
                     break;
-                case METHOD:
-                    this.method++;
+                case UNIT:
+                    this.unit++;
                     break;
                 case DUMMY:
                     this.dummy++;
@@ -45,8 +77,8 @@ public class Composition {
                 case CALLBACK:
                     this.callback++;
                     break;
-                case UNIT:
-                    this.unit++;
+                case METHOD:
+                    this.method++;
                     break;
             }
         }
@@ -54,62 +86,40 @@ public class Composition {
 
     public String toTableString() {
         String[][] data = new String[][]{{"TYPE", "COUNT"}, {"Vertex", String.valueOf(this.vertex)},
-                {"Edge", String.valueOf(this.edge)}, {"Interface", String.valueOf(this.control)},
-                {"Method", String.valueOf(this.method)}, {"Dummy", String.valueOf(this.dummy)},
-                {"Lifecycle", String.valueOf(this.lifecycle)}, {"Listener", String.valueOf(this.listener)},
-                {"Callback", String.valueOf(this.callback)}, {"Unit", String.valueOf(this.unit)}};
+                {"Edge", String.valueOf(this.edge)}, {"Controls", String.valueOf(this.control)},
+                {"Dummy", String.valueOf(this.dummy)}, {"Lifecycle", String.valueOf(this.lifecycle)},
+                {"Listener", String.valueOf(this.listener)}, {"Callback", String.valueOf(this.callback)},
+                {"Method", String.valueOf(this.method)}, {"Unit", String.valueOf(this.unit)}};
 
         return StringTable.tableWithLines(data, true);
     }
 
     @Override
     public String toString() {
-        return String.format(
-                "%s{vertex=%s, edge=%s, control=%s, method=%s, dummy=%s, lifecycle=%s, listener=%s, callback=%s, " +
-                        "unit=%s}", getClass().getSimpleName(), this.vertex, this.edge, this.control, this.method,
-                this.dummy, this.lifecycle, this.listener, this.callback, this.unit);
+        return getClass().getSimpleName() + "{vertex=" + this.vertex + ", edge=" + this.edge + ", control=" +
+                this.control + ", method=" + this.method + ", dummy=" + this.dummy + ", lifecycle=" + this.lifecycle +
+                ", listener=" + this.listener + ", callback=" + this.callback + ", unit=" + this.unit + "}";
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
+
         if (!(o instanceof Composition)) {
             return false;
         }
 
         Composition that = (Composition) o;
 
-        if (vertex != that.vertex) {
-            return false;
-        }
-        if (edge != that.edge) {
-            return false;
-        }
-        if (control != that.control) {
-            return false;
-        }
-        if (method != that.method) {
-            return false;
-        }
-        if (dummy != that.dummy) {
-            return false;
-        }
-        if (lifecycle != that.lifecycle) {
-            return false;
-        }
-        if (listener != that.listener) {
-            return false;
-        }
-        if (callback != that.callback) {
-            return false;
-        }
-        return unit == that.unit;
+        return this.vertex == that.vertex && this.edge == that.edge && this.control == that.control &&
+                this.method == that.method && this.dummy == that.dummy && this.lifecycle == that.lifecycle &&
+                this.listener == that.listener && this.callback == that.callback && this.unit == that.unit;
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = vertex;
         result = 31 * result + edge;
         result = 31 * result + control;

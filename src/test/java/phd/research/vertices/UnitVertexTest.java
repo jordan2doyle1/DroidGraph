@@ -1,7 +1,6 @@
 package phd.research.vertices;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
 import org.jgrapht.nio.Attribute;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,12 +8,10 @@ import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Style;
 import phd.research.enums.Type;
-import soot.Unit;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Jordan Doyle
@@ -22,38 +19,51 @@ import static org.mockito.Mockito.mock;
 
 public class UnitVertexTest {
 
-    private final String LABEL_REGEX = "Unit\\{unit=.+}";
+    //private final String SIGNATURE = "<com.example.android.lifecycle.ActivityA: void onClick()(android.view.View)>";
+    private final String UNIT = "$r0 := @this <com.example.android.lifecycle.ActivityA: init()()>";
 
-    private UnitVertex v;
+    private UnitVertex vertex;
 
     @Before
     public void setUp() {
-        Unit unit = mock(Unit.class);
-        this.v = new UnitVertex(unit);
+        DefaultVertex.resetIdSequence();
+        this.vertex = new UnitVertex(MethodVertexTest.SIGNATURE, this.UNIT);
     }
 
     @Test
     public void testConstructor() {
-        assertEquals("Type should be 'unit'.", Type.UNIT, this.v.getType());
-        assertTrue("Wrong label returned.", this.v.getLabel().matches(LABEL_REGEX));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testControlNullException() {
-        new UnitVertex(null);
+        assertEquals("Wrong id returned.", 0, this.vertex.getId());
+        assertEquals("Wrong type returned.", Type.UNIT, this.vertex.getType());
+        assertEquals("Wrong method signature returned.", MethodVertexTest.SIGNATURE, this.vertex.getMethodSignature());
+        assertEquals("Wrong unit returned.", this.UNIT, this.vertex.getUnit());
     }
 
     @Test
-    public void testGetUnit() {
-        assertNotNull("Unit is null.", this.v.getUnit());
+    public void testBaseConstructor() {
+        UnitVertex unitVertex = new UnitVertex(45, MethodVertexTest.SIGNATURE, this.UNIT);
+        assertEquals("Wrong id returned.", 45, unitVertex.getId());
+        assertEquals("Wrong type returned.", Type.UNIT, unitVertex.getType());
+        assertEquals("Wrong method signature returned.", MethodVertexTest.SIGNATURE, unitVertex.getMethodSignature());
+        assertEquals("Wrong unit returned.", this.UNIT, unitVertex.getUnit());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testMethodNullException() {
+        new UnitVertex(null, this.UNIT);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testUnitNullException() {
+        new UnitVertex(MethodVertexTest.SIGNATURE, null);
     }
 
     @Test
     public void testGetAttributes() {
-        Map<String, Attribute> attributes = this.v.getAttributes();
+        Map<String, Attribute> attributes = this.vertex.getAttributes();
         assertEquals("Should be exactly 5 attributes.", 6, attributes.size());
         assertEquals("Wrong type attribute returned.", Type.UNIT.name(), attributes.get("type").getValue());
-        assertTrue("Wrong label attribute returned.", attributes.get("label").getValue().matches(LABEL_REGEX));
+        assertEquals("Wrong type attribute returned.", this.UNIT, attributes.get("unit").getValue());
+        assertEquals("Wrong type attribute returned.", MethodVertexTest.SIGNATURE, attributes.get("method").getValue());
         assertEquals("Wrong color attribute returned.", Color.YELLOW.name(), attributes.get("color").getValue());
         assertEquals("Wrong shape attribute returned.", Shape.BOX.name(), attributes.get("shape").getValue());
         assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attributes.get("style").getValue());
@@ -61,13 +71,15 @@ public class UnitVertexTest {
 
     @Test
     public void testToString() {
-        String TO_STRING_REGEX = "Unit\\{label='Unit\\{unit=.+}', visit=false, localVisit=false, unit=.+}";
-        assertTrue("Wrong string value returned.", this.v.toString().matches(TO_STRING_REGEX));
+        assertEquals("Wrong string value returned.",
+                "UnitVertex{id=0, type=UNIT, methodSignature='" + MethodVertexTest.SIGNATURE + "', unit='" + this.UNIT +
+                        "', visit=false, localVisit=false}", this.vertex.toString()
+                    );
     }
 
     @Test
     public void testEquals() {
         EqualsVerifier.forClass(UnitVertex.class).withRedefinedSuperclass().withIgnoredFields("visit", "localVisit")
-                .suppress(Warning.NONFINAL_FIELDS).verify();
+                .verify();
     }
 }

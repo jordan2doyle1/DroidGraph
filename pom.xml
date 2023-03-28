@@ -25,12 +25,12 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>4.7.0</version>
+            <version>5.2.0</version>
         </dependency>
         <dependency>
             <groupId>nl.jqno.equalsverifier</groupId>
             <artifactId>equalsverifier</artifactId>
-            <version>3.10.1</version>
+            <version>3.14.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -46,7 +46,7 @@
         <dependency>
             <groupId>org.soot-oss</groupId>
             <artifactId>soot</artifactId>
-            <version>4.3.0</version>
+            <version>4.4.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -57,6 +57,8 @@
         <dependency>
             <groupId>de.fraunhofer.sit.sse.flowdroid</groupId>
             <artifactId>soot-infoflow-android</artifactId>
+            <!--Release version 2.11.1 will not download from Maven. -->
+            <!--suppress MavenPackageUpdate -->
             <version>2.10.0</version>
             <exclusions>
                 <exclusion>
@@ -93,12 +95,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.18.0</version>
+            <version>2.20.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.18.0</version>
+            <version>2.20.0</version>
         </dependency>
     </dependencies>
 

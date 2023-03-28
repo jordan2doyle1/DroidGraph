@@ -5,6 +5,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * @author Jordan Doyle
+ */
+
+@SuppressWarnings("unused")
 public class PythonRunner {
 
     private File virtualEnvDirectory;
@@ -13,13 +18,7 @@ public class PythonRunner {
 
     }
 
-    @API
-    public PythonRunner(File virtualEnvDirectory) throws IOException {
-        if (PythonRunner.confirmVirtualEnvironment(virtualEnvDirectory)) {
-            this.virtualEnvDirectory = virtualEnvDirectory;
-        }
-    }
-
+    @SuppressWarnings("SameReturnValue")
     private static boolean confirmVirtualEnvironment(File directory) throws IOException {
         File activationScript = new File(directory + File.separator + "bin" + File.separator + "activate");
         if (directory.isDirectory() && activationScript.isFile()) {
