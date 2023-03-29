@@ -1,6 +1,5 @@
 package phd.research.core;
 
-import jdk.internal.org.objectweb.asm.commons.Method;
 import org.jetbrains.annotations.NotNull;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;

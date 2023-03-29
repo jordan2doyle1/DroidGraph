@@ -124,10 +124,6 @@ public class Settings {
         return this.importControlFlowGraph;
     }
 
-    public File getContolFlowGraphFile() {
-        return this.controlFlowGraphFile;
-    }
-
     public void setImportControlFlowGraph(File controlFlowGraphFile) throws IOException {
         if (controlFlowGraphFile == null || !controlFlowGraphFile.isFile()) {
             throw new IOException(
@@ -136,6 +132,10 @@ public class Settings {
         this.importControlFlowGraph = true;
         this.controlFlowGraphFile = controlFlowGraphFile;
         LOGGER.info("Import control flow graph file set as '" + controlFlowGraphFile.getAbsolutePath() + "'.");
+    }
+
+    public File getContolFlowGraphFile() {
+        return this.controlFlowGraphFile;
     }
 
     public boolean isAddMissingComponents() {
