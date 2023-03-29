@@ -1,5 +1,6 @@
 package phd.research.core;
 
+import jdk.internal.org.objectweb.asm.commons.Method;
 import org.jetbrains.annotations.NotNull;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
@@ -628,6 +629,26 @@ public class DroidGraph {
             if (!entry.getValue().getLeft().equals(entry.getValue().getRight())) {
                 problemFound = true;
                 LOGGER.warn(entry.getKey() + " count does not match between control flow graph and call graph count.");
+            }
+        }
+
+        LOGGER.info("Looking for duplicate methods in control flow graph.");
+        List<String> duplicates = new ArrayList<>();
+        Set<String> set = new HashSet<>();
+        for (Vertex vertex : this.getControlFlowGraph().vertexSet()) {
+            if (vertex instanceof MethodVertex) {
+                String methodSignature = ((MethodVertex) vertex).getMethodSignature().replace("'", "");
+                if (set.contains(methodSignature)) {
+                    duplicates.add(methodSignature);
+                } else {
+                    set.add(methodSignature);
+                }
+            }
+        }
+        if (!duplicates.isEmpty()) {
+            problemFound = true;
+            for (String methodSignature : duplicates) {
+                LOGGER.warn("Method " + methodSignature + " is duplicated in the graph.");
             }
         }
 
