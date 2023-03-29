@@ -69,18 +69,14 @@ public class DroidGraph {
                         v.getControl().getControlId() == controlId).findFirst().orElse(null);
     }
 
-    public static Vertex getMethodVertex(SootMethod method, Set<Vertex> vertices) {
-        return vertices.stream().filter(vertex ->
-                        (vertex.getType() == Type.DUMMY || vertex.getType() == Type.LIFECYCLE ||
-                                vertex.getType() == Type.LISTENER || vertex.getType() == Type.CALLBACK ||
-                                vertex.getType() == Type.METHOD) &&
-                                ((MethodVertex) vertex).getMethodSignature().equals(method.getSignature())).findFirst()
-                .orElse(null);
-    }
-
     public static Vertex getUnitVertex(Unit unit, Set<Vertex> vertices) {
         return vertices.stream().filter(vertex -> vertex.getType() == Type.UNIT &&
                 ((UnitVertex) vertex).getUnit().equals(unit.toString())).findFirst().orElse(null);
+    }
+
+    public static Vertex getMethodVertex(String methodSignature, Set<Vertex> vertices) {
+        return vertices.stream().filter(vertex -> vertex instanceof MethodVertex &&
+                ((MethodVertex) vertex).getMethodSignature().equals(methodSignature)).findFirst().orElse(null);
     }
 
     public DroidControls getDroidControls() {
@@ -330,7 +326,7 @@ public class DroidGraph {
             graph.addVertex(controlVertex);
             control.getListeners().forEach(method -> {
                 SootMethod listener = Scene.v().grabMethod(method);
-                Vertex listenerVertex = DroidGraph.getMethodVertex(listener, graph.vertexSet());
+                Vertex listenerVertex = DroidGraph.getMethodVertex(listener.getSignature(), graph.vertexSet());
                 if (listenerVertex != null) {
                     graph.addEdge(controlVertex, listenerVertex);
                 } else {
@@ -361,7 +357,8 @@ public class DroidGraph {
                                     if (callerVertex == null) {
                                         LOGGER.error(String.format("Caller %s not found in the graph.", caller));
                                     }
-                                    Vertex calleeVertex = DroidGraph.getMethodVertex(callee, graph.vertexSet());
+                                    Vertex calleeVertex =
+                                            DroidGraph.getMethodVertex(callee.getSignature(), graph.vertexSet());
                                     if (calleeVertex == null) {
                                         LOGGER.error(String.format("Callee %s not found in the graph.", callee));
                                         if (!callee.getDeclaringClass().getPackageName()
