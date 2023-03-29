@@ -56,16 +56,16 @@ public class DroidGraph {
     }
 
     @SuppressWarnings("unused")
-    public static Vertex getControlVertex(SootClass activity, String controlName, Set<Vertex> vertices) {
+    public static Vertex getControlVertex(String activity, String controlName, Set<Vertex> vertices) {
         return vertices.stream().filter(vertex -> vertex.getType() == Type.CONTROL).map(v -> (ControlVertex) v)
-                .filter(v -> v.getControl().getActivity().equals(activity.getName()) &&
+                .filter(v -> v.getControl().getActivity().equals(activity) &&
                         v.getControl().getControlName().equals(controlName)).findFirst().orElse(null);
     }
 
     @SuppressWarnings("unused")
-    public static Vertex getControlVertex(SootClass activity, int controlId, Set<Vertex> vertices) {
+    public static Vertex getControlVertex(String activity, int controlId, Set<Vertex> vertices) {
         return vertices.stream().filter(vertex -> vertex.getType() == Type.CONTROL).map(v -> (ControlVertex) v)
-                .filter(v -> v.getControl().getActivity().equals(activity.getName()) &&
+                .filter(v -> v.getControl().getActivity().equals(activity) &&
                         v.getControl().getControlId() == controlId).findFirst().orElse(null);
     }
 
