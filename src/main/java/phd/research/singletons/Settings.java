@@ -27,6 +27,7 @@ public class Settings {
     private File controlFlowGraphFile;
     private File flowDroidCallbacksFile;
     private boolean addMissingComponents;
+    private boolean outputMissingComponents;
 
     private Settings() {
         this.format = Format.JSON;
@@ -36,6 +37,7 @@ public class Settings {
         this.flowDroidCallbacksFile =
                 new File(outputDirectory + File.separator + Settings.FLOWDROID_CALLBACKS_FILE_NAME);
         this.addMissingComponents = false;
+        this.outputMissingComponents = false;
     }
 
     public static Settings v() {
@@ -154,5 +156,14 @@ public class Settings {
     public void setFlowDroidCallbacksFile(File callbacksFile) {
         this.flowDroidCallbacksFile = callbacksFile;
         LOGGER.info("FlowDroid callbacks file set as '" + callbacksFile.getAbsolutePath() + "'.");
+    }
+
+    public boolean isOutputMissingComponents() {
+        return this.outputMissingComponents;
+    }
+
+    public void setOutputMissingComponents(boolean outputMissingComponents) {
+        this.outputMissingComponents = outputMissingComponents;
+        LOGGER.info("Output missing components set as " + outputMissingComponents);
     }
 }

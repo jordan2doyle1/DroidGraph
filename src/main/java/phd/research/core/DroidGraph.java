@@ -166,13 +166,13 @@ public class DroidGraph {
     }
 
     public void outputCGDetails() throws IOException {
-        Writer.writeString(Settings.v().getOutputDirectory(), "call_graph_composition",
+        Writer.writeString(Settings.v().getOutputDirectory(), "call_graph_composition.txt",
                 new Composition(this.getCallGraph()).toTableString()
                           );
     }
 
     public void outputCFGDetails() throws IOException {
-        Writer.writeString(Settings.v().getOutputDirectory(), "control_flow_graph_composition",
+        Writer.writeString(Settings.v().getOutputDirectory(), "control_flow_graph_composition.txt",
                 new Composition(this.getControlFlowGraph()).toTableString()
                           );
     }
@@ -227,22 +227,22 @@ public class DroidGraph {
             }
         }
 
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "all_classes", Scene.v().getClasses());
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "filtered_classes", filteredClasses);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "entry_point_classes",
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "all_classes.txt", Scene.v().getClasses());
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "filtered_classes.txt", filteredClasses);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "entry_point_classes.txt",
                 FlowDroidAnalysis.v().getEntryPointClasses()
                               );
 
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "all_methods", allMethods);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "filtered_methods", filteredMethods);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "standard_methods", standardMethods);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "lifecycle_methods", lifecycleCallbacks);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "listener_methods", listenerCallbacks);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "possible_callbacks", possibleCallbacks);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "other_callbacks", otherCallback);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "ignored_methods", ignoredMethods);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "all_methods.txt", allMethods);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "filtered_methods.txt", filteredMethods);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "standard_methods.txt", standardMethods);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "lifecycle_methods.txt", lifecycleCallbacks);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "listener_methods.txt", listenerCallbacks);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "possible_callbacks.txt", possibleCallbacks);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "other_callbacks.txt", otherCallback);
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "ignored_methods.txt", ignoredMethods);
 
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "launch_activities",
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "launch_activities.txt",
                 FlowDroidAnalysis.v().getLaunchActivities()
                               );
     }
@@ -277,10 +277,10 @@ public class DroidGraph {
     }
 
     public void writeControlsToFile() throws IOException {
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "interface_controls",
+        Writer.writeCollection(Settings.v().getOutputDirectory(), "interface_controls.txt",
                 this.getDroidControls().getControls()
                               );
-        Writer.writeString(Settings.v().getOutputDirectory(), "control_callbacks",
+        Writer.writeString(Settings.v().getOutputDirectory(), "control_callbacks.txt",
                 this.getControlCallbackTableString()
                           );
     }
@@ -408,10 +408,12 @@ public class DroidGraph {
             }
         }
 
-        try {
-            Writer.writeCollection(Settings.v().getOutputDirectory(), "missing_controls", missingControls);
-        } catch (IOException e) {
-            LOGGER.error("Error writing missing controls to output file." + e.getMessage());
+        if (Settings.v().isOutputMissingComponents()) {
+            try {
+                Writer.writeCollection(Settings.v().getOutputDirectory(), "missing_controls.txt", missingControls);
+            } catch (IOException e) {
+                LOGGER.error("Error writing missing controls to output file." + e.getMessage());
+            }
         }
 
         if (!missingControls.isEmpty()) {
@@ -454,10 +456,12 @@ public class DroidGraph {
                     }
                 }));
 
-        try {
-            Writer.writeCollection(Settings.v().getOutputDirectory(), "missing_methods", missingMethods);
-        } catch (IOException e) {
-            LOGGER.error("Error writing missing methods to output file." + e.getMessage());
+        if (Settings.v().isOutputMissingComponents()) {
+            try {
+                Writer.writeCollection(Settings.v().getOutputDirectory(), "missing_methods.txt", missingMethods);
+            } catch (IOException e) {
+                LOGGER.error("Error writing missing methods to output file." + e.getMessage());
+            }
         }
 
         if (!missingMethods.isEmpty()) {

@@ -46,6 +46,7 @@ public class FrameworkMain {
         options.addOption(Option.builder("cg").longOpt("output-CG").desc("Output the call graph.").build());
         options.addOption(Option.builder("cf").longOpt("output-CFG").desc("Output control flow graph.").build());
 
+        options.addOption(Option.builder("m").longOpt("missing-components").desc("Output missing components.").build());
         options.addOption(Option.builder("s").longOpt("output-analysis").desc("Output soot content files.").build());
         options.addOption(Option.builder("c").longOpt("clean-directory").desc("Clean the output directory.").build());
         options.addOption(Option.builder("h").longOpt("help").desc("Display help.").build());
@@ -88,6 +89,10 @@ public class FrameworkMain {
 
         if (cmd.hasOption("f")) {
             settings.setFormat(Format.valueOf(cmd.getOptionValue("f")));
+        }
+
+        if (cmd.hasOption("m")) {
+            settings.setOutputMissingComponents(true);
         }
 
         if (cmd.hasOption("o")) {
