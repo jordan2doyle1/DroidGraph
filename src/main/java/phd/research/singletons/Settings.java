@@ -14,30 +14,37 @@ import java.io.IOException;
 public class Settings {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Settings.class);
+
     private static final String FLOWDROID_CALLBACKS_FILE_NAME = "flow_droid_callbacks";
 
     private static Settings instance = null;
 
     private Format format;
+
     private File androidPlatformDirectory;
     private File outputDirectory;
     private File apkFile;
     private File callGraphFile;
-    private boolean importControlFlowGraph;
     private File controlFlowGraphFile;
     private File flowDroidCallbacksFile;
+
+    private boolean importControlFlowGraph;
+    private boolean defaultCallbacksFile;
     private boolean addMissingComponents;
     private boolean outputMissingComponents;
+    private boolean loggerActive;
 
     private Settings() {
         this.format = Format.JSON;
         this.androidPlatformDirectory = new File(System.getenv("ANDROID_HOME") + File.separator + "platforms");
         this.outputDirectory = new File(System.getProperty("user.dir") + File.separator + "output");
         this.importControlFlowGraph = false;
+        this.defaultCallbacksFile = true;
         this.flowDroidCallbacksFile =
-                new File(outputDirectory + File.separator + Settings.FLOWDROID_CALLBACKS_FILE_NAME);
+                new File(this.outputDirectory + File.separator + Settings.FLOWDROID_CALLBACKS_FILE_NAME);
         this.addMissingComponents = false;
         this.outputMissingComponents = false;
+        this.loggerActive = true;
     }
 
     public static Settings v() {
@@ -53,6 +60,7 @@ public class Settings {
     }
 
     public void validate() throws IOException {
+        this.loggerActive = false;
         setPlatformDirectory(this.androidPlatformDirectory);
         setOutputDirectory(this.outputDirectory);
         setApkFile(this.apkFile);
@@ -61,6 +69,7 @@ public class Settings {
         if (this.isImportControlFlowGraph()) {
             setImportControlFlowGraph(this.controlFlowGraphFile);
         }
+        this.loggerActive = true;
     }
 
     public File getApkFile() {
@@ -73,7 +82,10 @@ public class Settings {
         }
 
         this.apkFile = apkFile;
-        LOGGER.info("Apk file set as '" + apkFile.getAbsolutePath() + "'.");
+
+        if (this.loggerActive) {
+            LOGGER.info("Apk file set as '" + apkFile.getAbsolutePath() + "'.");
+        }
     }
 
     public File getPlatformDirectory() {
@@ -84,8 +96,12 @@ public class Settings {
         if (!androidPlatformDirectory.isDirectory()) {
             throw new IOException("Platform does not exist or is not a directory (" + androidPlatformDirectory + ").");
         }
+
         this.androidPlatformDirectory = androidPlatformDirectory;
-        LOGGER.info("Android platform directory set as '" + androidPlatformDirectory.getAbsolutePath() + "'");
+
+        if (this.loggerActive) {
+            LOGGER.info("Android platform directory set as '" + androidPlatformDirectory.getAbsolutePath() + "'");
+        }
     }
 
     public File getOutputDirectory() {
@@ -96,9 +112,17 @@ public class Settings {
         if (!outputDirectory.isDirectory()) {
             throw new IOException("Output directory does not exist or is not a directory (" + outputDirectory + ").");
         }
+
         this.outputDirectory = outputDirectory;
-        setFlowDroidCallbacksFile(new File(outputDirectory + File.separator + FLOWDROID_CALLBACKS_FILE_NAME));
-        LOGGER.info("Output directory set as '" + outputDirectory.getAbsolutePath() + ".");
+
+        if (this.defaultCallbacksFile) {
+            this.flowDroidCallbacksFile =
+                    new File(this.outputDirectory + File.separator + Settings.FLOWDROID_CALLBACKS_FILE_NAME);
+        }
+
+        if (this.loggerActive) {
+            LOGGER.info("Output directory set as '" + outputDirectory.getAbsolutePath() + ".");
+        }
     }
 
     public Format getFormat() {
@@ -118,8 +142,12 @@ public class Settings {
         if (callGraphFile == null || !callGraphFile.isFile()) {
             throw new IOException("Call graph file does not exist or is not a file (" + callGraphFile + ").");
         }
+
         this.callGraphFile = callGraphFile;
-        LOGGER.info("Call graph file set as '" + callGraphFile.getAbsolutePath() + "'.");
+
+        if (this.loggerActive) {
+            LOGGER.info("Call graph file set as '" + callGraphFile.getAbsolutePath() + "'.");
+        }
     }
 
     public boolean isImportControlFlowGraph() {
@@ -133,7 +161,10 @@ public class Settings {
         }
         this.importControlFlowGraph = true;
         this.controlFlowGraphFile = controlFlowGraphFile;
-        LOGGER.info("Import control flow graph file set as '" + controlFlowGraphFile.getAbsolutePath() + "'.");
+
+        if (this.loggerActive) {
+            LOGGER.info("Import control flow graph file set as '" + controlFlowGraphFile.getAbsolutePath() + "'.");
+        }
     }
 
     public File getContolFlowGraphFile() {
@@ -155,6 +186,7 @@ public class Settings {
 
     public void setFlowDroidCallbacksFile(File callbacksFile) {
         this.flowDroidCallbacksFile = callbacksFile;
+        this.defaultCallbacksFile = false;
         LOGGER.info("FlowDroid callbacks file set as '" + callbacksFile.getAbsolutePath() + "'.");
     }
 
