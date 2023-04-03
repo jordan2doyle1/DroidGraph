@@ -248,7 +248,7 @@ public class DroidGraph {
     }
 
     public void writeUnitGraphsToFile() throws IOException {
-        LOGGER.info("Exporting unit graphs in " + Settings.v().getFormat().name() + "format(s).");
+        LOGGER.info("Exporting unit graphs in " + Settings.v().getFormat().name() + " format(s).");
         for (SootClass clazz : Scene.v().getClasses()) {
             for (SootMethod method : clazz.getMethods()) {
                 if (Filter.isValidMethod(method) && method.hasActiveBody()) {
@@ -263,14 +263,14 @@ public class DroidGraph {
     }
 
     public void writeCallGraphToFile() throws IOException {
-        LOGGER.info("Exporting call graph in " + Settings.v().getFormat().name() + "format(s).");
+        LOGGER.info("Exporting call graph in " + Settings.v().getFormat().name() + " format(s).");
         Writer.writeGraph(Settings.v().getOutputDirectory(), "app_call_graph", Settings.v().getFormat(),
                 this.getCallGraph()
                          );
     }
 
     public void writeControlFlowGraphToFile() throws IOException {
-        LOGGER.info("Exporting control flow graph in " + Settings.v().getFormat().name() + "format(s).");
+        LOGGER.info("Exporting control flow graph in " + Settings.v().getFormat().name() + " format(s).");
         Writer.writeGraph(Settings.v().getOutputDirectory(), "app_control_flow_graph", Settings.v().getFormat(),
                 this.getControlFlowGraph()
                          );
