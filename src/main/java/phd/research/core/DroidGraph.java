@@ -27,6 +27,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -163,6 +164,36 @@ public class DroidGraph {
         }
 
         return new Pair<>((interfaceCoverage / interfaceTotal) * 100, (methodCoverage / methodTotal) * 100);
+    }
+
+    public void outputVertexVisitStatus() throws IOException {
+        StringBuilder builder = new StringBuilder();
+
+        Collection<Vertex> vertices = this.getControlsVisited();
+        builder.append("---------- Controls Visited (").append(vertices.size()).append(") ----------\n");
+        for (Vertex vertex : vertices) {
+            builder.append(((ControlVertex) vertex).getControl().getControlName()).append("\n");
+        }
+
+        vertices = this.getControlsNotVisited();
+        builder.append("\n---------- Controls Not Visited (").append(vertices.size()).append(") ----------\n");
+        for (Vertex vertex : vertices) {
+            builder.append(((ControlVertex) vertex).getControl().getControlName()).append("\n");
+        }
+
+        vertices = this.getMethodsVisited();
+        builder.append("\n---------- Methods Visited (").append(vertices.size()).append(") ----------\n");
+        for (Vertex v : vertices) {
+            builder.append(((MethodVertex) v).getMethodSignature()).append("\n");
+        }
+
+        vertices = this.getMethodsNotVisited();
+        builder.append("\n---------- Methods Not Visited (").append(vertices.size()).append(") ----------\n");
+        for (Vertex v : vertices) {
+            builder.append(((MethodVertex) v).getMethodSignature()).append("\n");
+        }
+
+        Writer.writeString(Settings.v().getOutputDirectory(), "vertex_visit_status.txt", builder.toString());
     }
 
     public void outputCGDetails() throws IOException {
