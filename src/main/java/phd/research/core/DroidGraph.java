@@ -167,6 +167,11 @@ public class DroidGraph {
     }
 
     public void outputVertexVisitStatus() throws IOException {
+        this.outputVertexVisitStatus(new File(Settings.v().getOutputDirectory() + File.separator +
+                "vertex_visit_status.txt"));
+    }
+
+    public void outputVertexVisitStatus(File outputFile) throws IOException {
         StringBuilder builder = new StringBuilder();
 
         Collection<Vertex> vertices = this.getControlsVisited();
@@ -193,7 +198,7 @@ public class DroidGraph {
             builder.append(((MethodVertex) v).getMethodSignature()).append("\n");
         }
 
-        Writer.writeString(Settings.v().getOutputDirectory(), "vertex_visit_status.txt", builder.toString());
+        Writer.writeString(outputFile.getParentFile(), outputFile.getName(), builder.toString());
     }
 
     public void outputCGDetails() throws IOException {
