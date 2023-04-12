@@ -166,9 +166,10 @@ public class DroidGraph {
         return new Pair<>((interfaceCoverage / interfaceTotal) * 100, (methodCoverage / methodTotal) * 100);
     }
 
+    @SuppressWarnings("unused")     // Used in DroidDynaSearch.
     public void outputVertexVisitStatus() throws IOException {
-        this.outputVertexVisitStatus(new File(Settings.v().getOutputDirectory() + File.separator +
-                "vertex_visit_status.txt"));
+        this.outputVertexVisitStatus(
+                new File(Settings.v().getOutputDirectory() + File.separator + "vertex_visit_status.txt"));
     }
 
     public void outputVertexVisitStatus(File outputFile) throws IOException {

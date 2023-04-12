@@ -27,11 +27,4 @@ public class CallbackVertex extends MethodVertex {
     public Shape getShape() {
         return Shape.HEXAGON;
     }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{id=" + super.getId() + ", type=" + super.getType() +
-                ", methodSignature='" + super.getMethodSignature() + "', visit=" + super.hasVisit() + ", localVisit=" +
-                super.hasLocalVisit() + "}";
-    }
 }

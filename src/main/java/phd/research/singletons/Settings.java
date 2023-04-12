@@ -184,6 +184,7 @@ public class Settings {
         return this.flowDroidCallbacksFile;
     }
 
+    @SuppressWarnings("unused")     // Used in DroidDynaSearch.
     public void setFlowDroidCallbacksFile(File callbacksFile) {
         this.flowDroidCallbacksFile = callbacksFile;
         this.defaultCallbacksFile = false;
