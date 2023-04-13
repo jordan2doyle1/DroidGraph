@@ -38,6 +38,10 @@ public class Filter {
 
     public static boolean isValidMethod(SootMethod method) {
         if (Filter.isValidClass(method.getDeclaringClass())) {
+            if (method.getName().startsWith("access$")) {
+                return false;
+            }
+
             String methodSignature = method.getSignature().replace("'", "");
             if (Filter.METHOD_EXTERNAL_STATUS.containsKey(methodSignature)) {
                 return !Filter.METHOD_EXTERNAL_STATUS.get(methodSignature);
@@ -52,6 +56,11 @@ public class Filter {
                 !Filter.isValidPackage(clazz.getPackageName())) {
             return false;
         }
+
+        if (clazz.getShortName().equals("R")) {
+            return false;
+        }
+
         return Filter.CLASS_BLACKLIST.stream()
                 .noneMatch(blacklistedClass -> clazz.getShortName().contains(blacklistedClass));
     }
