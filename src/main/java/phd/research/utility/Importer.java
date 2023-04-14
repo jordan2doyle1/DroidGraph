@@ -176,7 +176,7 @@ public class Importer {
 
             if (method == null) {
                 LOGGER.warn("Failed to find method signature: " + androGuardVertex.getJimpleSignature());
-            } else {
+            } else if (Filter.isValidMethod(method)) {
                 return factory.createVertex(androGuardVertex.getId(), method);
             }
         }
