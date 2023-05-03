@@ -282,6 +282,9 @@ public class DroidGraph {
         Writer.writeCollection(Settings.v().getOutputDirectory(), "launch_activities.txt",
                 FlowDroidAnalysis.v().getLaunchActivities()
                               );
+
+        Map<SootClass, Set<SootClass>> fragments = classifier.getFragments();
+        Writer.writeMap(Settings.v().getOutputDirectory(), "fragment_classes.txt", fragments);
     }
 
     public void writeUnitGraphsToFile() throws IOException {

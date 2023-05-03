@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import phd.research.enums.Type;
 import phd.research.singletons.FlowDroidAnalysis;
 import phd.research.singletons.Settings;
+import phd.research.utility.Filter;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.callbacks.AndroidCallbackDefinition;
@@ -13,6 +14,10 @@ import soot.jimple.infoflow.android.callbacks.xml.CollectedCallbacksSerializer;
 import soot.jimple.infoflow.android.entryPointCreators.AndroidEntryPointUtils;
 
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Jordan Doyle
@@ -105,5 +110,19 @@ public class Classifier {
             return Type.CALLBACK;
         }
         return Type.METHOD;
+    }
+
+    public Map<SootClass, Set<SootClass>> getFragments() {
+        Map<SootClass, Set<SootClass>> fragmentsPairs = new HashMap<>();
+
+        Classifier.COLLECTED_CALLBACKS.getFragmentClasses().forEach(p -> {
+            if (Filter.isValidClass(p.getO1()) && Filter.isValidClass(p.getO2())) {
+                Set<SootClass> fragments = fragmentsPairs.getOrDefault(p.getO1(), new HashSet<>());
+                fragments.add(p.getO2());
+                fragmentsPairs.put(p.getO1(), fragments);
+            }
+        });
+
+        return fragmentsPairs;
     }
 }

@@ -6,7 +6,9 @@ import phd.research.Timer;
 import phd.research.graph.Control;
 import phd.research.helper.MenuFileParser;
 import phd.research.singletons.FlowDroidAnalysis;
+import phd.research.singletons.Settings;
 import phd.research.utility.Filter;
+import phd.research.utility.Writer;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -14,6 +16,7 @@ import soot.jimple.infoflow.android.resources.LayoutFileParser;
 import soot.jimple.infoflow.android.resources.controls.AndroidLayoutControl;
 import soot.util.MultiMap;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -57,6 +60,12 @@ public class DroidControls {
         MultiMap<String, AndroidLayoutControl> layoutControls = layoutParser.getUserControls();
         Collection<Control> controls = new HashSet<>();
 
+        try {
+            Writer.writeMultiMap(Settings.v().getOutputDirectory(), "layout_controls.txt", layoutControls);
+        } catch (IOException e) {
+            LOGGER.error("Failed to output layout controls. " + e.getMessage());
+        }
+
         for (String layoutFileName : layoutControls.keySet()) {
             ARSCFileParser.AbstractResource layoutResource = FlowDroidAnalysis.v().getResources()
                     .findResourceByName("layout", DroidControls.getResourceName(layoutFileName));
@@ -71,6 +80,12 @@ public class DroidControls {
 
         MenuFileParser menuParser = FlowDroidAnalysis.v().getMenuFileParser();
         MultiMap<String, AndroidLayoutControl> menuControls = menuParser.getUserControls();
+
+        try {
+            Writer.writeMultiMap(Settings.v().getOutputDirectory(), "menu_controls.txt", menuControls);
+        } catch (IOException e) {
+            LOGGER.error("Failed to output layout controls. " + e.getMessage());
+        }
 
         for (String menuFileName : menuControls.keySet()) {
             ARSCFileParser.AbstractResource menuResource = FlowDroidAnalysis.v().getResources()

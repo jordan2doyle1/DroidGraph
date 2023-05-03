@@ -9,12 +9,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.enums.Format;
 import phd.research.vertices.Vertex;
+import soot.util.MultiMap;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * @author Jordan Doyle
@@ -62,6 +63,24 @@ public class Writer {
             writer.write(item.toString() + "\n");
         }
         writer.close();
+    }
+
+    public static void writeMap(File directory, String fileName, Map<?,?> map) throws IOException {
+        File file = new File(directory + File.separator + fileName);
+        createFile(file);
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        writer.write("Found " + map.size() + " item(s).\n\n");
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            writer.write(entry.getKey().toString() + ": " + entry.getValue().toString() + "\n");
+        }
+        writer.close();
+    }
+
+    public static void writeMultiMap(File directory, String fileName, MultiMap<?,?> map) throws IOException {
+        List<String> lines = new ArrayList<>();
+        map.forEach(pair -> lines.add(pair.getO1().toString() + ": " + pair.getO2().toString()));
+        Writer.writeCollection(directory, fileName, lines);
     }
 
     private static void createFile(File file) throws IOException {
