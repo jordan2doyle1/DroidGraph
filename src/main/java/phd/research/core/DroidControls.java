@@ -84,7 +84,7 @@ public class DroidControls {
         try {
             Writer.writeMultiMap(Settings.v().getOutputDirectory(), "menu_controls.txt", menuControls);
         } catch (IOException e) {
-            LOGGER.error("Failed to output layout controls. " + e.getMessage());
+            LOGGER.error("Failed to output menu controls. " + e.getMessage());
         }
 
         for (String menuFileName : menuControls.keySet()) {

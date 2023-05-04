@@ -33,6 +33,7 @@ public class Settings {
     private boolean addMissingComponents;
     private boolean outputMissingComponents;
     private boolean loggerActive;
+    private boolean validateCallGraph;
 
     private Settings() {
         this.format = Format.JSON;
@@ -45,6 +46,7 @@ public class Settings {
         this.addMissingComponents = false;
         this.outputMissingComponents = false;
         this.loggerActive = true;
+        this.validateCallGraph = true;
     }
 
     public static Settings v() {
@@ -64,7 +66,10 @@ public class Settings {
         setPlatformDirectory(this.androidPlatformDirectory);
         setOutputDirectory(this.outputDirectory);
         setApkFile(this.apkFile);
-        setCallGraphFile(this.callGraphFile);
+
+        if (this.validateCallGraph) {
+            setCallGraphFile(this.callGraphFile);
+        }
 
         if (this.isImportControlFlowGraph()) {
             setImportControlFlowGraph(this.controlFlowGraphFile);
@@ -136,6 +141,12 @@ public class Settings {
 
     public File getCallGraphFile() {
         return this.callGraphFile;
+    }
+
+
+    @SuppressWarnings("unused")     // Used in DroidDynaSearch.
+    public void setValidateCallGraph(boolean validate) {
+        this.validateCallGraph = validate;
     }
 
     public void setCallGraphFile(File callGraphFile) throws IOException {
