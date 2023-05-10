@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+/**
+ * @author Jordan Doyle
+ */
+
 public class Importer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Importer.class);

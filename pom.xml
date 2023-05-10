@@ -23,13 +23,6 @@
             <version>4.13.2</version>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <!--Future versions of Mockito will not work with Java 1.8. -->
-            <!--suppress MavenPackageUpdate -->
-            <version>4.11.0</version>
-        </dependency>
-        <dependency>
             <groupId>nl.jqno.equalsverifier</groupId>
             <artifactId>equalsverifier</artifactId>
             <version>3.14.1</version>
@@ -45,6 +38,7 @@
             <artifactId>Utilities</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>org.soot-oss</groupId>
             <artifactId>soot</artifactId>
@@ -75,6 +69,7 @@
             <!--suppress MavenPackageUpdate -->
             <version>1.4.0</version>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-io</artifactId>

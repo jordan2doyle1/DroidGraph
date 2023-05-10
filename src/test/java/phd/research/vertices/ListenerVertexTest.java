@@ -18,8 +18,6 @@ import static org.junit.Assert.assertEquals;
 
 public class ListenerVertexTest {
 
-    // private final String SIGNATURE = "<com.example.android.lifecycle.ActivityA: void onClick()(android.view.View)>";
-
     private ListenerVertex vertex;
 
     @Before

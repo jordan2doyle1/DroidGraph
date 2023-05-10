@@ -4,7 +4,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import phd.research.singletons.Settings;
+import phd.research.singletons.GraphSettings;
 import phd.research.vertices.AndroGuardVertex;
 import soot.Scene;
 import soot.SootClass;
@@ -33,7 +33,7 @@ public class Filter {
     private static final List<String> LAYOUT_BLACKLIST = Filter.loadBlacklist("layout_blacklist");
 
     private static final Graph<AndroGuardVertex, DefaultEdge> ANDRO_GUARD_GRAPH =
-            Importer.importAndroGuardGraph(Settings.v().getCallGraphFile());
+            Importer.importAndroGuardGraph(GraphSettings.v().getCallGraphFile());
     private static final Map<String, Boolean> METHOD_EXTERNAL_STATUS = Filter.getExternalStatusMap();
 
     public static boolean isValidMethod(SootMethod method) {

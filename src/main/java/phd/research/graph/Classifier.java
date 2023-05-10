@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.enums.Type;
 import phd.research.singletons.FlowDroidAnalysis;
-import phd.research.singletons.Settings;
+import phd.research.singletons.GraphSettings;
 import phd.research.utility.Filter;
 import soot.SootClass;
 import soot.SootMethod;
@@ -36,13 +36,13 @@ public class Classifier {
     }
 
     public static CollectedCallbacks deserializeCallbacks() {
-        if (!Settings.v().getFlowDroidCallbacksFile().isFile()) {
+        if (!GraphSettings.v().getFlowDroidCallbacksFile().isFile()) {
             FlowDroidAnalysis.v().runFlowDroid();
         }
 
         LOGGER.info("Deserializing FlowDroid callbacks file.");
         try {
-            return CollectedCallbacksSerializer.deserialize(Settings.v().getFlowDroidCallbacksFile());
+            return CollectedCallbacksSerializer.deserialize(GraphSettings.v().getFlowDroidCallbacksFile());
         } catch (FileNotFoundException e) {
             throw new RuntimeException("FlowDroid callbacks file cannot be found: " + e.getMessage());
         }

@@ -19,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 
 public class UnitVertexTest {
 
-    //private final String SIGNATURE = "<com.example.android.lifecycle.ActivityA: void onClick()(android.view.View)>";
     private final String UNIT = "$r0 := @this <com.example.android.lifecycle.ActivityA: init()()>";
 
     private UnitVertex vertex;

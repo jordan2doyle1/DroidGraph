@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import phd.research.Timer;
 import phd.research.core.DroidGraph;
 import phd.research.enums.Format;
-import phd.research.singletons.Settings;
+import phd.research.singletons.GraphSettings;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class FrameworkMain {
             System.exit(0);
         }
 
-        Settings settings = Settings.v();
+        GraphSettings settings = GraphSettings.v();
         try {
             settings.setApkFile(new File(cmd.getOptionValue("a")));
             settings.setCallGraphFile(new File(cmd.getOptionValue("i")));

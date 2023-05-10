@@ -6,7 +6,7 @@ import phd.research.Timer;
 import phd.research.graph.Control;
 import phd.research.helper.MenuFileParser;
 import phd.research.singletons.FlowDroidAnalysis;
-import phd.research.singletons.Settings;
+import phd.research.singletons.GraphSettings;
 import phd.research.utility.Filter;
 import phd.research.utility.Writer;
 import soot.*;
@@ -61,7 +61,7 @@ public class DroidControls {
         Collection<Control> controls = new HashSet<>();
 
         try {
-            Writer.writeMultiMap(Settings.v().getOutputDirectory(), "layout_controls.txt", layoutControls);
+            Writer.writeMultiMap(GraphSettings.v().getOutputDirectory(), "layout_controls.txt", layoutControls);
         } catch (IOException e) {
             LOGGER.error("Failed to output layout controls. " + e.getMessage());
         }
@@ -82,7 +82,7 @@ public class DroidControls {
         MultiMap<String, AndroidLayoutControl> menuControls = menuParser.getUserControls();
 
         try {
-            Writer.writeMultiMap(Settings.v().getOutputDirectory(), "menu_controls.txt", menuControls);
+            Writer.writeMultiMap(GraphSettings.v().getOutputDirectory(), "menu_controls.txt", menuControls);
         } catch (IOException e) {
             LOGGER.error("Failed to output menu controls. " + e.getMessage());
         }

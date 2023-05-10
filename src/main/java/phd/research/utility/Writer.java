@@ -15,7 +15,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jordan Doyle
@@ -65,7 +68,7 @@ public class Writer {
         writer.close();
     }
 
-    public static void writeMap(File directory, String fileName, Map<?,?> map) throws IOException {
+    public static void writeMap(File directory, String fileName, Map<?, ?> map) throws IOException {
         File file = new File(directory + File.separator + fileName);
         createFile(file);
 
@@ -77,7 +80,7 @@ public class Writer {
         writer.close();
     }
 
-    public static void writeMultiMap(File directory, String fileName, MultiMap<?,?> map) throws IOException {
+    public static void writeMultiMap(File directory, String fileName, MultiMap<?, ?> map) throws IOException {
         List<String> lines = new ArrayList<>();
         map.forEach(pair -> lines.add(pair.getO1().toString() + ": " + pair.getO2().toString()));
         Writer.writeCollection(directory, fileName, lines);

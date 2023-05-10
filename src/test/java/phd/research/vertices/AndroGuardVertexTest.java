@@ -12,6 +12,7 @@ import static org.junit.Assert.*;
 
 public class AndroGuardVertexTest {
 
+    @SuppressWarnings("SpellCheckingInspection")
     private final String BYTECODE = "Lcom/example/android/lifecycle/ActivityA$1;-><init>" +
             "(Lcom/example/android/lifecycle/ActivityA;)V [access_flags=constructor] @ 0x1958";
 

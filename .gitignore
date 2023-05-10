@@ -1,10 +1,32 @@
-.DS_Store
-.idea/
-*iml
-output/
+### Maven ###
 target/
-console_output.txt
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IntelliJ IDEA ###
+*.iws
+*.iml
+*.ipr
+.idea/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### FlowDroid ###
 sootOutput/
-FrontMatterOutput.json
-.java-version
-FlowDroidCallbacks
+
+### Project ###
+output/

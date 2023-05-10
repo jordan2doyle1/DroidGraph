@@ -54,14 +54,14 @@ public class FlowDroidAnalysis {
         this.sootInitialised = false;
 
         try {
-            this.manifest = new ProcessManifest(Settings.v().getApkFile());
+            this.manifest = new ProcessManifest(GraphSettings.v().getApkFile());
         } catch (IOException | XmlPullParserException e) {
             throw new RuntimeException("Failed to process APK manifest file." + e.getMessage());
         }
 
         this.resources = new ARSCFileParser();
         try {
-            this.resources.parse(Settings.v().getApkFile().getAbsolutePath());
+            this.resources.parse(GraphSettings.v().getApkFile().getAbsolutePath());
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse APK resources." + e.getMessage());
         }
@@ -132,7 +132,7 @@ public class FlowDroidAnalysis {
         controlFactory.setLoadAdditionalAttributes(true);
         MenuFileParser menuParser = new MenuFileParser();
         menuParser.setControlFactory(controlFactory);
-        menuParser.parseLayoutFileDirect(this.getBasePackageName(), Settings.v().getApkFile().getAbsolutePath());
+        menuParser.parseLayoutFileDirect(this.getBasePackageName(), GraphSettings.v().getApkFile().getAbsolutePath());
         return menuParser;
     }
 
@@ -145,7 +145,7 @@ public class FlowDroidAnalysis {
         controlFactory.setLoadAdditionalAttributes(true);
         LayoutFileParser layoutParser = new LayoutFileParser(this.getBasePackageName(), this.resources);
         layoutParser.setControlFactory(controlFactory);
-        layoutParser.parseLayoutFileDirect(Settings.v().getApkFile().getAbsolutePath());
+        layoutParser.parseLayoutFileDirect(GraphSettings.v().getApkFile().getAbsolutePath());
         return layoutParser;
     }
 
@@ -168,21 +168,21 @@ public class FlowDroidAnalysis {
         Options.v().set_allow_phantom_refs(true);
         Options.v().set_output_format(soot.options.Options.output_format_none);
         Options.v().set_whole_program(true);
-        Options.v().set_process_dir(Collections.singletonList(Settings.v().getApkFile().getAbsolutePath()));
-        Options.v().set_android_jars(Settings.v().getPlatformDirectory().getAbsolutePath());
+        Options.v().set_process_dir(Collections.singletonList(GraphSettings.v().getApkFile().getAbsolutePath()));
+        Options.v().set_android_jars(GraphSettings.v().getPlatformDirectory().getAbsolutePath());
         Options.v().set_src_prec(Options.src_prec_apk_class_jimple);
         Options.v().set_throw_analysis(Options.throw_analysis_dalvik);
         Options.v().set_process_multiple_dex(true);
         Options.v().set_ignore_resolution_errors(true);
-        Options.v().set_output_dir(Settings.v().getOutputDirectory().getAbsolutePath());
+        Options.v().set_output_dir(GraphSettings.v().getOutputDirectory().getAbsolutePath());
 
         List<String> excludeList = new LinkedList<>(
                 Arrays.asList("java.*", "javax.*", "sun.*", "org.apache.*", "org.eclipse.*", "soot.*"));
         Options.v().set_exclude(excludeList);
 
         Options.v().set_soot_classpath(Scene.v()
-                .getAndroidJarPath(Settings.v().getPlatformDirectory().getAbsolutePath(),
-                        Settings.v().getApkFile().getAbsolutePath()
+                .getAndroidJarPath(GraphSettings.v().getPlatformDirectory().getAbsolutePath(),
+                        GraphSettings.v().getApkFile().getAbsolutePath()
                                   ));
         Main.v().autoSetOptions();
 
@@ -221,12 +221,13 @@ public class FlowDroidAnalysis {
         config.setSootIntegrationMode(InfoflowAndroidConfiguration.SootIntegrationMode.UseExistingInstance);
         config.setCodeEliminationMode(InfoflowConfiguration.CodeEliminationMode.NoCodeElimination);
         config.setMergeDexFiles(true);
-        config.getAnalysisFileConfig().setAndroidPlatformDir(Settings.v().getPlatformDirectory().getAbsolutePath());
+        config.getAnalysisFileConfig()
+                .setAndroidPlatformDir(GraphSettings.v().getPlatformDirectory().getAbsolutePath());
         String sourceAndSinkFileName = System.getProperty("user.dir") + File.separator + "SourcesAndSinks.txt";
         config.getAnalysisFileConfig().setSourceSinkFile(sourceAndSinkFileName);
-        config.getAnalysisFileConfig().setTargetAPKFile(Settings.v().getApkFile().getAbsolutePath());
+        config.getAnalysisFileConfig().setTargetAPKFile(GraphSettings.v().getApkFile().getAbsolutePath());
         config.getCallbackConfig().setSerializeCallbacks(true);
-        config.getCallbackConfig().setCallbacksFile(Settings.v().getFlowDroidCallbacksFile().getAbsolutePath());
+        config.getCallbackConfig().setCallbacksFile(GraphSettings.v().getFlowDroidCallbacksFile().getAbsolutePath());
         return config;
     }
 

@@ -8,6 +8,7 @@ import static org.junit.Assert.assertEquals;
  * @author Jordan Doyle
  */
 
+@SuppressWarnings("SpellCheckingInspection")
 public class BytecodeTest {
 
     @Test

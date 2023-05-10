@@ -5,7 +5,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.junit.Before;
 import org.junit.Test;
 import phd.research.core.DroidGraph;
-import phd.research.singletons.Settings;
+import phd.research.singletons.GraphSettings;
 import phd.research.vertices.AndroGuardVertex;
 
 import java.io.File;
@@ -22,11 +22,11 @@ public class ImporterTest {
     private static final String inputDirectory =
             System.getProperty("user.dir") + File.separator + "samples" + File.separator;
 
-    private Settings settings;
+    private GraphSettings settings;
 
     @Before
     public void setUp() throws IOException {
-        this.settings = Settings.v();
+        this.settings = GraphSettings.v();
         this.settings.setApkFile(new File(ImporterTest.inputDirectory + "ActivityLifecycle.apk"));
         this.settings.setCallGraphFile(new File(ImporterTest.inputDirectory + "ActivityLifecycle.gml"));
     }

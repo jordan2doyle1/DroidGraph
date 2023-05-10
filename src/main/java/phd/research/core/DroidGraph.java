@@ -16,7 +16,7 @@ import phd.research.graph.Composition;
 import phd.research.graph.Control;
 import phd.research.graph.UnitGraph;
 import phd.research.singletons.FlowDroidAnalysis;
-import phd.research.singletons.Settings;
+import phd.research.singletons.GraphSettings;
 import phd.research.utility.Filter;
 import phd.research.utility.Importer;
 import phd.research.utility.Writer;
@@ -48,8 +48,8 @@ public class DroidGraph {
     private Graph<Vertex, DefaultEdge> callGraph;
 
     public DroidGraph() {
-        if (Settings.v().isImportControlFlowGraph()) {
-            this.controlFlowGraph = Importer.importDroidGraph(Settings.v().getContolFlowGraphFile());
+        if (GraphSettings.v().isImportControlFlowGraph()) {
+            this.controlFlowGraph = Importer.importDroidGraph(GraphSettings.v().getContolFlowGraphFile());
         } else {
             this.controlFlowGraph = this.generateGraph();
             verifyControlFlowGraphContents();
@@ -169,7 +169,7 @@ public class DroidGraph {
     @SuppressWarnings("unused")     // Used in DroidDynaSearch.
     public void outputVertexVisitStatus() throws IOException {
         this.outputVertexVisitStatus(
-                new File(Settings.v().getOutputDirectory() + File.separator + "vertex_visit_status.txt"));
+                new File(GraphSettings.v().getOutputDirectory() + File.separator + "vertex_visit_status.txt"));
     }
 
     public void outputVertexVisitStatus(File outputFile) throws IOException {
@@ -203,13 +203,13 @@ public class DroidGraph {
     }
 
     public void outputCGDetails() throws IOException {
-        Writer.writeString(Settings.v().getOutputDirectory(), "call_graph_composition.txt",
+        Writer.writeString(GraphSettings.v().getOutputDirectory(), "call_graph_composition.txt",
                 new Composition(this.getCallGraph()).toTableString()
                           );
     }
 
     public void outputCFGDetails() throws IOException {
-        Writer.writeString(Settings.v().getOutputDirectory(), "control_flow_graph_composition.txt",
+        Writer.writeString(GraphSettings.v().getOutputDirectory(), "control_flow_graph_composition.txt",
                 new Composition(this.getControlFlowGraph()).toTableString()
                           );
     }
@@ -264,37 +264,37 @@ public class DroidGraph {
             }
         }
 
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "all_classes.txt", Scene.v().getClasses());
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "filtered_classes.txt", filteredClasses);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "entry_point_classes.txt",
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "all_classes.txt", Scene.v().getClasses());
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "filtered_classes.txt", filteredClasses);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "entry_point_classes.txt",
                 FlowDroidAnalysis.v().getEntryPointClasses()
                               );
 
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "all_methods.txt", allMethods);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "filtered_methods.txt", filteredMethods);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "standard_methods.txt", standardMethods);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "lifecycle_methods.txt", lifecycleCallbacks);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "listener_methods.txt", listenerCallbacks);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "possible_callbacks.txt", possibleCallbacks);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "other_callbacks.txt", otherCallback);
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "ignored_methods.txt", ignoredMethods);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "all_methods.txt", allMethods);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "filtered_methods.txt", filteredMethods);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "standard_methods.txt", standardMethods);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "lifecycle_methods.txt", lifecycleCallbacks);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "listener_methods.txt", listenerCallbacks);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "possible_callbacks.txt", possibleCallbacks);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "other_callbacks.txt", otherCallback);
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "ignored_methods.txt", ignoredMethods);
 
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "launch_activities.txt",
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "launch_activities.txt",
                 FlowDroidAnalysis.v().getLaunchActivities()
                               );
 
         Map<SootClass, Set<SootClass>> fragments = classifier.getFragments();
-        Writer.writeMap(Settings.v().getOutputDirectory(), "fragment_classes.txt", fragments);
+        Writer.writeMap(GraphSettings.v().getOutputDirectory(), "fragment_classes.txt", fragments);
     }
 
     public void writeUnitGraphsToFile() throws IOException {
-        LOGGER.info("Exporting unit graphs in " + Settings.v().getFormat().name() + " format(s).");
+        LOGGER.info("Exporting unit graphs in " + GraphSettings.v().getFormat().name() + " format(s).");
         for (SootClass clazz : Scene.v().getClasses()) {
             for (SootMethod method : clazz.getMethods()) {
                 if (Filter.isValidMethod(method) && method.hasActiveBody()) {
                     UnitGraph unitGraph = new UnitGraph(method.getActiveBody());
                     String fileName = clazz.getShortName() + "_" + method.getName();
-                    Writer.writeGraph(Settings.v().getOutputDirectory(), fileName, Settings.v().getFormat(),
+                    Writer.writeGraph(GraphSettings.v().getOutputDirectory(), fileName, GraphSettings.v().getFormat(),
                             unitGraph.getGraph()
                                      );
                 }
@@ -303,24 +303,24 @@ public class DroidGraph {
     }
 
     public void writeCallGraphToFile() throws IOException {
-        LOGGER.info("Exporting call graph in " + Settings.v().getFormat().name() + " format(s).");
-        Writer.writeGraph(Settings.v().getOutputDirectory(), "app_call_graph", Settings.v().getFormat(),
+        LOGGER.info("Exporting call graph in " + GraphSettings.v().getFormat().name() + " format(s).");
+        Writer.writeGraph(GraphSettings.v().getOutputDirectory(), "app_call_graph", GraphSettings.v().getFormat(),
                 this.getCallGraph()
                          );
     }
 
     public void writeControlFlowGraphToFile() throws IOException {
-        LOGGER.info("Exporting control flow graph in " + Settings.v().getFormat().name() + " format(s).");
-        Writer.writeGraph(Settings.v().getOutputDirectory(), "app_control_flow_graph", Settings.v().getFormat(),
-                this.getControlFlowGraph()
+        LOGGER.info("Exporting control flow graph in " + GraphSettings.v().getFormat().name() + " format(s).");
+        Writer.writeGraph(GraphSettings.v().getOutputDirectory(), "app_control_flow_graph",
+                GraphSettings.v().getFormat(), this.getControlFlowGraph()
                          );
     }
 
     public void writeControlsToFile() throws IOException {
-        Writer.writeCollection(Settings.v().getOutputDirectory(), "interface_controls.txt",
+        Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "interface_controls.txt",
                 this.getDroidControls().getControls()
                               );
-        Writer.writeString(Settings.v().getOutputDirectory(), "control_callbacks.txt",
+        Writer.writeString(GraphSettings.v().getOutputDirectory(), "control_callbacks.txt",
                 this.getControlCallbackTableString()
                           );
     }
@@ -406,7 +406,7 @@ public class DroidGraph {
                                             LOGGER.info(
                                                     String.format("Callee %s is probably not a valid method.", callee));
                                         }
-                                        if (Settings.v().isAddMissingComponents()) {
+                                        if (GraphSettings.v().isAddMissingComponents()) {
                                             LOGGER.info(String.format("Adding %s method into the graph.", callee));
                                             graph.addVertex(new VertexFactory().createVertex(callee));
                                         }
@@ -448,9 +448,9 @@ public class DroidGraph {
             }
         }
 
-        if (Settings.v().isOutputMissingComponents()) {
+        if (GraphSettings.v().isOutputMissingComponents()) {
             try {
-                Writer.writeCollection(Settings.v().getOutputDirectory(), "missing_controls.txt", missingControls);
+                Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "missing_controls.txt", missingControls);
             } catch (IOException e) {
                 LOGGER.error("Error writing missing controls to output file." + e.getMessage());
             }
@@ -459,7 +459,7 @@ public class DroidGraph {
         if (!missingControls.isEmpty()) {
             problemFound = true;
             LOGGER.error(String.format("Found %s controls that are not in the graph.", missingControls.size()));
-            if (Settings.v().isAddMissingComponents()) {
+            if (GraphSettings.v().isAddMissingComponents()) {
                 LOGGER.info(String.format("Adding %s controls into the graph.", missingControls.size()));
                 missingControls.forEach(control -> this.getControlFlowGraph().addVertex(new ControlVertex(control)));
             }
@@ -496,9 +496,9 @@ public class DroidGraph {
                     }
                 }));
 
-        if (Settings.v().isOutputMissingComponents()) {
+        if (GraphSettings.v().isOutputMissingComponents()) {
             try {
-                Writer.writeCollection(Settings.v().getOutputDirectory(), "missing_methods.txt", missingMethods);
+                Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "missing_methods.txt", missingMethods);
             } catch (IOException e) {
                 LOGGER.error("Error writing missing methods to output file." + e.getMessage());
             }
@@ -507,7 +507,7 @@ public class DroidGraph {
         if (!missingMethods.isEmpty()) {
             problemFound = true;
             LOGGER.error(String.format("Found %s methods that are not in the graph.", missingMethods.size()));
-            if (Settings.v().isAddMissingComponents()) {
+            if (GraphSettings.v().isAddMissingComponents()) {
                 LOGGER.info(String.format("Adding %s methods into the graph.", missingMethods.size()));
                 missingMethods.forEach(
                         method -> this.getControlFlowGraph().addVertex(new VertexFactory().createVertex(method)));
