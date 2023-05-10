@@ -24,9 +24,9 @@ public class GraphSettingsTest {
     public void setUp() throws IOException {
         this.settings = GraphSettings.v();
         this.settings.setApkFile(
-                new File(GraphSettingsTest.workingDirectory + File.separator + "ActivityLifecycle.apk"));
+                new File(GraphSettingsTest.workingDirectory + File.separator + "Activity_Lifecycle_1.apk"));
         this.settings.setCallGraphFile(
-                new File(GraphSettingsTest.workingDirectory + File.separator + "ActivityLifecycle.gml"));
+                new File(GraphSettingsTest.workingDirectory + File.separator + "Activity_Lifecycle_1.gml"));
         this.settings.setOutputDirectory(new File(GraphSettingsTest.workingDirectory));
     }
 
@@ -79,7 +79,7 @@ public class GraphSettingsTest {
         assertNull("Control flow graph file should be null.", this.settings.getContolFlowGraphFile());
 
         this.settings.setImportControlFlowGraph(
-                new File(GraphSettingsTest.workingDirectory + File.separator + "ActivityLifecycle.json"));
+                new File(GraphSettingsTest.workingDirectory + File.separator + "app_control_flow_graph.json"));
 
         assertTrue("Import control flow graph should be enabled.", this.settings.isImportControlFlowGraph());
         assertTrue("Control flow graph file does not exist.", this.settings.getContolFlowGraphFile().isFile());
@@ -122,7 +122,7 @@ public class GraphSettingsTest {
     @Test
     public void testValidate() throws IOException {
         this.settings.setImportControlFlowGraph(
-                new File(GraphSettingsTest.workingDirectory + File.separator + "ActivityLifecycle.json"));
+                new File(GraphSettingsTest.workingDirectory + File.separator + "app_control_flow_graph.json"));
         this.settings.validate();
     }
 }
