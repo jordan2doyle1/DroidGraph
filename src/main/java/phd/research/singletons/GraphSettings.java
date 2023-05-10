@@ -184,7 +184,7 @@ public class GraphSettings {
         return this.flowDroidCallbacksFile;
     }
 
-    @SuppressWarnings("unused")     // Used in DroidDynaSearch and DroidCoverage.
+    @SuppressWarnings("unused")     // Used in DroidCoverage.
     public void setFlowDroidCallbacksFile(File callbacksFile) {
         this.flowDroidCallbacksFile = callbacksFile;
         this.defaultCallbacksFile = false;
