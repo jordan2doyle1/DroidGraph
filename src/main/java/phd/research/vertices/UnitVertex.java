@@ -57,9 +57,10 @@ public class UnitVertex extends DefaultVertex {
 
         attributes.put("method", DefaultAttribute.createAttribute(this.getMethodSignature()));
         attributes.put("unit", DefaultAttribute.createAttribute(this.getUnit()));
-        attributes.put("color", DefaultAttribute.createAttribute(this.getColor().name()));
-        attributes.put("shape", DefaultAttribute.createAttribute(this.getShape().name()));
-        attributes.put("style", DefaultAttribute.createAttribute(this.getStyle().name()));
+        attributes.put("label", DefaultAttribute.createAttribute(this.getUnit()));
+        attributes.put("color", DefaultAttribute.createAttribute(this.getColor().name().toLowerCase()));
+        attributes.put("shape", DefaultAttribute.createAttribute(this.getShape().name().toLowerCase()));
+        attributes.put("style", DefaultAttribute.createAttribute(this.getStyle().name().toLowerCase()));
 
         return attributes;
     }
@@ -81,11 +82,15 @@ public class UnitVertex extends DefaultVertex {
             return false;
         }
 
-        if (!super.equals(o)) {
+//        if (!super.equals(o)) {
+//            return false;
+//        }
+
+        UnitVertex that = (UnitVertex) o;
+        if (super.getType() != that.getType()) {
             return false;
         }
 
-        UnitVertex that = (UnitVertex) o;
         if (!methodSignature.equals(that.methodSignature) || !unit.equals(that.unit)) {
             return false;
         }

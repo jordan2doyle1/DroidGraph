@@ -6,6 +6,7 @@ import org.jgrapht.graph.DefaultEdge;
 import phd.research.vertices.UnitVertex;
 import phd.research.vertices.Vertex;
 import soot.Body;
+import soot.Unit;
 import soot.toolkits.graph.BriefUnitGraph;
 
 import java.util.Collection;
@@ -42,16 +43,41 @@ public class UnitGraph extends BriefUnitGraph {
     private Graph<Vertex, DefaultEdge> generateGraph() {
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-        super.unitChain.forEach(unit -> {
+        for (Unit unit : super.unitChain) {
             UnitVertex vertex = new UnitVertex(super.method.getSignature(), unit.toString());
-            graph.addVertex(vertex);
+            boolean found = false;
+            for (Vertex v : graph.vertexSet()) {
+                UnitVertex unitVertex = (UnitVertex) v;
+                if (unitVertex.equals(vertex)) {
+                    vertex = unitVertex;
+                    found = true;
+                    break;
+                }
+            }
 
-            super.getSuccsOf(unit).forEach(nextUnit -> {
+            if (!found) {
+                graph.addVertex(vertex);
+            }
+
+            for (Unit nextUnit : super.getSuccsOf(unit)) {
                 UnitVertex nextVertex = new UnitVertex(super.method.getSignature(), nextUnit.toString());
-                graph.addVertex(nextVertex);
+                found = false;
+                for (Vertex v : graph.vertexSet()) {
+                    UnitVertex unitVertex = (UnitVertex) v;
+                    if (unitVertex.equals(nextVertex)) {
+                        nextVertex = unitVertex;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    graph.addVertex(nextVertex);
+                }
+
                 graph.addEdge(vertex, nextVertex);
-            });
-        });
+            }
+        }
 
         return graph;
     }
