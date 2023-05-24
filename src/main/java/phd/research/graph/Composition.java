@@ -52,6 +52,12 @@ public class Composition {
         return this.callback;
     }
 
+
+    @SuppressWarnings("unused")     // used in DroidCoverage.
+    public int getEdge() {
+        return this.edge;
+    }
+
     public void readComposition(Graph<Vertex, DefaultEdge> graph) {
         Set<Vertex> vertices = graph.vertexSet();
         this.vertex = vertices.size();
