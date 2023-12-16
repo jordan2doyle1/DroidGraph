@@ -4,9 +4,9 @@ import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import phd.research.Timer;
 import phd.research.core.DroidGraph;
 import phd.research.enums.Format;
+import phd.research.helper.Timer;
 import phd.research.singletons.GraphSettings;
 
 import java.io.File;

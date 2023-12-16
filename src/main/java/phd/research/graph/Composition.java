@@ -2,7 +2,7 @@ package phd.research.graph;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
-import phd.research.StringTable;
+import phd.research.helper.StringTable;
 import phd.research.vertices.Vertex;
 
 import java.util.Set;

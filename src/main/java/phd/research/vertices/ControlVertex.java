@@ -1,6 +1,5 @@
 package phd.research.vertices;
 
-import org.jetbrains.annotations.NotNull;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
@@ -8,6 +7,7 @@ import phd.research.enums.Shape;
 import phd.research.enums.Type;
 import phd.research.graph.Control;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.Objects;
 
@@ -17,7 +17,7 @@ import java.util.Objects;
 
 public class ControlVertex extends DefaultVertex {
 
-    @NotNull
+    @Nonnull
     private final Control control;
 
     public ControlVertex(Control control) {
@@ -30,7 +30,7 @@ public class ControlVertex extends DefaultVertex {
         this.control = Objects.requireNonNull(control);
     }
 
-    @NotNull
+    @Nonnull
     public Control getControl() {
         return this.control;
     }

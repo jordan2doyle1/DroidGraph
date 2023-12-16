@@ -2,9 +2,9 @@ package phd.research.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import phd.research.Timer;
 import phd.research.graph.Control;
 import phd.research.helper.MenuFileParser;
+import phd.research.helper.Timer;
 import phd.research.singletons.FlowDroidAnalysis;
 import phd.research.singletons.GraphSettings;
 import phd.research.utility.Filter;

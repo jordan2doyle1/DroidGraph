@@ -2,13 +2,12 @@ package phd.research.singletons;
 
 import heros.InterproceduralCFG;
 import heros.solver.IFDSSolver;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
-import phd.research.Timer;
 import phd.research.helper.DroidControlFactory;
 import phd.research.helper.MenuFileParser;
+import phd.research.helper.Timer;
 import soot.*;
 import soot.jimple.DefinitionStmt;
 import soot.jimple.infoflow.InfoflowConfiguration;
@@ -25,6 +24,7 @@ import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.options.Options;
 import soot.toolkits.scalar.Pair;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -39,9 +39,9 @@ public class FlowDroidAnalysis {
 
     private static FlowDroidAnalysis instance = null;
 
-    @NotNull
+    @Nonnull
     private final ProcessManifest manifest;
-    @NotNull
+    @Nonnull
     private final ARSCFileParser resources;
 
     private boolean sootInitialised;
@@ -78,7 +78,7 @@ public class FlowDroidAnalysis {
         return this.manifest.getPackageName();
     }
 
-    @NotNull
+    @Nonnull
     public ARSCFileParser getResources() {
         return this.resources;
     }

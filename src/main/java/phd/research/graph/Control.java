@@ -1,7 +1,6 @@
 package phd.research.graph;
 
-import org.jetbrains.annotations.NotNull;
-
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Objects;
@@ -15,14 +14,14 @@ public class Control implements Serializable {
     private final int controlId;
     private final int layoutId;
 
-    @NotNull
+    @Nonnull
     private final String controlName;
-    @NotNull
+    @Nonnull
     private final String layoutName;
-    @NotNull
+    @Nonnull
     private final String activity;
 
-    @NotNull
+    @Nonnull
     private Collection<String> listeners;
 
     public Control(int controlId, String controlName, int layoutId, String layoutName, String activity,
@@ -39,7 +38,7 @@ public class Control implements Serializable {
         return this.controlId;
     }
 
-    @NotNull
+    @Nonnull
     public String getControlName() {
         return this.controlName;
     }
@@ -48,17 +47,17 @@ public class Control implements Serializable {
         return this.layoutId;
     }
 
-    @NotNull
+    @Nonnull
     public String getLayoutName() {
         return this.layoutName;
     }
 
-    @NotNull
+    @Nonnull
     public String getActivity() {
         return this.activity;
     }
 
-    @NotNull
+    @Nonnull
     public Collection<String> getListeners() {
         return this.listeners;
     }

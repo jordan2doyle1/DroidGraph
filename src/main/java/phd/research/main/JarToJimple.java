@@ -3,13 +3,11 @@ package phd.research.main;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import phd.research.Timer;
+import phd.research.helper.Timer;
 import soot.Printer;
 import soot.Scene;
 import soot.SootClass;
 import soot.SourceLocator;
-import soot.jimple.JasminClass;
-import soot.util.JasminOutputStream;
 
 import java.io.*;
 import java.nio.file.Files;

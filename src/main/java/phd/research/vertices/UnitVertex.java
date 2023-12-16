@@ -1,12 +1,12 @@
 package phd.research.vertices;
 
-import org.jetbrains.annotations.NotNull;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
 import phd.research.enums.Shape;
 import phd.research.enums.Type;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.Objects;
 
@@ -16,9 +16,9 @@ import java.util.Objects;
 
 public class UnitVertex extends DefaultVertex {
 
-    @NotNull
+    @Nonnull
     private final String methodSignature;
-    @NotNull
+    @Nonnull
     private final String unit;
 
     public UnitVertex(String methodSignature, String unit) {
@@ -33,12 +33,12 @@ public class UnitVertex extends DefaultVertex {
         this.unit = Objects.requireNonNull(unit);
     }
 
-    @NotNull
+    @Nonnull
     public String getMethodSignature() {
         return this.methodSignature;
     }
 
-    @NotNull
+    @Nonnull
     public String getUnit() {
         return this.unit;
     }

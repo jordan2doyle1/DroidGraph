@@ -1,20 +1,19 @@
 package phd.research.core;
 
-import org.jetbrains.annotations.NotNull;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import phd.research.Pair;
-import phd.research.StringTable;
-import phd.research.Timer;
 import phd.research.enums.Type;
 import phd.research.graph.Classifier;
 import phd.research.graph.Composition;
 import phd.research.graph.Control;
 import phd.research.graph.UnitGraph;
+import phd.research.helper.Pair;
+import phd.research.helper.StringTable;
+import phd.research.helper.Timer;
 import phd.research.singletons.FlowDroidAnalysis;
 import phd.research.singletons.GraphSettings;
 import phd.research.utility.Filter;
@@ -27,6 +26,7 @@ import soot.SootMethod;
 import soot.Unit;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -41,7 +41,7 @@ public class DroidGraph {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DroidGraph.class);
 
-    @NotNull
+    @Nonnull
     private final Graph<Vertex, DefaultEdge> controlFlowGraph;
 
     private DroidControls droidControls;
@@ -87,7 +87,7 @@ public class DroidGraph {
         return this.droidControls;
     }
 
-    @NotNull
+    @Nonnull
     public Graph<Vertex, DefaultEdge> getCallGraph() {
         if (this.callGraph == null) {
             this.callGraph = Importer.convertAndFilterAndroGuardGraph(Filter.getAndroGuardCallGraph());
@@ -95,7 +95,7 @@ public class DroidGraph {
         return this.callGraph;
     }
 
-    @NotNull
+    @Nonnull
     public Graph<Vertex, DefaultEdge> getControlFlowGraph() {
         return this.controlFlowGraph;
     }

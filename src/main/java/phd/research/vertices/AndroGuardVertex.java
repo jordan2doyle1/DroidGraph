@@ -1,10 +1,10 @@
 package phd.research.vertices;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import phd.research.utility.Bytecode;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -21,7 +21,7 @@ public class AndroGuardVertex implements Serializable {
     private final boolean external;
     private final boolean entryPoint;
 
-    @NotNull
+    @Nonnull
     private final String bytecodeSignature;
 
     private String jimpleSignature;
@@ -52,7 +52,7 @@ public class AndroGuardVertex implements Serializable {
         return this.entryPoint;
     }
 
-    @NotNull
+    @Nonnull
     public String getBytecodeSignature() {
         return this.bytecodeSignature;
     }

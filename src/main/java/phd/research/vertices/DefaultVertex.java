@@ -1,6 +1,5 @@
 package phd.research.vertices;
 
-import org.jetbrains.annotations.NotNull;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.DefaultAttribute;
 import phd.research.enums.Color;
@@ -8,6 +7,7 @@ import phd.research.enums.Shape;
 import phd.research.enums.Style;
 import phd.research.enums.Type;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +22,7 @@ public class DefaultVertex implements Vertex, Serializable {
     private static int currentIdSequenceValue = 0;
 
     private final int id;
-    @NotNull
+    @Nonnull
     private final Type type;
 
     private boolean visit;
@@ -51,7 +51,7 @@ public class DefaultVertex implements Vertex, Serializable {
         return this.id;
     }
 
-    @NotNull
+    @Nonnull
     public Type getType() {
         return this.type;
     }
