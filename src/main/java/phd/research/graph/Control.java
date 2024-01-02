@@ -87,7 +87,7 @@ public class Control implements Serializable {
 
         return this.controlId == that.controlId && this.layoutId == that.layoutId &&
                 controlName.equals(that.controlName) && layoutName.equals(that.layoutName) &&
-                activity.equals(that.activity) && listeners.equals(that.listeners);
+                activity.equals(that.activity);
     }
 
     @Override
@@ -97,7 +97,6 @@ public class Control implements Serializable {
         result = 31 * result + controlName.hashCode();
         result = 31 * result + layoutName.hashCode();
         result = 31 * result + activity.hashCode();
-        result = 31 * result + listeners.hashCode();
         return result;
     }
 }

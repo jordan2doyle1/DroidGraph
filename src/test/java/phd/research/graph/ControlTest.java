@@ -82,6 +82,7 @@ public class ControlTest {
 
     @Test
     public void testEqualsContract() {
-        EqualsVerifier.forClass(Control.class).suppress(Warning.NONFINAL_FIELDS).verify();
+        EqualsVerifier.forClass(Control.class).withIgnoredFields("listeners").suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

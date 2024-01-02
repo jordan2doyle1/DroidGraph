@@ -172,6 +172,10 @@ public class GraphSettings {
         }
     }
 
+    public File getContolFlowGraphFile() {
+        return this.controlFlowGraphFile;
+    }
+
     public boolean isImportDynamicAnalysis() {
         return this.importDynamicAnalysis;
     }
@@ -189,8 +193,8 @@ public class GraphSettings {
         }
     }
 
-    public File getContolFlowGraphFile() {
-        return this.controlFlowGraphFile;
+    public File getDynamicAnalysisLogFile() {
+        return this.dynamicLogFile;
     }
 
     public boolean isAddMissingComponents() {
