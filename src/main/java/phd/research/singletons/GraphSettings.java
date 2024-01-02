@@ -27,11 +27,13 @@ public class GraphSettings {
     private File callGraphFile;
     private File controlFlowGraphFile;
     private File flowDroidCallbacksFile;
+    private File dynamicLogFile;
 
     private boolean importControlFlowGraph;
     private boolean defaultCallbacksFile;
     private boolean addMissingComponents;
     private boolean outputMissingComponents;
+    private boolean importDynamicAnalysis;
     private boolean loggerActive;
 
     private GraphSettings() {
@@ -68,6 +70,9 @@ public class GraphSettings {
 
         if (this.isImportControlFlowGraph()) {
             setImportControlFlowGraph(this.controlFlowGraphFile);
+        }
+        if (this.isImportDynamicAnalysis()) {
+            setImportDynamicAnalysis(this.dynamicLogFile);
         }
         this.loggerActive = true;
     }
@@ -164,6 +169,23 @@ public class GraphSettings {
 
         if (this.loggerActive) {
             LOGGER.info("Import control flow graph file set as '" + controlFlowGraphFile.getAbsolutePath() + "'.");
+        }
+    }
+
+    public boolean isImportDynamicAnalysis() {
+        return this.importDynamicAnalysis;
+    }
+
+    public void setImportDynamicAnalysis(File dynamicAnalysisLog) throws IOException {
+        if (dynamicAnalysisLog == null || !dynamicAnalysisLog.isFile()) {
+            throw new IOException(
+                    "Dynamic analysis log file does not exist or is not a file (" + dynamicAnalysisLog + ").");
+        }
+        this.importDynamicAnalysis = true;
+        this.dynamicLogFile = dynamicAnalysisLog;
+
+        if (this.loggerActive) {
+            LOGGER.info("Import dynamic analysis log file set as '" + dynamicAnalysisLog.getAbsolutePath() + "'.");
         }
     }
 

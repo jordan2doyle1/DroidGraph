@@ -41,6 +41,8 @@ public class FrameworkMain {
                 .desc("The directory containing Python virtual environment.").build());
         options.addOption(Option.builder("o").longOpt("output-directory").hasArg().numberOfArgs(1).argName("DIRECTORY")
                 .desc("The directory for storing output files.").build());
+        options.addOption(Option.builder("d").longOpt("dynamic-log").hasArg().numberOfArgs(1).argName("FILE")
+                .desc("Log file from a dynamic analysis.").build());
 
         options.addOption(Option.builder("ug").longOpt("output-UG").desc("Output all method Unit graphs.").build());
         options.addOption(Option.builder("cg").longOpt("output-CG").desc("Output the call graph.").build());
@@ -104,11 +106,20 @@ public class FrameworkMain {
             }
         }
 
+        if (cmd.hasOption("d")) {
+            try {
+                settings.setImportDynamicAnalysis(new File(cmd.getOptionValue("d")));
+            } catch (IOException e) {
+                LOGGER.error("Files missing: " + e.getMessage());
+                System.exit(50);
+            }
+        }
+
         try {
             settings.validate();
         } catch (IOException e) {
             LOGGER.error("Files missing: " + e.getMessage());
-            System.exit(50);
+            System.exit(60);
         }
 
         if (cmd.hasOption("c")) {
