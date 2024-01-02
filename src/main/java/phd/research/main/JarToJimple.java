@@ -53,13 +53,13 @@ public class JarToJimple {
         }
 
         File jar_file = new File(cmd.getOptionValue("j"));
-        if (! jar_file.exists()) {
+        if (!jar_file.exists()) {
             LOGGER.error("Jar file (" + jar_file + ") does not exist.");
             System.exit(20);
         }
 
         File output_directory = cmd.hasOption("o") ? new File(cmd.getOptionValue("o")) : new File("output");
-        if (! output_directory.exists()) {
+        if (!output_directory.exists()) {
             LOGGER.error("Output directory (" + output_directory + ") does not exist.");
             System.exit(30);
         }
@@ -72,7 +72,7 @@ public class JarToJimple {
 
         Scene.v().loadNecessaryClasses();
 
-        for (SootClass sootClass: Scene.v().getApplicationClasses()) {
+        for (SootClass sootClass : Scene.v().getApplicationClasses()) {
             String fileName = SourceLocator.v().getFileNameFor(sootClass, soot.options.Options.output_format_jimple);
             OutputStream streamOut = Files.newOutputStream(Paths.get(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
