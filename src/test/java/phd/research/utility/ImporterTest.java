@@ -27,8 +27,8 @@ public class ImporterTest {
     @Before
     public void setUp() throws IOException {
         this.settings = GraphSettings.v();
-        this.settings.setApkFile(new File(ImporterTest.inputDirectory + "Activity_Lifecycle_1.apk"));
-        this.settings.setCallGraphFile(new File(ImporterTest.inputDirectory + "Activity_Lifecycle_1.gml"));
+        this.settings.setApkFile(new File(ImporterTest.inputDirectory + "activity_lifecycle_1.apk"));
+        this.settings.setCallGraphFile(new File(ImporterTest.inputDirectory + "activity_lifecycle_1.gml"));
     }
 
     @Test
@@ -49,7 +49,7 @@ public class ImporterTest {
 
         DroidGraph droidGraph = new DroidGraph();
 
-        assertEquals("Wrong number of vertices imported.", 3155, droidGraph.getControlFlowGraph().vertexSet().size());
-        assertEquals("Wrong number of edges imported.", 3173, droidGraph.getControlFlowGraph().edgeSet().size());
+        assertEquals("Wrong number of vertices imported.", 3233, droidGraph.getControlFlowGraph().vertexSet().size());
+        assertEquals("Wrong number of edges imported.", 3250, droidGraph.getControlFlowGraph().edgeSet().size());
     }
 }

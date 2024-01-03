@@ -82,9 +82,9 @@ public class UnitVertex extends DefaultVertex {
             return false;
         }
 
-        //        if (!super.equals(o)) {
-        //            return false;
-        //        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         UnitVertex that = (UnitVertex) o;
         if (super.getType() != that.getType()) {

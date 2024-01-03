@@ -59,13 +59,21 @@ public class UnitVertexTest {
     @Test
     public void testGetAttributes() {
         Map<String, Attribute> attributes = this.vertex.getAttributes();
-        assertEquals("Should be exactly 5 attributes.", 6, attributes.size());
+        assertEquals("Should be exactly 7 attributes.", 7, attributes.size());
         assertEquals("Wrong type attribute returned.", Type.UNIT.name(), attributes.get("type").getValue());
-        assertEquals("Wrong type attribute returned.", this.UNIT, attributes.get("unit").getValue());
-        assertEquals("Wrong type attribute returned.", MethodVertexTest.SIGNATURE, attributes.get("method").getValue());
-        assertEquals("Wrong color attribute returned.", Color.YELLOW.name(), attributes.get("color").getValue());
-        assertEquals("Wrong shape attribute returned.", Shape.BOX.name(), attributes.get("shape").getValue());
-        assertEquals("Wrong style attribute returned.", Style.FILLED.name(), attributes.get("style").getValue());
+        assertEquals("Wrong unit attribute returned.", this.UNIT, attributes.get("unit").getValue());
+        assertEquals("Wrong signature attribute returned.", MethodVertexTest.SIGNATURE,
+                attributes.get("method").getValue()
+                    );
+        assertEquals("Wrong color attribute returned.", Color.YELLOW.name().toLowerCase(),
+                attributes.get("color").getValue()
+                    );
+        assertEquals("Wrong shape attribute returned.", Shape.BOX.name().toLowerCase(),
+                attributes.get("shape").getValue()
+                    );
+        assertEquals("Wrong style attribute returned.", Style.FILLED.name().toLowerCase(),
+                attributes.get("style").getValue()
+                    );
     }
 
     @Test
