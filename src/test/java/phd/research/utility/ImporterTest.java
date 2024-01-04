@@ -49,7 +49,7 @@ public class ImporterTest {
 
         DroidGraph droidGraph = new DroidGraph();
 
-        assertEquals("Wrong number of vertices imported.", 3233, droidGraph.getControlFlowGraph().vertexSet().size());
-        assertEquals("Wrong number of edges imported.", 3250, droidGraph.getControlFlowGraph().edgeSet().size());
+        assertEquals("Wrong number of vertices imported.", 1693, droidGraph.getControlFlowGraph().vertexSet().size());
+        assertEquals("Wrong number of edges imported.", 3161, droidGraph.getControlFlowGraph().edgeSet().size());
     }
 }

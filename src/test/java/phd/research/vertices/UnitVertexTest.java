@@ -86,7 +86,7 @@ public class UnitVertexTest {
 
     @Test
     public void testEquals() {
-        EqualsVerifier.forClass(UnitVertex.class).withRedefinedSuperclass().withIgnoredFields("visit", "localVisit")
-                .verify();
+        EqualsVerifier.forClass(UnitVertex.class).withRedefinedSuperclass().withIgnoredFields("id","visit",
+                        "localVisit").verify();
     }
 }

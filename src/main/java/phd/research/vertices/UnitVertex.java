@@ -82,10 +82,6 @@ public class UnitVertex extends DefaultVertex {
             return false;
         }
 
-        if (!super.equals(o)) {
-            return false;
-        }
-
         UnitVertex that = (UnitVertex) o;
         if (super.getType() != that.getType()) {
             return false;
@@ -100,7 +96,7 @@ public class UnitVertex extends DefaultVertex {
 
     @Override
     public final int hashCode() {
-        int result = super.hashCode();
+        int result = super.getType().hashCode();
         result = 31 * result + methodSignature.hashCode();
         result = 31 * result + unit.hashCode();
         return result;
