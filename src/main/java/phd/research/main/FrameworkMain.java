@@ -24,7 +24,7 @@ public class FrameworkMain {
     public static void main(String[] args) {
 
         Timer timer = new Timer();
-        LOGGER.info("Start time: " + timer.start());
+        LOGGER.info("Start time: {}", timer.start());
 
         Options options = new Options();
         options.addOption(Option.builder("a").longOpt("apk-file").required().hasArg().numberOfArgs(1).argName("FILE")
@@ -76,7 +76,7 @@ public class FrameworkMain {
             settings.setApkFile(new File(cmd.getOptionValue("a")));
             settings.setCallGraphFile(new File(cmd.getOptionValue("i")));
         } catch (IOException e) {
-            LOGGER.error("Files missing: " + e.getMessage());
+            LOGGER.error("Files missing: {}", e.getMessage());
             System.exit(20);
         }
 
@@ -84,7 +84,7 @@ public class FrameworkMain {
             try {
                 settings.setPlatformDirectory(new File(cmd.getOptionValue("p")));
             } catch (IOException e) {
-                LOGGER.error("Files missing: " + e.getMessage());
+                LOGGER.error("Files missing: {}", e.getMessage());
                 System.exit(30);
             }
         }
@@ -101,7 +101,7 @@ public class FrameworkMain {
             try {
                 settings.setOutputDirectory(new File(cmd.getOptionValue("o")));
             } catch (IOException e) {
-                LOGGER.error("Files missing: " + e.getMessage());
+                LOGGER.error("Files missing: {}", e.getMessage());
                 System.exit(40);
             }
         }
@@ -110,7 +110,7 @@ public class FrameworkMain {
             try {
                 settings.setImportDynamicAnalysis(new File(cmd.getOptionValue("d")));
             } catch (IOException e) {
-                LOGGER.error("Files missing: " + e.getMessage());
+                LOGGER.error("Files missing: {}", e.getMessage());
                 System.exit(50);
             }
         }
@@ -118,7 +118,7 @@ public class FrameworkMain {
         try {
             settings.validate();
         } catch (IOException e) {
-            LOGGER.error("Files missing: " + e.getMessage());
+            LOGGER.error("Files missing: {}", e.getMessage());
             System.exit(60);
         }
 
@@ -126,7 +126,7 @@ public class FrameworkMain {
             try {
                 FileUtils.cleanDirectory(settings.getOutputDirectory());
             } catch (IOException e) {
-                LOGGER.error("Failed to clean output directory." + e.getMessage());
+                LOGGER.error("Failed to clean output directory.{}", e.getMessage());
             }
         }
 
@@ -138,13 +138,13 @@ public class FrameworkMain {
 
         Timer cTimer = new Timer();
         if (outputUnitGraphs || outputCallGraph || outputControlFlowGraph) {
-            LOGGER.info("Starting graph output... (" + cTimer.start(true) + ")");
+            LOGGER.info("Starting graph output... ({})", cTimer.start(true));
 
             if (outputUnitGraphs) {
                 try {
                     droidGraph.writeUnitGraphsToFile();
                 } catch (IOException e) {
-                    LOGGER.error("Problem writing methods to output file: " + e.getMessage());
+                    LOGGER.error("Problem writing methods to output file: {}", e.getMessage());
                 }
             }
 
@@ -152,7 +152,7 @@ public class FrameworkMain {
                 try {
                     droidGraph.writeCallGraphToFile();
                 } catch (Exception e) {
-                    LOGGER.error("Problem writing call graph to output file: " + e.getMessage());
+                    LOGGER.error("Problem writing call graph to output file: {}", e.getMessage());
                 }
             }
 
@@ -160,27 +160,27 @@ public class FrameworkMain {
                 try {
                     droidGraph.writeControlFlowGraphToFile();
                 } catch (Exception e) {
-                    LOGGER.error("Problem writing CFG to output file: " + e.getMessage());
+                    LOGGER.error("Problem writing CFG to output file: {}", e.getMessage());
                 }
             }
 
-            LOGGER.info("(" + cTimer.end() + ") Graph output took " + cTimer.secondsDuration() + " second(s).");
+            LOGGER.info("({}) Graph output took {} second(s).", cTimer.end(), cTimer.secondsDuration());
         }
 
         if (cmd.hasOption("s")) {
-            LOGGER.info("Starting file output... (" + cTimer.start(true) + ")");
+            LOGGER.info("Starting file output... ({})", cTimer.start(true));
             try {
                 droidGraph.outputCGDetails();
                 droidGraph.writeFlowDroidAnalysisToFile();
                 droidGraph.writeControlsToFile();
                 droidGraph.outputCFGDetails();
             } catch (IOException e) {
-                LOGGER.error("Failed to write app analysis to output files: " + e.getMessage());
+                LOGGER.error("Failed to write app analysis to output files: {}", e.getMessage());
             }
-            LOGGER.info("(" + cTimer.end() + ") File output took " + cTimer.secondsDuration() + " second(s).");
+            LOGGER.info("({}) File output took {} second(s).", cTimer.end(), cTimer.secondsDuration());
         }
 
-        LOGGER.info("End time: " + timer.end());
-        LOGGER.info("Execution time: " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("End time: {}", timer.end());
+        LOGGER.info("Execution time: {} second(s).", timer.secondsDuration());
     }
 }

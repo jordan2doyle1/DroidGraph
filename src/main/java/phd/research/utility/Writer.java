@@ -99,7 +99,7 @@ public class Writer {
             }
         }
 
-        LOGGER.info("Created file '" + file.getAbsolutePath() + "'.");
+        LOGGER.info("Created file '{}'.", file.getAbsolutePath());
     }
 
     private static void exportDOT(File directory, String fileName, Graph<Vertex, DefaultEdge> graph)

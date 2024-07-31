@@ -25,7 +25,7 @@ public class JarToJimple {
     public static void main(String[] args) throws IOException {
 
         Timer timer = new Timer();
-        LOGGER.info("Start time: " + timer.start());
+        LOGGER.info("Start time: {}", timer.start());
 
         Options options = new Options();
         options.addOption(Option.builder("j").longOpt("jar-file").required().hasArg().numberOfArgs(1).argName("FILE")
@@ -54,13 +54,13 @@ public class JarToJimple {
 
         File jar_file = new File(cmd.getOptionValue("j"));
         if (!jar_file.exists()) {
-            LOGGER.error("Jar file (" + jar_file + ") does not exist.");
+            LOGGER.error("Jar file ({}) does not exist.", jar_file);
             System.exit(20);
         }
 
         File output_directory = cmd.hasOption("o") ? new File(cmd.getOptionValue("o")) : new File("output");
         if (!output_directory.exists()) {
-            LOGGER.error("Output directory (" + output_directory + ") does not exist.");
+            LOGGER.error("Output directory ({}) does not exist.", output_directory);
             System.exit(30);
         }
 
@@ -77,14 +77,14 @@ public class JarToJimple {
             OutputStream streamOut = Files.newOutputStream(Paths.get(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
 
-            LOGGER.info("Writing class " + sootClass.getName() + " to Jimple file.");
+            LOGGER.info("Writing class {} to Jimple file.", sootClass.getName());
             Printer.v().printTo(sootClass, writerOut);
 
             writerOut.flush();
             streamOut.close();
         }
 
-        LOGGER.info("End time: " + timer.end());
-        LOGGER.info("Execution time: " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("End time: {}", timer.end());
+        LOGGER.info("Execution time: {} second(s).", timer.secondsDuration());
     }
 }

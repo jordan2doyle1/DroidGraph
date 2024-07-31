@@ -89,7 +89,7 @@ public class GraphSettings {
         this.apkFile = apkFile;
 
         if (this.loggerActive) {
-            LOGGER.info("Apk file set as '" + apkFile.getAbsolutePath() + "'.");
+            LOGGER.info("Apk file set as '{}'.", apkFile.getAbsolutePath());
         }
     }
 
@@ -105,7 +105,7 @@ public class GraphSettings {
         this.androidPlatformDirectory = androidPlatformDirectory;
 
         if (this.loggerActive) {
-            LOGGER.info("Android platform directory set as '" + androidPlatformDirectory.getAbsolutePath() + "'");
+            LOGGER.info("Android platform directory set as '{}'", androidPlatformDirectory.getAbsolutePath());
         }
     }
 
@@ -126,7 +126,7 @@ public class GraphSettings {
         }
 
         if (this.loggerActive) {
-            LOGGER.info("Output directory set as '" + outputDirectory.getAbsolutePath() + ".");
+            LOGGER.info("Output directory set as '{}.", outputDirectory.getAbsolutePath());
         }
     }
 
@@ -136,7 +136,7 @@ public class GraphSettings {
 
     public void setFormat(Format format) {
         this.format = format;
-        LOGGER.info("Format set as " + format.name());
+        LOGGER.info("Format set as {}", format.name());
     }
 
     public File getCallGraphFile() {
@@ -151,7 +151,7 @@ public class GraphSettings {
         this.callGraphFile = callGraphFile;
 
         if (this.loggerActive) {
-            LOGGER.info("Call graph file set as '" + callGraphFile.getAbsolutePath() + "'.");
+            LOGGER.info("Call graph file set as '{}'.", callGraphFile.getAbsolutePath());
         }
     }
 
@@ -168,7 +168,7 @@ public class GraphSettings {
         this.controlFlowGraphFile = controlFlowGraphFile;
 
         if (this.loggerActive) {
-            LOGGER.info("Import control flow graph file set as '" + controlFlowGraphFile.getAbsolutePath() + "'.");
+            LOGGER.info("Import control flow graph file set as '{}'.", controlFlowGraphFile.getAbsolutePath());
         }
     }
 
@@ -189,7 +189,7 @@ public class GraphSettings {
         this.dynamicLogFile = dynamicAnalysisLog;
 
         if (this.loggerActive) {
-            LOGGER.info("Import dynamic analysis log file set as '" + dynamicAnalysisLog.getAbsolutePath() + "'.");
+            LOGGER.info("Import dynamic analysis log file set as '{}'.", dynamicAnalysisLog.getAbsolutePath());
         }
     }
 
@@ -203,7 +203,7 @@ public class GraphSettings {
 
     public void setAddMissingComponents(boolean addMissingComponents) {
         this.addMissingComponents = addMissingComponents;
-        LOGGER.info("Add missing components set as " + addMissingComponents);
+        LOGGER.info("Add missing components set as {}", addMissingComponents);
     }
 
     public File getFlowDroidCallbacksFile() {
@@ -214,7 +214,7 @@ public class GraphSettings {
     public void setFlowDroidCallbacksFile(File callbacksFile) {
         this.flowDroidCallbacksFile = callbacksFile;
         this.defaultCallbacksFile = false;
-        LOGGER.info("FlowDroid callbacks file set as '" + callbacksFile.getAbsolutePath() + "'.");
+        LOGGER.info("FlowDroid callbacks file set as '{}'.", callbacksFile.getAbsolutePath());
     }
 
     public boolean isOutputMissingComponents() {
@@ -223,6 +223,6 @@ public class GraphSettings {
 
     public void setOutputMissingComponents(boolean outputMissingComponents) {
         this.outputMissingComponents = outputMissingComponents;
-        LOGGER.info("Output missing components set as " + outputMissingComponents);
+        LOGGER.info("Output missing components set as {}", outputMissingComponents);
     }
 }

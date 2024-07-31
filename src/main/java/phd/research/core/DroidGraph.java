@@ -292,7 +292,7 @@ public class DroidGraph {
     }
 
     public void writeUnitGraphsToFile() throws IOException {
-        LOGGER.info("Exporting unit graphs in " + GraphSettings.v().getFormat().name() + " format(s).");
+        LOGGER.info("Exporting unit graphs in {} format(s).", GraphSettings.v().getFormat().name());
         for (SootClass clazz : Scene.v().getClasses()) {
             for (SootMethod method : clazz.getMethods()) {
                 if (Filter.isValidMethod(method) && method.hasActiveBody()) {
@@ -307,14 +307,14 @@ public class DroidGraph {
     }
 
     public void writeCallGraphToFile() throws IOException {
-        LOGGER.info("Exporting call graph in " + GraphSettings.v().getFormat().name() + " format(s).");
+        LOGGER.info("Exporting call graph in {} format(s).", GraphSettings.v().getFormat().name());
         Writer.writeGraph(GraphSettings.v().getOutputDirectory(), "app_call_graph", GraphSettings.v().getFormat(),
                 this.getCallGraph()
                          );
     }
 
     public void writeControlFlowGraphToFile() throws IOException {
-        LOGGER.info("Exporting control flow graph in " + GraphSettings.v().getFormat().name() + " format(s).");
+        LOGGER.info("Exporting control flow graph in {} format(s).", GraphSettings.v().getFormat().name());
         Writer.writeGraph(GraphSettings.v().getOutputDirectory(), "app_control_flow_graph",
                 GraphSettings.v().getFormat(), this.getControlFlowGraph()
                          );
@@ -356,13 +356,14 @@ public class DroidGraph {
         }
 
         Timer timer = new Timer();
-        LOGGER.info("Running graph generation... (" + timer.start(true) + ")");
+        LOGGER.info("Running graph generation... ({})", timer.start(true));
 
         LOGGER.info("Adding call graph vertices and edges to the control flow graph.");
         Graph<Vertex, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
         Graphs.addGraph(graph, this.getCallGraph());
-        LOGGER.info(this.getCallGraph().vertexSet().size() + " vertices and " + this.getCallGraph().edgeSet().size() +
-                " edges added to the control flow graph.");
+        LOGGER.info("{} vertices and {} edges added to the control flow graph.", this.getCallGraph().vertexSet().size(),
+                this.getCallGraph().edgeSet().size()
+                   );
 
         LOGGER.info("Adding controls to the control flow graph.");
         this.getDroidControls().getControls().forEach(control -> {
@@ -378,7 +379,7 @@ public class DroidGraph {
                 }
             });
         });
-        LOGGER.info(this.getDroidControls().getControls().size() + " controls added to the control flow graph.");
+        LOGGER.info("{} controls added to the control flow graph.", this.getDroidControls().getControls().size());
 
         LOGGER.info("Adding unit graphs to the control flow graph.");
         AtomicInteger numberOfUnitGraphs = new AtomicInteger();
@@ -422,7 +423,7 @@ public class DroidGraph {
                 //TODO: Link method return unit back to the calling unit.
             }
         });
-        LOGGER.info(numberOfUnitGraphs + " unit graphs added to the control flow graph.");
+        LOGGER.info("{} unit graphs added to the control flow graph.", numberOfUnitGraphs);
 
         if (GraphSettings.v().isImportDynamicAnalysis()) {
             LOGGER.info("Augmenting control flow graph with dynamic analysis logs.");
@@ -431,7 +432,7 @@ public class DroidGraph {
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     if (line.contains(LogHandler.M_TAG) || line.contains(LogHandler.C_TAG)) {
-                        LOGGER.debug("Dynamic analysis log: " + line);
+                        LOGGER.debug("Dynamic analysis log: {}", line);
                         Tuple<Integer, SootClass, SootMethod> logData = LogHandler.regexLogMessage(line);
                         if (logData != null) {
                             MethodVertex methodVertex =
@@ -439,7 +440,7 @@ public class DroidGraph {
                                             graph.vertexSet()
                                                                              );
                             if (methodVertex == null) {
-                                LOGGER.info("Adding method vertex with signature: " + logData.getRight());
+                                LOGGER.info("Adding method vertex with signature: {}", logData.getRight());
                                 VertexFactory factory = new VertexFactory();
                                 methodVertex = (MethodVertex) factory.createVertex(logData.getRight());
                                 graph.addVertex(methodVertex);
@@ -451,7 +452,7 @@ public class DroidGraph {
                                                 logData.getLeft(), graph.vertexSet()
                                                                                    );
                                 if (controlVertex == null) {
-                                    LOGGER.info("Adding control vertex with Id: " + logData.getLeft());
+                                    LOGGER.info("Adding control vertex with Id: {}", logData.getLeft());
                                     controlVertex = new ControlVertex(
                                             new Control(logData.getLeft(), "Unknown", -1, "Unknown",
                                                     logData.getMiddle().getName(), Collections.emptyList()
@@ -467,19 +468,20 @@ public class DroidGraph {
                     }
                 }
             } catch (IOException e) {
-                LOGGER.error("Failed to read traversal log: " + e.getMessage());
+                LOGGER.error("Failed to read traversal log: {}", e.getMessage());
             }
         }
 
-        LOGGER.info(graph.vertexSet().size() + " vertices and " + graph.edgeSet().size() + " edges added to the " +
-                "control flow graph.");
-        LOGGER.info("(" + timer.end() + ") Graph generation took " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("{} vertices and {} edges added to the control flow graph.", graph.vertexSet().size(),
+                graph.edgeSet().size()
+                   );
+        LOGGER.info("({}) Graph generation took {} second(s).", timer.end(), timer.secondsDuration());
         return graph;
     }
 
     private void verifyControlFlowGraphContents() {
         Timer timer = new Timer();
-        LOGGER.info("Verifying Control Flow Graph Content... (" + timer.start(true) + ")");
+        LOGGER.info("Verifying Control Flow Graph Content... ({})", timer.start(true));
         boolean problemFound = false;
 
         LOGGER.info("Searching for missing controls.");
@@ -503,7 +505,7 @@ public class DroidGraph {
             try {
                 Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "missing_controls.txt", missingControls);
             } catch (IOException e) {
-                LOGGER.error("Error writing missing controls to output file." + e.getMessage());
+                LOGGER.error("Error writing missing controls to output file.{}", e.getMessage());
             }
         }
 
@@ -551,7 +553,7 @@ public class DroidGraph {
             try {
                 Writer.writeCollection(GraphSettings.v().getOutputDirectory(), "missing_methods.txt", missingMethods);
             } catch (IOException e) {
-                LOGGER.error("Error writing missing methods to output file." + e.getMessage());
+                LOGGER.error("Error writing missing methods to output file.{}", e.getMessage());
             }
         }
 
@@ -625,7 +627,7 @@ public class DroidGraph {
         for (Map.Entry<String, Collection<SootClass>> entry : classEmptyCheckMap.entrySet()) {
             if (entry.getValue().isEmpty()) {
                 problemFound = true;
-                LOGGER.warn("No classes in " + entry.getKey() + ".");
+                LOGGER.warn("No classes in {}.", entry.getKey());
             }
         }
 
@@ -637,7 +639,7 @@ public class DroidGraph {
         for (Map.Entry<String, Collection<SootMethod>> entry : methodEmptyCheckMap.entrySet()) {
             if (entry.getValue().isEmpty()) {
                 problemFound = true;
-                LOGGER.warn("No methods in " + entry.getKey() + ".");
+                LOGGER.warn("No methods in {}.", entry.getKey());
             }
         }
 
@@ -656,7 +658,7 @@ public class DroidGraph {
         for (Map.Entry<String, Integer> entry : callGraphEmptyCheckMap.entrySet()) {
             if (entry.getValue() != 0) {
                 problemFound = true;
-                LOGGER.warn("Call graph contains " + entry.getKey() + ".");
+                LOGGER.warn("Call graph contains {}.", entry.getKey());
             }
         }
 
@@ -678,7 +680,7 @@ public class DroidGraph {
         for (Map.Entry<String, Pair<Integer, Integer>> entry : callGraphCountCheckMap.entrySet()) {
             if (!entry.getValue().getLeft().equals(entry.getValue().getRight())) {
                 problemFound = true;
-                LOGGER.warn(entry.getKey() + " methods count does not match call graph composition count.");
+                LOGGER.warn("{} methods count does not match call graph composition count.", entry.getKey());
             }
         }
 
@@ -696,7 +698,7 @@ public class DroidGraph {
         for (Map.Entry<String, Integer> entry : controlFlowGraphEmptyCheckMap.entrySet()) {
             if (entry.getValue() == 0) {
                 problemFound = true;
-                LOGGER.warn("Control flow graph contains no " + entry.getKey() + ".");
+                LOGGER.warn("Control flow graph contains no {}.", entry.getKey());
             }
         }
 
@@ -722,7 +724,7 @@ public class DroidGraph {
         for (Map.Entry<String, Pair<Integer, Integer>> entry : cfgCountCheckMap.entrySet()) {
             if (!entry.getValue().getLeft().equals(entry.getValue().getRight())) {
                 problemFound = true;
-                LOGGER.warn(entry.getKey() + " count does not match between control flow graph and call graph count.");
+                LOGGER.warn("{} count does not match between control flow graph and call graph count.", entry.getKey());
             }
         }
 
@@ -742,7 +744,7 @@ public class DroidGraph {
         if (!duplicates.isEmpty()) {
             problemFound = true;
             for (String methodSignature : duplicates) {
-                LOGGER.warn("Method " + methodSignature + " is duplicated in the graph.");
+                LOGGER.warn("Method {} is duplicated in the graph.", methodSignature);
             }
         }
 
@@ -750,6 +752,6 @@ public class DroidGraph {
             LOGGER.info("Content verification finished without any problems.");
         }
 
-        LOGGER.info("(" + timer.end() + ") Content verification took " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("({}) Content verification took {} second(s).", timer.end(), timer.secondsDuration());
     }
 }

@@ -35,7 +35,7 @@ public class AndroGuardVertex implements Serializable {
         try {
             this.jimpleSignature = Bytecode.signatureToJimple(this.bytecodeSignature);
         } catch (RuntimeException e) {
-            LOGGER.warn("Failed to convert bytecode signature: " + bytecodeSignature);
+            LOGGER.warn("Failed to convert bytecode signature: {}", bytecodeSignature);
             this.jimpleSignature = null;
         }
     }

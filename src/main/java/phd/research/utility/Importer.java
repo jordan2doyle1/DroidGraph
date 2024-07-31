@@ -32,7 +32,7 @@ public class Importer {
     private static final Logger LOGGER = LoggerFactory.getLogger(Importer.class);
 
     public static Graph<AndroGuardVertex, DefaultEdge> importAndroGuardGraph(File graphFile) {
-        LOGGER.info("Importing AndroGuard call graph from " + graphFile);
+        LOGGER.info("Importing AndroGuard call graph from {}", graphFile);
 
         Graph<Integer, DefaultEdge> tempGraph =
                 new DefaultDirectedGraph<>(SupplierUtil.createIntegerSupplier(), SupplierUtil.DEFAULT_EDGE_SUPPLIER,
@@ -67,8 +67,9 @@ public class Importer {
             graph.addEdge(sourceVertex, targetVertex);
         });
 
-        LOGGER.info("AndroGuard call graph contains " + graph.vertexSet().size() + " vertices and " +
-                graph.edgeSet().size() + " edges.");
+        LOGGER.info("AndroGuard call graph contains {} vertices and {} edges.", graph.vertexSet().size(),
+                graph.edgeSet().size()
+                   );
         return graph;
     }
 
@@ -105,13 +106,14 @@ public class Importer {
             }
         });
 
-        LOGGER.info("Converted and filtered call graph contains " + graph.vertexSet().size() + " vertices and " +
-                graph.edgeSet().size() + " edges.");
+        LOGGER.info("Converted and filtered call graph contains {} vertices and {} edges.", graph.vertexSet().size(),
+                graph.edgeSet().size()
+                   );
         return graph;
     }
 
     public static Graph<Vertex, DefaultEdge> importDroidGraph(File graphFile) throws RuntimeException {
-        LOGGER.info("Importing control flow graph from " + graphFile);
+        LOGGER.info("Importing control flow graph from {}", graphFile);
 
         Graph<Integer, DefaultEdge> tempGraph =
                 new DefaultDirectedGraph<>(SupplierUtil.createIntegerSupplier(), SupplierUtil.DEFAULT_EDGE_SUPPLIER,
@@ -141,8 +143,9 @@ public class Importer {
             graph.addEdge(sourceVertex, targetVertex);
         });
 
-        LOGGER.info("Imported control flow graph contains " + graph.vertexSet().size() + " vertices and " +
-                graph.edgeSet().size() + " edges.");
+        LOGGER.info("Imported control flow graph contains {} vertices and {} edges.", graph.vertexSet().size(),
+                graph.edgeSet().size()
+                   );
         return graph;
     }
 
@@ -156,7 +159,7 @@ public class Importer {
 
     private static Vertex convertVertex(AndroGuardVertex androGuardVertex) {
         if (androGuardVertex.getJimpleSignature() == null) {
-            LOGGER.warn("Bytecode not converted to Jimple signature: " + androGuardVertex.getBytecodeSignature());
+            LOGGER.warn("Bytecode not converted to Jimple signature: {}", androGuardVertex.getBytecodeSignature());
             return null;
         }
 
@@ -179,7 +182,7 @@ public class Importer {
             }
 
             if (method == null) {
-                LOGGER.warn("Failed to find method signature: " + androGuardVertex.getJimpleSignature());
+                LOGGER.warn("Failed to find method signature: {}", androGuardVertex.getJimpleSignature());
             } else if (Filter.isValidMethod(method)) {
                 return factory.createVertex(androGuardVertex.getId(), method);
             }

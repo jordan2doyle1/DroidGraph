@@ -33,7 +33,7 @@ public class LogHandler {
         } else if (logMessage.contains(M_TAG)) {
             pattern = Pattern.compile("Method:\\s<(.+):\\s(.+)>");
         } else {
-            LOGGER.error("No recognisable tag in log message: " + logMessage);
+            LOGGER.error("No recognisable tag in log message: {}", logMessage);
             return null;
         }
 
@@ -74,7 +74,7 @@ public class LogHandler {
             }
         }
 
-        LOGGER.error("Failure while reading Logcat message: " + logMessage);
+        LOGGER.error("Failure while reading Logcat message: {}", logMessage);
         return null;
     }
 }

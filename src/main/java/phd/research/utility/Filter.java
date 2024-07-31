@@ -80,7 +80,7 @@ public class Filter {
     }
 
     private static List<String> loadBlacklist(String fileName) {
-        LOGGER.info("Loading blacklist from resource file '" + fileName + "'");
+        LOGGER.info("Loading blacklist from resource file '{}'", fileName);
         InputStream resourceStream = Filter.class.getClassLoader().getResourceAsStream(fileName);
         return resourceStream != null ?
                 new BufferedReader(new InputStreamReader(resourceStream)).lines().collect(Collectors.toList()) :

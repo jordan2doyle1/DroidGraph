@@ -54,7 +54,7 @@ public class DroidControls {
 
     private Collection<Control> processFlowDroidControls() {
         Timer timer = new Timer();
-        LOGGER.info("Parsing app controls... (" + timer.start(true) + ")");
+        LOGGER.info("Parsing app controls... ({})", timer.start(true));
 
         LayoutFileParser layoutParser = FlowDroidAnalysis.v().getLayoutFileParser();
         MultiMap<String, AndroidLayoutControl> layoutControls = layoutParser.getUserControls();
@@ -63,7 +63,7 @@ public class DroidControls {
         try {
             Writer.writeMultiMap(GraphSettings.v().getOutputDirectory(), "layout_controls.txt", layoutControls);
         } catch (IOException e) {
-            LOGGER.error("Failed to output layout controls. " + e.getMessage());
+            LOGGER.error("Failed to output layout controls. {}", e.getMessage());
         }
 
         for (String layoutFileName : layoutControls.keySet()) {
@@ -84,7 +84,7 @@ public class DroidControls {
         try {
             Writer.writeMultiMap(GraphSettings.v().getOutputDirectory(), "menu_controls.txt", menuControls);
         } catch (IOException e) {
-            LOGGER.error("Failed to output menu controls. " + e.getMessage());
+            LOGGER.error("Failed to output menu controls. {}", e.getMessage());
         }
 
         for (String menuFileName : menuControls.keySet()) {
@@ -108,7 +108,7 @@ public class DroidControls {
             }
         }
 
-        LOGGER.info("(" + timer.end() + ") Parsing app controls took " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("({}) Parsing app controls took {} second(s).", timer.end(), timer.secondsDuration());
         return controls;
     }
 

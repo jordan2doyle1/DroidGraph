@@ -160,7 +160,7 @@ public class FlowDroidAnalysis {
 
     public void initializeSoot() {
         Timer timer = new Timer();
-        LOGGER.info("Initializing Soot... (" + timer.start(true) + ")");
+        LOGGER.info("Initializing Soot... ({})", timer.start(true));
 
         G.reset();
 
@@ -196,7 +196,7 @@ public class FlowDroidAnalysis {
 
         this.sootInitialised = true;
 
-        LOGGER.info("(" + timer.end() + ") Soot initialization took " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("({}) Soot initialization took {} second(s).", timer.end(), timer.secondsDuration());
     }
 
     public void runFlowDroid() {
@@ -205,7 +205,7 @@ public class FlowDroidAnalysis {
         }
 
         Timer timer = new Timer();
-        LOGGER.info("Running FlowDroid Analysis... (" + timer.start(true) + ")");
+        LOGGER.info("Running FlowDroid Analysis... ({})", timer.start(true));
 
         InfoflowAndroidConfiguration configuration = this.getFlowDroidConfiguration();
         this.application = new SetupApplication(configuration);
@@ -213,7 +213,7 @@ public class FlowDroidAnalysis {
 
         this.flowDroidExecuted = true;
 
-        LOGGER.info("(" + timer.end() + ") FlowDroid analysis took " + timer.secondsDuration() + " second(s).");
+        LOGGER.info("({}) FlowDroid analysis took {} second(s).", timer.end(), timer.secondsDuration());
     }
 
     private InfoflowAndroidConfiguration getFlowDroidConfiguration() {
