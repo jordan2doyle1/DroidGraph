@@ -4,6 +4,27 @@ Droid Graph is a Java command line application that generates an extended contro
 application. Both static and dynamic analysis techniques are used to model the applications control flow 
 including the applications interface elements and callback methods.
 
+#### Publications:
+```
+@inproceedings{doyle2023modelling,
+  title={Modelling Android applications through static analysis and systematic exploratory testing},
+  author={Doyle, Jordan and Laurent, Thomas and Ventresque, Anthony},
+  booktitle={2023 10th International Conference on Dependable Systems and Their Applications (DSA)},
+  pages={94--104},
+  year={2023},
+  organization={IEEE}
+}
+```
+```
+@inproceedings{doyle2024padraig,
+  title={PADRAIG: Precise AnDRoid Automated Input Generation},
+  author={Doyle, Jordan and Laurent, Thomas and Ventresque, Anthony},
+  booktitle={2024 International Conference on Software Quality, Reliability, and Security (QRS)},
+  year={2024},
+  note={Status: accepted and presented at QRS.}
+}
+```
+
 ### Build & Run ###
 
 This is a Maven project developed in JetBrains Intellij IDE. You can clone this project and open it in JetBrains
