@@ -1,0 +1,9 @@
+﻿# Droid Graph Future Work
+
+* Currently UI elements with a layout from the Android SDK are filtered so they are not added to the model. However, some UI elements are added back into the model during dynamic analysis. This indicates that the filter is too restrictive. Modify the filter to fix this issue.
+* Verify if the FlowDroid framework has a clickable attribute associated with it's UI control objects, thus distinguishing UI elements that are clickable or not.
+* Droid Graph currently contains all UI elements found during both static and dynamic analysis. Only UI elements that are actionable/clickable should be added to the model. Determine if UI elements found during static analysis are actionable UI controls.
+* Verify the structure of the graph by retrieving a trace/path from the graph and replicating it using dynamic analysis during execution.
+* FlowDroids LayoutFileParser class is supposed to contain an associated callback method, but it is very rarely populated because FlowDroid will only retrieve and link callbacks from the layout XML files. Extend the LayoutFileParser class to include a search for associated callback methods defined in the Java code.
+* Search and identify fragments as well as the activities they belong to within an Android application. The static analysis of an Android applications should be able to output all the activities within an application and the fragments they instantiate.
+* Search for statements that invoke a set listener method. This has already been done in the bash script 'listener_method_search.sh'. The purpose is to identify where a view object has been assigned a callback method. A list of Android set listener methods can be found in the Frontmatter repository or in the 'set_listener_methods.txt' file.
